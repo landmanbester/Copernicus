@@ -20,9 +20,9 @@ import matplotlib as mpl
 mpl.rcParams.update({'font.size': 12, 'font.family': 'serif'})
 import matplotlib.pyplot as plt
 from scipy.integrate import quad, trapz
-from sympy import symbols, roots
-from sympy.utilities import lambdify
-from mpmath import elliprj
+#from sympy import symbols, roots
+#from sympy.utilities import lambdify
+#from mpmath import elliprj
 import CIVP
 
 global kappa
@@ -67,7 +67,7 @@ class GP(object):
         self.fmean = dot(self.LinvKp.T,self.Linvy)
         self.fcov = self.Kpp - dot(self.LinvKp.T,self.LinvKp)
         self.W,self.V = eigh(self.fcov)
-        self.srtW = diag(nan_to_num(sqrt(self.W)))
+        self.srtW = diag(nan_to_num(sqrt(nan_to_num(self.W))))
 
     def abs_diff(self,x,xp):
         """
@@ -108,10 +108,6 @@ class SSU(object):
 
         #Set function to get t0
         self.t0f = lambda x,a,b,c,d: sqrt(x)/(d*sqrt(a + b*x + c*x**3))
-
-        #set t0
-        self.H0 = H[0]
-        self.t0 = self.set_age()
         
         #Set rhoz and Hz on finest grid
         self.rhoz = rho
@@ -196,21 +192,6 @@ class SSU(object):
         self.t0 = quad(self.t0f,0,1.0,args=(self.Om0,self.Ok0,self.OL0,self.Hz[0]))[0]
         return
 
-    def set_age(self):
-        x,Omo,OKo,OLo = symbols('t_0,Omega_m,Omega_K,Omega_Lambda')
-        f = (x + 1)**3 + OKo*(x+1)**2/Omo + OLo/Omo
-        q = roots(f,x,multiple=True)
-        zroots = lambdify([Omo,OKo,OLo],q,modules="numpy")
-        try:
-            qi = zroots(self.Om0,self.Ok0,self.OL0)
-            t0tmp = 2*elliprj(-qi[0],-qi[1],-qi[2],1)/(3*self.H0*sqrt(self.Om0))
-            t0 = float(t0tmp.real)
-        except:
-            a = linspace(1e-8,1,10000)
-            t0 = trapz(sqrt(a)/(self.H0*sqrt(self.Om0 + self.Ok0*a + self.OL0*a**3)),a)
-            print "Resorted to finding t0 numerically", t0
-        return t0
-
     def affine_grid(self,z,Hz,rhoz):
         #this functions gets the data as a function of evenly spaced affine parameter values
         dnuzo = uvs(z,1/((1+z)**2*Hz),k=3,s=0.0)
@@ -281,13 +262,17 @@ if __name__ == "__main__":
     pEf = zeros(nsamp)
     Lam0 = 3*0.7*0.2335**2
     sLam = 0.05*Lam0
+    H = KH.simp_sample()
+    rho = Krho.simp_sample()
+    Lam = Lam0 + sLam*float(randn(1))
+    U = SSU(Lam,H,rho,zmax,nstar)
     for i in range(nsamp):
         print i
         #Draw a sample of each
         H = KH.simp_sample()
         rho = Krho.simp_sample()
         Lam = Lam0 + sLam*float(randn(1))
-        U = SSU(Lam,H,rho,zmax,nstar)
+        U.update_samps(H,rho,Lam)
         pDi[i], pDf[i], p1i[i], p1f[i], p2i[i], p2f[i], pEi[i], pEf[i] = U.run_test()
         
     #Get averages of convergence factors and generate table
@@ -317,13 +302,7 @@ if __name__ == "__main__":
     print pEim, spEi
     print pEfm, spEf
 
-#    #Load first samples
-#    print "Loading Samps"
-#    holder = load('ProcessedData/Samps12.npz') #/home/landman/Documents/Research/Algo_Pap/Simulated_LCDM_prior/ProcessedData/Samps1s.npz')
-#    LLTBConsi = asarray(holder['LLTBConsi'])
-#    LLTBConsf = asarray(holder['LLTBConsf'])
-#        
-#    #2Create figure
+#    #Create figure
 #    figLLTB, axLLTB = plt.subplots(nrows = 1, ncols = 2,figsize=(15,5))
 #
 #    #Do LLTBi figure
