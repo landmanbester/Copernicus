@@ -8,4 +8,4 @@ This should open the documentation in your web browser. If nothing happens you p
 
 $ pip install ipython[notebook]
 
-You should be able to run the scripts interactively from your browser but beware some of the scripts are computationally intensive. These have been indicated 
+You should be able to run the scripts interactively from your browser by selecting on one of the code blocks and clicking on the run icon. Make sure to run each block of code starting with the first.
