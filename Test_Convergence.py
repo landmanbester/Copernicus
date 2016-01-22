@@ -276,71 +276,72 @@ class SSU(object):
 if __name__ == "__main__":
     #Set grid
     nstar = 800 #zD.size
+    print nstar
 
-    #Set redshift
-    zmax = 2.0
-    zp = linspace(0,zmax,nstar)
-
-    #Set GP hypers (optimised values for simulated data)
-    Xrho = array([0.04529012,1.60557223])
-    XH = array([0.54722799,2.30819676])   
-    
-    #Load prior data 
-    zH,Hz,sHz = loadtxt('RawData/SimH.txt',unpack=True)
-    zrho,rhoz,srhoz = loadtxt('RawData/Simrho.txt',unpack=True)
-    
-    KH = GP(zH,Hz,sHz,zp,XH)
-    Krho = GP(zrho,rhoz,srhoz,zp,Xrho)
-
-#    plt.figure('H')
-#    plt.plot(zp,KH.fmean,'k')
-#    plt.errorbar(zH,Hz,sHz,fmt='xr')
-#    plt.figure('rho')
-#    plt.plot(zp,Krho.fmean,'k')
-#    plt.errorbar(zrho,rhoz,srhoz,fmt='xr')
-
-
-    #Do integrations with a few random samples
-    nsamp = 1
-    pDi = zeros(nsamp)
-    pDf = zeros(nsamp)
-    p1i = zeros(nsamp)
-    p2i = zeros(nsamp)
-    p1f = zeros(nsamp)
-    p2f = zeros(nsamp)
-    Lam0 = 3*0.7*0.2335**2
-    sLam = 0.05*Lam0
-    for i in range(nsamp):
-        print i
-        #Draw a sample of each
-        H = KH.simp_sample()
-        rho = Krho.simp_sample()
-        Lam = Lam0 + sLam*float(randn(1))
-        U = SSU(Lam,H,rho,zmax,nstar)
-        pDi[i], pDf[i], p1i[i], p1f[i], p2i[i], p2f[i] = U.run_test()
-        
-    #Get averages of convergence factors and generate table
-    pDim = mean(pDi)
-    spDi = std(pDi)
-    pDfm = mean(pDf)
-    spDf = std(pDf)
-    p1im = mean(p1i)
-    sp1i = std(p1i)
-    p2im = mean(p2i)
-    sp2i = std(p2i)
-    p1fm = mean(p1f)
-    sp1f = std(p1f)
-    p2fm = mean(p2f)
-    sp2f = std(p2f)
-
-
-    print pDim, spDi
-    print pDfm, spDf
-    print p1im, sp1i
-    print p1fm, sp1f
-    print p2im, sp2i
-    print p2fm, sp2f
-
+#    #Set redshift
+#    zmax = 2.0
+#    zp = linspace(0,zmax,nstar)
+#
+#    #Set GP hypers (optimised values for simulated data)
+#    Xrho = array([0.04529012,1.60557223])
+#    XH = array([0.54722799,2.30819676])   
+#    
+#    #Load prior data 
+#    zH,Hz,sHz = loadtxt('RawData/SimH.txt',unpack=True)
+#    zrho,rhoz,srhoz = loadtxt('RawData/Simrho.txt',unpack=True)
+#    
+#    KH = GP(zH,Hz,sHz,zp,XH)
+#    Krho = GP(zrho,rhoz,srhoz,zp,Xrho)
+#
+##    plt.figure('H')
+##    plt.plot(zp,KH.fmean,'k')
+##    plt.errorbar(zH,Hz,sHz,fmt='xr')
+##    plt.figure('rho')
+##    plt.plot(zp,Krho.fmean,'k')
+##    plt.errorbar(zrho,rhoz,srhoz,fmt='xr')
+#
+#
+#    #Do integrations with a few random samples
+#    nsamp = 1
+#    pDi = zeros(nsamp)
+#    pDf = zeros(nsamp)
+#    p1i = zeros(nsamp)
+#    p2i = zeros(nsamp)
+#    p1f = zeros(nsamp)
+#    p2f = zeros(nsamp)
+#    Lam0 = 3*0.7*0.2335**2
+#    sLam = 0.05*Lam0
+#    for i in range(nsamp):
+#        print i
+#        #Draw a sample of each
+#        H = KH.simp_sample()
+#        rho = Krho.simp_sample()
+#        Lam = Lam0 + sLam*float(randn(1))
+#        U = SSU(Lam,H,rho,zmax,nstar)
+#        pDi[i], pDf[i], p1i[i], p1f[i], p2i[i], p2f[i] = U.run_test()
+#        
+#    #Get averages of convergence factors and generate table
+#    pDim = mean(pDi)
+#    spDi = std(pDi)
+#    pDfm = mean(pDf)
+#    spDf = std(pDf)
+#    p1im = mean(p1i)
+#    sp1i = std(p1i)
+#    p2im = mean(p2i)
+#    sp2i = std(p2i)
+#    p1fm = mean(p1f)
+#    sp1f = std(p1f)
+#    p2fm = mean(p2f)
+#    sp2f = std(p2f)
+#
+#
+#    print pDim, spDi
+#    print pDfm, spDf
+#    print p1im, sp1i
+#    print p1fm, sp1f
+#    print p2im, sp2i
+#    print p2fm, sp2f
+#
 #    #Load first samples
 #    print "Loading Samps"
 #    holder = load('ProcessedData/Samps12.npz') #/home/landman/Documents/Research/Algo_Pap/Simulated_LCDM_prior/ProcessedData/Samps1s.npz')
