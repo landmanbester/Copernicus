@@ -209,7 +209,6 @@ subroutine get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,Zp,u,rho,Lam,delw,NI,NJ,vmaxi)
                     tmp = 1
                 end where
                 imax = sum(tmp) !This is the number of PLCs (temporal grid points) within the causal horizon
-                write(*,*) imax
                 call dd5fT(Dww,D,-delw,j,NI,NJ,imax)
                 call d5fT(Aw,A,-delw,j,NI,NJ,imax)
             endif
@@ -219,4 +218,38 @@ subroutine get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,Zp,u,rho,Lam,delw,NI,NJ,vmaxi)
             j = j + 1
         end do
 	
+end subroutine
+
+subroutine curve_test(T2,D,S,dSdv,u,up,upp,vmaxi,i,NI,NJ)
+	implicit none
+        !subroutine parameters
+	integer, intent(in) :: NI,NJ,vmaxi(NI),i
+	real*8, dimension(NJ), intent(in) :: D,S,dSdv,u,up,upp
+        real*8, dimension(NJ,NI), intent(inout) :: T2
+        !Local parameters
+        integer :: njf
+
+        !Compute curve test
+        njf = vmaxi(i)
+        T2(1:njf,i) = 1.0D0 + up(1:njf)**2.0D0*(u(1:njf)**2.0D0*(D(1:njf)*(dSdv(1:njf)/up(1:njf)**2.0D0 - &
+        S(1:njf)*upp(1:njf)/(up(1:njf)**3.0D0)) - (S(1:njf)/up(1:njf))**2.0D0) - D(1:njf)**2.0D0)/u(1:njf)**4.0D0 &
+        + (upp(1:njf)/u(1:njf)**3.0D0 - 2.0D0*up(1:njf)**2.0D0/u(1:njf)**4.0D0)*D(1:njf)*(u(1:njf)*S(1:njf)/up(1:njf) + D)
+
+end subroutine
+
+
+subroutine shear_test(T1,u,up,D,S,Q,A,vmaxi,i,NI,NJ)
+	implicit none
+        !subroutine parameters
+	integer, intent(in) :: NI,NJ,vmaxi(NI),i
+	real*8, dimension(NJ), intent(in) :: D,S,Q,A,u,up
+        real*8, dimension(NJ,NI), intent(inout) :: T1
+        !Local parameters
+        integer :: njf
+
+        !Compute shear test
+        njf = vmaxi(i)
+        T1(1:njf,i) = 1.0D0 - u(1:njf)**3.0D0*(Q(1:njf) - S(1:njf)*(1/u(1:njf)**2.0D0 - A(1:njf))/2.0D0)/(up(1:njf)*D(1:njf))
+        T1(1,i) = 0.0D0
+
 end subroutine
