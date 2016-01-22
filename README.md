@@ -1,4 +1,5 @@
 # Copernicus
+<<<<<<< HEAD
 Copernicus is an algorithm (written in Python 2.7 and Fortran) to find the LLTB metric from data. You will need recent versions of numpy, scipy and matplotlib to run it. The documentation has been written as an ipython notebook. To see the notebook go to the Copernicus directory and run
 
 $ ipython notebook
@@ -13,3 +14,6 @@ You should be able to run the scripts interactively from your browser but beware
 
 
 
+=======
+Algorithm to test the Copernican Principle (CP)
+>>>>>>> ca0527fd4d051c4aafd5ef660b89d65dc16f6dce
