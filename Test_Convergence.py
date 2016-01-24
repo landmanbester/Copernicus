@@ -9,7 +9,7 @@ Test convergence
 """
 import sys
 #sys.path.insert(0, '/home/bester/Algorithm') #On cluster
-sys.path.insert(0, '/home/landman/Copernicus/fortran_mods') #At home PC
+sys.path.insert(0, 'fortran_mods/') #At home PC
 
 from numpy import size, exp, any,loadtxt, linspace, array,zeros, sqrt, pi, mean, std, load, asarray, ones, argwhere, log2, ceil, tile, floor, log, diag, dot, eye, nan_to_num
 from scipy.interpolate import UnivariateSpline as uvs
