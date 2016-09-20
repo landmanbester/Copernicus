@@ -5,7 +5,7 @@ import os
 import argparse
 import ConfigParser
 from concurrent.futures import ProcessPoolExecutor
-import sampler
+from Copernicus import sampler
 
 def readargs():
     conf_parser = argparse.ArgumentParser(

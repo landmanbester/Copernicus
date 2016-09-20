@@ -13,27 +13,19 @@ Universes that are not in causal contact with the constant time slice we are
 locating are not considered.
 
 """
-import sys
-#sys.path.insert(0, '/home/bester/Algorithm') #On cluster
-#sys.path.insert(0, '/home/landman/Algorithm') #At home PC
-#sys.path.insert(0, 'C:\Users\BMAX\Documents\Algorithm') #At home Laptop
-import time
-from numpy import inf,nan_to_num,log10, exp, size, dot, log, eye, diag, tile,ceil, zeros, linspace, sqrt, floor, argwhere, arange, pi, array, interp,squeeze, loadtxt, reshape, flipud
-from numpy.linalg import cholesky, solve, inv, slogdet, LinAlgError, eigh
-from numpy.random import multivariate_normal as mvn
+
+import numpy as np
+from numpy.linalg import cholesky, solve, inv, slogdet, eigh
 from numpy.random import randn, random
 from scipy.integrate import odeint,quad
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+#import matplotlib as mpl
 #from genFLRW import FLRW
-import CIVP
-import CIVP2
-import FSupport as FS
-from genFLRW import FLRW
+from Copernicus.fortran_mods import CIVP
 
 global kappa
-kappa = 8.0*pi
+kappa = 8.0*np.pi
 
 class GP(object):
     def __init__(self,x,y,sy,xp,THETA,beta):
@@ -51,32 +43,32 @@ class GP(object):
         """
         #Compute quantities that are used often
         self.beta = beta
-        self.n = x.size
-        self.nlog2pi = self.n*log(2*pi)
-        self.np = xp.size
-        self.zero = zeros(self.np)
-        self.nplog2pi = self.np*log(2*pi)
-        self.eyenp = eye(self.np)
+        self.N = x.size
+        self.Nlog2pi = self.N*np.log(2*np.pi)
+        self.Np = xp.size
+        self.zero = np.zeros(self.Np)
+        self.Nplog2pi = self.Np*np.log(2*np.pi)
+        self.eyenp = np.eye(self.Np)
         #Get vectorised forms of x_i - x_j
         self.XX = self.abs_diff(x,x)
         self.XXp = self.abs_diff(x,xp)
         self.XXpp = self.abs_diff(xp,xp)
         self.ydat = y 
-        self.SIGMA = diag(sy**2) #Set covariance matrix
+        self.SIGMA = np.diag(sy**2) #Set covariance matrix
         self.THETA = THETA        
         self.K = self.cov_func(self.THETA,self.XX)
         self.L = cholesky(self.K + self.SIGMA)
-        self.sdet = 2*sum(log(diag(self.L)))
+        self.sdet = 2*sum(np.log(np.diag(self.L)))
         self.Linv = inv(self.L)
         self.Linvy = solve(self.L,self.ydat)
         self.logL = self.log_lik(self.Linvy,self.sdet)
         self.Kp = self.cov_func(THETA,self.XXp)
-        self.LinvKp = dot(self.Linv,self.Kp)
+        self.LinvKp = np.dot(self.Linv,self.Kp)
         self.Kpp = self.cov_func(THETA,self.XXpp)
-        self.fmean = dot(self.LinvKp.T,self.Linvy)
-        self.fcov = self.Kpp - dot(self.LinvKp.T,self.LinvKp)
+        self.fmean = np.dot(self.LinvKp.T,self.Linvy)
+        self.fcov = self.Kpp - np.dot(self.LinvKp.T,self.LinvKp)
         self.W,self.V = eigh(self.fcov)
-        self.srtW = diag(nan_to_num(sqrt(self.W)))
+        self.srtW = np.diag(np.nan_to_num(np.sqrt(self.W)))
 
 
     def meanf(self,theta,y,XXp):
@@ -85,7 +77,7 @@ class GP(object):
         """
         Kp = self.cov_func(theta,XXp)
         Ky = self.cov_func(theta,self.XX) + self.SIGMA
-        return dot(Kp.T,solve(Ky,y))
+        return np.dot(Kp.T,solve(Ky,y))
     
     def covf(self,theta):
         """
@@ -96,19 +88,19 @@ class GP(object):
         Ky = self.cov_func(theta,self.XX) + self.SIGMA
         L = cholesky(Ky)
         Linv = inv(L)
-        LinvKp = dot(Linv,Kp)
-        return Kpp - dot(LinvKp.T,LinvKp)
+        LinvKp = np.dot(Linv,Kp)
+        return Kpp - np.dot(LinvKp.T,LinvKp)
 
     def abs_diff(self,x,xp):
         """
         Creates matrix of differences (x_i - x_j) for vectorising.
         """
-        n = size(x)
-        np = size(xp)
-        return tile(x,(np,1)).T - tile(xp,(n,1))
+        N = x.size #np.size(x)
+        Np = xp.size #np.size(xp)
+        return np.tile(x,(Np,1)).T - np.tile(xp,(N,1))
 
     def cov_func(self,THETA,x):
-        return THETA[0]**2*exp(-sqrt(7)*abs(x)/THETA[1])*(1 + sqrt(7)*abs(x)/THETA[1] + 14*abs(x)**2/(5*THETA[1]**2) + 7*sqrt(7)*abs(x)**3/(15*THETA[1]**3))
+        return THETA[0]**2*np.exp(-np.sqrt(7)*abs(x)/THETA[1])*(1 + np.sqrt(7)*abs(x)/THETA[1] + 14*abs(x)**2/(5*THETA[1]**2) + 7*np.sqrt(7)*abs(x)**3/(15*THETA[1]**3))
         
 
     def sample(self,f):
@@ -116,10 +108,10 @@ class GP(object):
         Returns pCN proposal for MCMC. For normal sample use simp_sample
         """
         f0 = f - self.fmean
-        return self.fmean + sqrt(1-self.beta**2)*f0 + self.beta*self.V.dot(self.srtW.dot(randn(self.np)))
+        return self.fmean + np.sqrt(1-self.beta**2)*f0 + self.beta*self.V.dot(self.srtW.dot(randn(self.Np)))
         
     def simp_sample(self):
-        return self.fmean + self.V.dot(self.srtW.dot(randn(self.np)))
+        return self.fmean + self.V.dot(self.srtW.dot(randn(self.Np)))
 
     def sample_logprob(self,f):
         """
@@ -127,30 +119,30 @@ class GP(object):
         """
         F = f-self.fmean
         LinvF = solve(self.fcovL,F)
-        return -0.5*dot(LinvF.T,LinvF) - 0.5*self.covdet - 0.5*self.nplog2pi
+        return -0.5*np.dot(LinvF.T,LinvF) - 0.5*self.covdet - 0.5*self.Nplog2pi
 
     def logp(self,theta,y):
         """
         Returns marginal negative log lik. Only used for optimization.
         """
         Ky = self.cov_func(theta,self.XX) + self.SIGMA
-        y = reshape(y,(self.n,1))
+        y = np.reshape(y,(self.N,1))
         print Ky.shape, y.T.shape, y.shape
-        return dot(y.T,solve(Ky,y))/2.0 + slogdet(Ky)[1]/2.0 + self.nlog2pi/2.0
+        return np.dot(y.T,solve(Ky,y))/2.0 + slogdet(Ky)[1]/2.0 + self.Nlog2pi/2.0
         
     def log_lik(self,Linvy,sdet):
         """
         Quick marginal log lik for hyper-parameter marginalisation
         """
-        return -0.5*dot(Linvy.T,Linvy) - 0.5*sdet - 0.5*self.nlog2pi
+        return -0.5*np.dot(Linvy.T,Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self,zmax,tmin,np,err,XH,Xrho,sigmaLam,nret):
+    def __init__(self,zmax,tmin,Np,err,XH,Xrho,sigmaLam,Nret):
         """
-        This is the main untility class. 
+        This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
                 tmin = min time to integrate up to
-                np = The number of redshift points to use for GPR
+                Np = The number of redshift points to use for GPR
                 err = the target error of the numerical integration scheme
                 XH = The optimised hyperparameter values for GP_H
                 Xrho = The optimised hyperparameter values for GP_rho
@@ -161,48 +153,44 @@ class SSU(object):
         self.load_Dat()
 
         #Set number of spatial grid points
-        self.np = np
-        self.z = linspace(0,zmax,np)
+        self.Np = Np
+        self.z = np.linspace(0,zmax,self.Np)
         self.uz = 1 + self.z
 
         #Set function to get t0
-        self.t0f = lambda x,a,b,c,d: sqrt(x)/(d*sqrt(a + b*x + c*x**3))
+        self.t0f = lambda x,a,b,c,d: np.sqrt(x)/(d*np.sqrt(a + b*x + c*x**3))
 
         #Set minimum time to integrate to
         self.tmin = tmin
-        self.tfind = tmin + 0.1
+        self.tfind = tmin + 0.1 # This is defines the constant time slice we are looking for
 
-        #Set number of spatial grid points at which to return quantities of interrest
-        self.nret = nret
+        #Set number of spatial grid points at which to return quantities of interest
+        self.Nret = Nret
 
         #Set target error
-        self.err = err #(fixed)
-
-        #Max iterations to find vmaxi
-        self.nitmax = 1000
+        self.err = err # The error of the integration scheme used to set NJ and NI
         
         #Create GP objects
         self.beta = 0.25
-        self.KH = GP(self.zHdat,self.Hzdat,self.sHzdat,self.z,XH,self.beta)
-        self.XH = self.KH.THETA
-        self.Hm = self.KH.fmean
-        self.Krho = GP(self.zrhodat,self.rhozdat,self.srhozdat,self.z,Xrho,self.beta)
-        self.Xrho = self.Krho.THETA
-        self.rhom = self.Krho.fmean
+        self.GPH = GP(self.zHdat,self.Hzdat,self.sHzdat,self.z,XH,self.beta) #Should fit the GP's to the data here
+        self.XH = self.GPH.THETA
+        self.Hm = self.GPH.fmean
+        self.GPrho = GP(self.zrhodat,self.rhozdat,self.srhozdat,self.z,Xrho,self.beta)
+        self.Xrho = self.GPrho.THETA
+        self.rhom = self.GPrho.fmean
         #Set Lambda mean and variance (Here we use the background model)
         self.Lam = 3*0.7*(70.0/299.79)**2        
         self.sigmaLam = sigmaLam
 
-        #Set initial conditions for hypersurface equations
-        self.y0 = zeros(5)
-        self.y0[1] = 1.0
-        self.y0[3] = 1.0
+        # #Set initial conditions for hypersurface equations
+        # self.y0 = np.zeros(5)
+        # self.y0[1] = 1.0
+        # self.y0[3] = 1.0
 
         #Now we do the initialisation starting with the background vals
-        Lam = 3*0.7*(70.0/299.79)**2 #self.Lam 
-        #FL = FLRW(0.3,0.7,70.0/299.79,zmax,np)
-        Hz = self.Hm #FL.Hz 
-        rhoz = self.rhom #FL.getrho()
+        Lam = 3*0.7*(70.0/299.79)**2 #self.Lam
+        Hz = self.Hm
+        rhoz = self.rhom
         #Set up spatial grid
         v,vzo,Hi,rhoi,ui,NJ,NI,delv,Om0,OL0,Ok0,t0 = self.affine_grid(Hz,rhoz,Lam)
         self.NI = NI
@@ -260,7 +248,7 @@ class SSU(object):
             #Get likelihood
             logLik = self.get_Chi2(H,D,rho,u,vzo,t0,NJ)
             logr = logLik - logLik0
-            accprob = exp(-logr/2.0)
+            accprob = np.exp(-logr/2.0)
             #Accept reject step
             tmp = random(1)
             if tmp > accprob:
@@ -272,21 +260,21 @@ class SSU(object):
                 return Hz,rhoz,Lam,logLik,F,1  #If F returns one we can't use solution inside PLC
 
     def load_Dat(self):
-#        self.zmudat,self.muzdat,self.smuzdat = loadtxt('/home/bester/Algorithm/RawData/Simmu.txt',unpack=True)  #For working on cluster
-#        self.zHdat,self.Hzdat,self.sHzdat = loadtxt('/home/bester/Algorithm/RawData/SimH.txt',unpack=True)
-#        self.zrhodat,self.rhozdat,self.srhozdat = loadtxt('/home/bester/Algorithm/RawData/Simrho.txt',unpack=True)
-        self.zmudat,self.muzdat,self.smuzdat = loadtxt('/home/landman/Algorithm/RawData/Simmu.txt',unpack=True) #For home PC
-        self.zHdat,self.Hzdat,self.sHzdat = loadtxt('/home/landman/Algorithm/RawData/SimH.txt',unpack=True)
-        self.zrhodat,self.rhozdat,self.srhozdat = loadtxt('/home/landman/Algorithm/RawData/Simrho.txt',unpack=True)
+#        self.zmudat,self.muzdat,self.smuzdat = np.loadtxt('/home/bester/Algorithm/RawData/Simmu.txt',unpack=True)  #For working on cluster
+#        self.zHdat,self.Hzdat,self.sHzdat = np.loadtxt('/home/bester/Algorithm/RawData/SimH.txt',unpack=True)
+#        self.zrhodat,self.rhozdat,self.srhozdat = np.loadtxt('/home/bester/Algorithm/RawData/Simrho.txt',unpack=True)
+        self.zmudat,self.muzdat,self.smuzdat = np.loadtxt('/home/landman/Algorithm/RawData/Simmu.txt',unpack=True) #For home PC
+        self.zHdat,self.Hzdat,self.sHzdat = np.loadtxt('/home/landman/Algorithm/RawData/SimH.txt',unpack=True)
+        self.zrhodat,self.rhozdat,self.srhozdat = np.loadtxt('/home/landman/Algorithm/RawData/Simrho.txt',unpack=True)
         self.t0dat = 4.129
         self.st0dat = 0.02*self.t0dat
         return
         
     def gen_sample(self,Hzi,rhozi,Lami):
-        Hz = self.KH.sample(Hzi)
-        rhoz = self.Krho.sample(rhozi)
+        Hz = self.GPH.sample(Hzi)
+        rhoz = self.GPrho.sample(rhozi)
         Lam0 = self.Lam - Lami
-        Lam = self.Lam + sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*randn(1)
+        Lam = self.Lam + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
             print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
@@ -297,8 +285,8 @@ class SSU(object):
     def accept(self,NJ,NI,delw,delv,v,w,Di,ui,rhoi,Lam,t0,Om0,OL0,Ok0,vzo):
         self.NI = NI
         self.NJ = NJ
-        self.vmax = zeros(NI)   #max radial extent on each PLC
-        self.vmaxi = zeros(NI)  #index of max radial extent
+        self.vmax = np.zeros(NI)   #max radial extent on each PLC
+        self.vmaxi = np.zeros(NI)  #index of max radial extent
         self.vmaxi[:] = int(NJ)
         self.vmax[0] = v[-1]
         #Do CIVP integration
@@ -334,8 +322,8 @@ class SSU(object):
         #First get current age of universe
         amin = 0.5
         t0 = quad(self.t0f,0,1.0,args=(Om0,Ok0,OL0,H0))[0]
-        #Get t(a) when a_0 = 1 (for some reason spline does not return correct result if we use a = linspace(1.0,0.2,1000)?)
-        a = linspace(amin,1.0,5000)
+        #Get t(a) when a_0 = 1 (for some reason spline does not return correct result if we use a = np.linspace(1.0,0.2,1000)?)
+        a = np.linspace(amin,1.0,5000)
         tmp = self.t0f(a,Om0,Ok0,OL0,H0)        
         dto = uvs(a,tmp,k=3,s=0)
         to = dto.antiderivative()
@@ -348,14 +336,14 @@ class SSU(object):
         rho0 = Om0*3*H0**2/(kappa)
         rhoow = rho0*aow**(-3.0)
         #Get How (this is up_0)
-        How = H0*sqrt(Om0*aow**(-3) + Ok0*aow**(-2) + OL0)
+        How = H0*np.sqrt(Om0*aow**(-3) + Ok0*aow**(-2) + OL0)
         upow = How
         #Now get dHz and hence uppow
         #First dimensionless densities
         Omow = kappa*rhoow/(3*How**2)
         OLow = self.Lam/(3*How**2)
         OKow = 1 - Omow - OLow
-        dHzow = How*(3*Omow + 2*OKow)/2 #(because the terms in the sqrt adds up to 1)
+        dHzow = How*(3*Omow + 2*OKow)/2 #(because the terms in the np.sqrt adds up to 1)
         uppow = (dHzow + 2*upow)*upow
         return rhoow, upow, uppow
         
@@ -375,12 +363,12 @@ class SSU(object):
         vz = vzo(self.z)
         vz[0] = 0.0
         #Compute grid sizes that gives num error od err
-        NJ = int(ceil(vz[-1]/sqrt(self.err) + 1))
-        NI = int(ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
+        NJ = int(np.ceil(vz[-1]/np.sqrt(self.err) + 1))
+        NI = int(np.ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
         #Get functions on regular grid
-        v = linspace(0,vz[-1],NJ)
+        v = np.linspace(0,vz[-1],NJ)
         delv = (v[-1] - v[0])/(NJ-1)
-        if delv > sqrt(self.err):
+        if delv > np.sqrt(self.err):
             print 'delv > sqrt(err)'
         Ho = uvs(vz,Hz,s=0.0,k=3)
         H = Ho(v)
@@ -392,163 +380,168 @@ class SSU(object):
         return v,vzo,H,rho,u,NJ,NI,delv,Om0,OL0,Ok0,t0
         
     def age_grid(self,NI,NJ,delv,t0):
-        w0 = linspace(t0,self.tmin,NI)
+        w0 = np.linspace(t0,self.tmin,NI)
         self.w0 = w0
         delw = (w0[0] - w0[-1])/(NI-1)
         if delw/delv > 0.5:
             print "Warning CFL might be violated." 
         #Set u grid
-        w = tile(w0,(NJ,1)).T
+        w = np.tile(w0,(NJ,1)).T
         return w, delw
 
-    def hypeq(self,y,v,rhoo,uo,Lambda):
-        dy = zeros(5)
-        rho = rhoo(v)
-        u = uo(v)
-        dy[0] = y[1]
-        dy[1] = -kappa*u**2*rho*y[0]/2.0
-        if y[0] == 0.0:
-            dy[2] = 0.0
-        else:
-            dy[2] = (1.0 - y[0]*y[1]*y[4] - 2.0*y[2]*y[1] - y[3]*y[1]**2 + 4.0*pi*rho*y[0]**2*(y[3]*u**2 - 1.0) - Lambda*y[0]**2)/(2*y[0])
-        dy[3] = y[4]
-        if y[0] == 0.0:
-            dy[4] = kappa*rho/3.0 - 2.0*Lambda/3.0 
-        else:
-            dy[4] = kappa*rho + 4.0*y[2]*y[1]/y[0]**2 + 2.0*y[3]*y[1]**2/y[0]**2 - 2.0/y[0]**2
-        return dy
-
-    def get_App(self,rho,Lam,D,S,Q,A):
-        App = kappa*rho + 4.0*Q*S/D**2 + 2.0*A*S**2/D**2 - 2.0/D**2
-        App[0,:] = kappa*rho[0,:]/3.0- 2.0*Lam/3.0
-        return App
-
-    def dotu(self,u,A,up,Ap):
-        return ((1.0/u**2 - A)*up - Ap*u)/2.0
-
-    def dotrho(self,rho,u,rhop,up,D,Dp,dotD,A,vmaxi):
-        rhodot = zeros(vmaxi)
-        rhodot[0] = -3.0*rho[0]*up[0]
-        rhodot[1::] = rho[1::]*(-up[1::]/u[1::]**3 - 2.0*dotD[1::]/D[1::] + Dp[1::]*(1.0/u[1::]**2 - A[1::])/D[1::]) + rhop[1::]*(1.0/u[1::]**2.0 - A[1::])/2.0
-        return rhodot    
-
-    def evaluate(self,rho,u,v,vmaxi,Lam):
-        """
-        This functions evaluates CIVP variables on a PLC from the values of rho and u on that PLC
-        """
-        #Interpolate u and rho
-        uo = uvs(v,u,s=0.0,k=5)
-        rhoo = uvs(v,rho,s=0.0,k=5)
-        #Solve hyp equations
-        y = odeint(self.hypeq,self.y0,v,args=(rhoo,uo,Lam),atol=1e-6,rtol=1e-6)
-        #Get spatial derivatives of rho and u
-        upo = uo.derivative()
-        uppo = uo.derivative(2)
-        up = upo(v)
-        upp = uppo(v)
-        rhopo = rhoo.derivative()
-        rhop = rhopo(v)
-        #Get udot and rhodot corresponding to these solutions
-        ud = self.dotu(u,y[:,3],up,y[:,4])     
-        rhod = self.dotrho(rho,u,rhop,up,y[:,0],y[:,1],y[:,2],y[:,3],vmaxi)
-        return y[:,0], y[:,1], y[:,2], y[:,3], y[:,4], ud, rhod, up, rhop, upp
-
-    def integrate(self,NJ,NI,delw,delv,v,w,D,u,rho,Lam):
-        r,v1,rhof,W,v0,v1u,v1nu,v12nu,S,T,RR,rhod,rhop,self.vmaxi = CIVP2.solve(v,w,0.0025,0.005,D,-u,rho,Lam)
-        A = zeros([NI,NJ])        
-        A[:,1::] = 1.0 + W[:,1::]/r[:,1::]
-        A[:,0] = 1.0
-        Z = zeros([NI,NJ])
-        Z[:,1::] = T[:,1::]/r[:,1::] - W[:,1::]*S[:,1::]/r[:,1::]**2
-        Z[:,0] = 0.0
-        self.v1 = v1
-        self.v1nu=v1nu
-        self.v1u = v1u
-        self.delnu=delv
-        self.delu = delw
-        self.RR = RR
-        return r,S,-RR,A,Z,rhof,-v1,-v1nu,-v12nu,v1u,-rhod,rhop
+    # def hypeq(self,y,v,rhoo,uo,Lambda):
+    #     dy = np.zeros(5)
+    #     rho = rhoo(v)
+    #     u = uo(v)
+    #     dy[0] = y[1]
+    #     dy[1] = -kappa*u**2*rho*y[0]/2.0
+    #     if y[0] == 0.0:
+    #         dy[2] = 0.0
+    #     else:
+    #         dy[2] = (1.0 - y[0]*y[1]*y[4] - 2.0*y[2]*y[1] - y[3]*y[1]**2 + 4.0*np.pi*rho*y[0]**2*(y[3]*u**2 - 1.0) - Lambda*y[0]**2)/(2*y[0])
+    #     dy[3] = y[4]
+    #     if y[0] == 0.0:
+    #         dy[4] = kappa*rho/3.0 - 2.0*Lambda/3.0
+    #     else:
+    #         dy[4] = kappa*rho + 4.0*y[2]*y[1]/y[0]**2 + 2.0*y[3]*y[1]**2/y[0]**2 - 2.0/y[0]**2
+    #     return dy
+    #
+    # def get_App(self,rho,Lam,D,S,Q,A):
+    #     App = kappa*rho + 4.0*Q*S/D**2 + 2.0*A*S**2/D**2 - 2.0/D**2
+    #     App[0,:] = kappa*rho[0,:]/3.0- 2.0*Lam/3.0
+    #     return App
+    #
+    # def dotu(self,u,A,up,Ap):
+    #     return ((1.0/u**2 - A)*up - Ap*u)/2.0
+    #
+    # def dotrho(self,rho,u,rhop,up,D,Dp,dotD,A,vmaxi):
+    #     rhodot = np.zeros(vmaxi)
+    #     rhodot[0] = -3.0*rho[0]*up[0]
+    #     rhodot[1::] = rho[1::]*(-up[1::]/u[1::]**3 - 2.0*dotD[1::]/D[1::] + Dp[1::]*(1.0/u[1::]**2 - A[1::])/D[1::]) + rhop[1::]*(1.0/u[1::]**2.0 - A[1::])/2.0
+    #     return rhodot
+    #
+    # def evaluate(self,rho,u,v,vmaxi,Lam):
+    #     """
+    #     This functions evaluates CIVP variables on a PLC from the values of rho and u on that PLC
+    #     """
+    #     #Interpolate u and rho
+    #     uo = uvs(v,u,s=0.0,k=5)
+    #     rhoo = uvs(v,rho,s=0.0,k=5)
+    #     #Solve hyp equations
+    #     y = odeint(self.hypeq,self.y0,v,args=(rhoo,uo,Lam),atol=1e-6,rtol=1e-6)
+    #     #Get spatial derivatives of rho and u
+    #     upo = uo.derivative()
+    #     uppo = uo.derivative(2)
+    #     up = upo(v)
+    #     upp = uppo(v)
+    #     rhopo = rhoo.derivative()
+    #     rhop = rhopo(v)
+    #     #Get udot and rhodot corresponding to these solutions
+    #     ud = self.dotu(u,y[:,3],up,y[:,4])
+    #     rhod = self.dotrho(rho,u,rhop,up,y[:,0],y[:,1],y[:,2],y[:,3],vmaxi)
+    #     return y[:,0], y[:,1], y[:,2], y[:,3], y[:,4], ud, rhod, up, rhop, upp
+    #
+    # def integrate(self,NJ,NI,delw,delv,v,w,D,u,rho,Lam):
+    #     r,v1,rhof,W,v0,v1u,v1nu,v12nu,S,T,RR,rhod,rhop,self.vmaxi = CIVP2.solve(v,w,0.0025,0.005,D,-u,rho,Lam)
+    #     A = np.zeros([NI,NJ])
+    #     A[:,1::] = 1.0 + W[:,1::]/r[:,1::]
+    #     A[:,0] = 1.0
+    #     Z = np.zeros([NI,NJ])
+    #     Z[:,1::] = T[:,1::]/r[:,1::] - W[:,1::]*S[:,1::]/r[:,1::]**2
+    #     Z[:,0] = 0.0
+    #     self.v1 = v1
+    #     self.v1nu=v1nu
+    #     self.v1u = v1u
+    #     self.delnu=delv
+    #     self.delu = delw
+    #     self.RR = RR
+    #     return r,S,-RR,A,Z,rhof,-v1,-v1nu,-v12nu,v1u,-rhod,rhop
 
     def integrate_MyCIVP(self,u,rho,Lam,v,delv,w,delw):
         D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw = CIVP.solve(v,delv,w,delw,u,rho,Lam)
         self.vmaxi = vmaxi
         return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,drdv,drdvp,X,dXdr,LLTBCon,Dww,Aw
 
-    def dprimecoef(self,u,A):
-        return (A - 1/u**2)/2
-    
-    def dcoef(self,du,u,dA):
-        return (du/u**3 + dA/2)    
+    def integrate(self,u,rho,Lam,v,delv,w,delw):
+        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2 = CIVP.solve(v,delv,w,delw,u,rho,Lam)
+        self.vmaxi = vmaxi
+        return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2
 
-    def F_d(self,n,j):
-        return self.d[n,j]*(self.A[n,j] - 1.0/self.v1[n,j]**2)/2.0
-
-    def transform(self):
-        #get dt components
-        self.dtdw = (self.A*self.v1**2 + 1)/(-2*self.v1)
-        self.dtdv = self.v1
-        self.dwdt = -self.v1
-        self.dvdt = (self.A*self.v1**2 - 1)/(-2*self.v1)
-        #set initial d data
-        self.d = zeros([self.NI,self.NJ])
-        self.c = zeros([self.NI,self.NJ])
-        self.b = zeros([self.NI,self.NJ])
-        self.a = zeros([self.NI,self.NJ])
-        self.d[0,:] = -self.v1nu[0,:]*self.D[0,:] -self.v1[0,:]*self.S[0,:]
-        self.c[0,:] = self.d[0,:]*(self.A[0,:]*self.v1[0,:]**2-1)/(2*self.v1[0,:]**2)
-        self.a[0,:] = -self.v1[0,:]**2/self.d[0,:]
-        self.b[0,:] = (1+self.A[0,:]*self.v1[0,:]**2)/(2*self.d[0,:])
-        #Get dprime and ddot to evaluate dXdr below
-        self.F = zeros([self.NI,self.NJ])
-        self.ddot = zeros([self.NI,self.NJ])
-        self.dprime = zeros([self.NI,self.NJ])
-        self.F[0,:] = self.d[0,:]*(self.A[0,:] - 1.0/self.v1[0,:]**2)/2.0
-        self.ddot[0,0] = (-self.F[0,2]/2.0 + 2.0*self.F[0,1] - 3.0*self.F[0,0]/2.0)/self.delnu
-        self.ddot[0,1:self.NJ-1] = (self.F[0,2:self.NJ] - self.F[0,0:self.NJ-2])/(2*self.delnu)
-        self.ddot[0,self.NJ-1] = (3.0*self.F[0,self.NJ-1]/2.0 - 2.0*self.F[0,self.NJ-2] + self.F[0,self.NJ-3]/2.0)/self.delnu        
-        self.dprime[0,0] = (-self.d[0,2]/2.0 + 2.0*self.d[0,1] - 3.0*self.d[0,0]/2.0)/self.delnu
-        self.dprime[0,1:self.NJ-1] = (self.d[0,2:self.NJ] - self.d[0,0:self.NJ-2])/(2*self.delnu)
-        self.dprime[0,self.NJ-1] = (3.0*self.d[0,self.NJ-1]/2.0 - 2.0*self.d[0,self.NJ-2] + self.d[0,self.NJ-3]/2.0)/self.delnu
-        self.X = zeros([self.NI,self.NJ])
-        self.X[0,:] = -self.v1[0,:]/self.d[0,:]
-        self.tv = zeros([self.NI,self.NJ])
-        self.rv = zeros([self.NI,self.NJ])
-        dto = uvs(self.v,self.v1[0,:],k=3,s=0.0)
-        self.tv[0,:] = self.w0[0] + dto.antiderivative()(self.v)
-        dro = uvs(self.v,self.d[0,:],k=3,s=0.0)
-        self.rv[0,:] = dro.antiderivative()(self.v)
-        for n in range(self.NI-1):
-            jmax = int(self.vmaxi[n+1])
-            #Use forward differences to get value at origin
-            self.d[n+1,0] = self.d[n,0] + self.delu*(-self.F_d(n,2)/2.0 + 2.0*self.F_d(n,1) - 3.0*self.F_d(n,0)/2.0)/self.delnu
-            arrup = arange(2,jmax)
-            arrmid = arange(1,jmax-1)
-            arrdown = arange(0,jmax-2)
-            self.d[n+1,arrmid] = (self.d[n,arrup] + self.d[n,arrdown])/2.0 + self.delu*(self.F_d(n,arrup) - self.F_d(n,arrdown))/(2*self.delnu)
-            #Use backward differences to get value at jmax
-            self.d[n+1,jmax-1] = self.d[n,jmax-1] + self.delu*(3.0*self.F_d(n,jmax-1)/2.0 - 2*self.F_d(n,jmax-2) + self.F_d(n,jmax-3)/2.0)/self.delnu
-            #get remaining transformation components
-            self.c[n+1,0:jmax] = self.d[n+1,0:jmax]*(self.A[n+1,0:jmax]*self.v1[n+1,0:jmax]**2-1.0)/(2.0*self.v1[n+1,0:jmax]**2.0)
-            self.a[n+1,0:jmax] = -self.v1[n+1,0:jmax]**2/self.d[n+1,0:jmax]
-            self.b[n+1,0:jmax] = (1.0+self.A[n+1,0:jmax]*self.v1[n+1,0:jmax]**2.0)/(2.0*self.d[n+1,0:jmax])
-            #Get dprime and ddot to evaluate dXdr below
-            self.F[n+1,0:jmax] = self.d[n+1,0:jmax]*(self.A[n+1,0:jmax] - 1.0/self.v1[n+1,0:jmax]**2)/2.0
-            self.ddot[n+1,0] = (-self.F[n+1,2]/2.0 + 2.0*self.F[n+1,1] - 3.0*self.F[n+1,0]/2.0)/self.delnu
-            self.ddot[n+1,arrmid] = (self.F[n+1,arrup] - self.F[n+1,arrdown])/(2*self.delnu)
-            self.ddot[n+1,jmax-1] = (3.0*self.F[n+1,jmax-1]/2.0 - 2.0*self.F[n+1,jmax-2] + self.F[n+1,jmax-3]/2.0)/self.delnu
-            self.dprime[n+1,0] = (-self.d[n+1,2]/2.0 + 2.0*self.d[n+1,1] - 3.0*self.d[n+1,0]/2.0)/self.delnu
-            self.dprime[n+1,arrmid] = (self.d[n+1,arrup] - self.d[n+1,arrdown])/(2*self.delnu)
-            self.dprime[n+1,jmax-1] = (3.0*self.d[n+1,jmax-1]/2.0 - 2.0*self.d[n+1,jmax-2] + self.d[n+1,jmax-3]/2.0)/self.delnu
-            self.X[n+1,0:jmax] = -self.v1[n+1,0:jmax]/self.d[n+1,0:jmax]
-#            self.dXdr[n+1,0:jmax] = self.a[n+1,0:jmax]*(-self.v1u[n+1,0:jmax]/self.d[n+1,0:jmax] + self.v1[n+1,0:jmax]*self.ddot[n+1,0:jmax]/self.d[n+1,0:jmax]**2) + self.b[n+1,0:jmax]*(-self.v1nu[n+1,0:jmax]/self.d[n+1,0:jmax] + self.v1[n+1,0:jmax]*self.dprime[n+1,0:jmax]/self.d[n+1,0:jmax]**2)
-#            self.Hr[n+1,0:jmax] = self.dXdr[n+1,0:jmax]/self.X[n+1,0:jmax]
-#            self.dDdr[n+1,0:jmax] = self.a[n+1,0:jmax]*self.RR[n+1,0:jmax] + self.b[n+1,0:jmax]*self.S[n+1,0:jmax]
-            #Get t(v) and r(v)
-            dto = uvs(self.v[0:jmax],self.v1[n+1,0:jmax],k=3,s=0.0)
-            self.tv[n+1,0:jmax] =  self.w0[n+1] + dto.antiderivative()(self.v[0:jmax])
-            dro = uvs(self.v[0:jmax],self.d[n+1,0:jmax],k=3,s=0.0)
-            self.rv[n+1,0:jmax] = dro.antiderivative()(self.v[0:jmax])
-        return              
+#     def dprimecoef(self,u,A):
+#         return (A - 1/u**2)/2
+#
+#     def dcoef(self,du,u,dA):
+#         return (du/u**3 + dA/2)
+#
+#     def F_d(self,n,j):
+#         return self.d[n,j]*(self.A[n,j] - 1.0/self.v1[n,j]**2)/2.0
+#
+#     def transform(self):
+#         #get dt components
+#         self.dtdw = (self.A*self.v1**2 + 1)/(-2*self.v1)
+#         self.dtdv = self.v1
+#         self.dwdt = -self.v1
+#         self.dvdt = (self.A*self.v1**2 - 1)/(-2*self.v1)
+#         #set initial d data
+#         self.d = np.zeros([self.NI,self.NJ])
+#         self.c = np.zeros([self.NI,self.NJ])
+#         self.b = np.zeros([self.NI,self.NJ])
+#         self.a = np.zeros([self.NI,self.NJ])
+#         self.d[0,:] = -self.v1nu[0,:]*self.D[0,:] -self.v1[0,:]*self.S[0,:]
+#         self.c[0,:] = self.d[0,:]*(self.A[0,:]*self.v1[0,:]**2-1)/(2*self.v1[0,:]**2)
+#         self.a[0,:] = -self.v1[0,:]**2/self.d[0,:]
+#         self.b[0,:] = (1+self.A[0,:]*self.v1[0,:]**2)/(2*self.d[0,:])
+#         #Get dprime and ddot to evaluate dXdr below
+#         self.F = np.zeros([self.NI,self.NJ])
+#         self.ddot = np.zeros([self.NI,self.NJ])
+#         self.dprime = np.zeros([self.NI,self.NJ])
+#         self.F[0,:] = self.d[0,:]*(self.A[0,:] - 1.0/self.v1[0,:]**2)/2.0
+#         self.ddot[0,0] = (-self.F[0,2]/2.0 + 2.0*self.F[0,1] - 3.0*self.F[0,0]/2.0)/self.delnu
+#         self.ddot[0,1:self.NJ-1] = (self.F[0,2:self.NJ] - self.F[0,0:self.NJ-2])/(2*self.delnu)
+#         self.ddot[0,self.NJ-1] = (3.0*self.F[0,self.NJ-1]/2.0 - 2.0*self.F[0,self.NJ-2] + self.F[0,self.NJ-3]/2.0)/self.delnu
+#         self.dprime[0,0] = (-self.d[0,2]/2.0 + 2.0*self.d[0,1] - 3.0*self.d[0,0]/2.0)/self.delnu
+#         self.dprime[0,1:self.NJ-1] = (self.d[0,2:self.NJ] - self.d[0,0:self.NJ-2])/(2*self.delnu)
+#         self.dprime[0,self.NJ-1] = (3.0*self.d[0,self.NJ-1]/2.0 - 2.0*self.d[0,self.NJ-2] + self.d[0,self.NJ-3]/2.0)/self.delnu
+#         self.X = np.zeros([self.NI,self.NJ])
+#         self.X[0,:] = -self.v1[0,:]/self.d[0,:]
+#         self.tv = np.zeros([self.NI,self.NJ])
+#         self.rv = np.zeros([self.NI,self.NJ])
+#         dto = uvs(self.v,self.v1[0,:],k=3,s=0.0)
+#         self.tv[0,:] = self.w0[0] + dto.antiderivative()(self.v)
+#         dro = uvs(self.v,self.d[0,:],k=3,s=0.0)
+#         self.rv[0,:] = dro.antiderivative()(self.v)
+#         for n in range(self.NI-1):
+#             jmax = int(self.vmaxi[n+1])
+#             #Use forward differences to get value at origin
+#             self.d[n+1,0] = self.d[n,0] + self.delu*(-self.F_d(n,2)/2.0 + 2.0*self.F_d(n,1) - 3.0*self.F_d(n,0)/2.0)/self.delnu
+#             arrup = np.arange(2,jmax)
+#             arrmid = np.arange(1,jmax-1)
+#             arrdown = np.arange(0,jmax-2)
+#             self.d[n+1,arrmid] = (self.d[n,arrup] + self.d[n,arrdown])/2.0 + self.delu*(self.F_d(n,arrup) - self.F_d(n,arrdown))/(2*self.delnu)
+#             #Use backward differences to get value at jmax
+#             self.d[n+1,jmax-1] = self.d[n,jmax-1] + self.delu*(3.0*self.F_d(n,jmax-1)/2.0 - 2*self.F_d(n,jmax-2) + self.F_d(n,jmax-3)/2.0)/self.delnu
+#             #get remaining transformation components
+#             self.c[n+1,0:jmax] = self.d[n+1,0:jmax]*(self.A[n+1,0:jmax]*self.v1[n+1,0:jmax]**2-1.0)/(2.0*self.v1[n+1,0:jmax]**2.0)
+#             self.a[n+1,0:jmax] = -self.v1[n+1,0:jmax]**2/self.d[n+1,0:jmax]
+#             self.b[n+1,0:jmax] = (1.0+self.A[n+1,0:jmax]*self.v1[n+1,0:jmax]**2.0)/(2.0*self.d[n+1,0:jmax])
+#             #Get dprime and ddot to evaluate dXdr below
+#             self.F[n+1,0:jmax] = self.d[n+1,0:jmax]*(self.A[n+1,0:jmax] - 1.0/self.v1[n+1,0:jmax]**2)/2.0
+#             self.ddot[n+1,0] = (-self.F[n+1,2]/2.0 + 2.0*self.F[n+1,1] - 3.0*self.F[n+1,0]/2.0)/self.delnu
+#             self.ddot[n+1,arrmid] = (self.F[n+1,arrup] - self.F[n+1,arrdown])/(2*self.delnu)
+#             self.ddot[n+1,jmax-1] = (3.0*self.F[n+1,jmax-1]/2.0 - 2.0*self.F[n+1,jmax-2] + self.F[n+1,jmax-3]/2.0)/self.delnu
+#             self.dprime[n+1,0] = (-self.d[n+1,2]/2.0 + 2.0*self.d[n+1,1] - 3.0*self.d[n+1,0]/2.0)/self.delnu
+#             self.dprime[n+1,arrmid] = (self.d[n+1,arrup] - self.d[n+1,arrdown])/(2*self.delnu)
+#             self.dprime[n+1,jmax-1] = (3.0*self.d[n+1,jmax-1]/2.0 - 2.0*self.d[n+1,jmax-2] + self.d[n+1,jmax-3]/2.0)/self.delnu
+#             self.X[n+1,0:jmax] = -self.v1[n+1,0:jmax]/self.d[n+1,0:jmax]
+# #            self.dXdr[n+1,0:jmax] = self.a[n+1,0:jmax]*(-self.v1u[n+1,0:jmax]/self.d[n+1,0:jmax] + self.v1[n+1,0:jmax]*self.ddot[n+1,0:jmax]/self.d[n+1,0:jmax]**2) + self.b[n+1,0:jmax]*(-self.v1nu[n+1,0:jmax]/self.d[n+1,0:jmax] + self.v1[n+1,0:jmax]*self.dprime[n+1,0:jmax]/self.d[n+1,0:jmax]**2)
+# #            self.Hr[n+1,0:jmax] = self.dXdr[n+1,0:jmax]/self.X[n+1,0:jmax]
+# #            self.dDdr[n+1,0:jmax] = self.a[n+1,0:jmax]*self.RR[n+1,0:jmax] + self.b[n+1,0:jmax]*self.S[n+1,0:jmax]
+#             #Get t(v) and r(v)
+#             dto = uvs(self.v[0:jmax],self.v1[n+1,0:jmax],k=3,s=0.0)
+#             self.tv[n+1,0:jmax] =  self.w0[n+1] + dto.antiderivative()(self.v[0:jmax])
+#             dro = uvs(self.v[0:jmax],self.d[n+1,0:jmax],k=3,s=0.0)
+#             self.rv[n+1,0:jmax] = dro.antiderivative()(self.v[0:jmax])
+#         return
 
     def get_tslice(self):
         #Here we get the constant time slice closest to t
@@ -557,8 +550,8 @@ class SSU(object):
             print "Time slice beyond causal horizon"
             return 1
         else:
-            I1 = argwhere(self.w0 >= self.tfind)[-1]
-            I2 = argwhere(self.w0 < self.tfind)[0]
+            I1 = np.argwhere(self.w0 >= self.tfind)[-1]
+            I2 = np.argwhere(self.w0 < self.tfind)[0]
             #Choose whichever is closer
             if ( abs(self.w0[I1]-self.tfind) < abs(self.w0[I2] - self.tfind)):
                 self.Istar = I1
@@ -566,12 +559,12 @@ class SSU(object):
                 self.Istar = I2
             #get values on C
             self.tstar = self.w0[self.Istar]
-            self.vstar = zeros(self.NI)
-            self.rstar = zeros(self.NI)
-            self.rhostar = zeros(self.NI)
-            self.Dstar = zeros(self.NI)
-            self.Xstar = zeros(self.NI)
-            self.Hperpstar = zeros(self.NI)
+            self.vstar = np.zeros(self.NI)
+            self.rstar = np.zeros(self.NI)
+            self.rhostar = np.zeros(self.NI)
+            self.Dstar = np.zeros(self.NI)
+            self.Xstar = np.zeros(self.NI)
+            self.Hperpstar = np.zeros(self.NI)
             self.vstar[0] = 0.0
             self.rstar[0] = 0.0
             self.rhostar[0] = self.rho[self.Istar,0]
@@ -581,56 +574,56 @@ class SSU(object):
             for i in range(1,self.Istar):
                 n0 = self.Istar - i
                 n = int(self.vmaxi[n0])
-                I1 = argwhere(self.tv[n0,range(n)] > self.tstar)[-1]
-                I2 = I1 + 1 #argwhere(self.tv[n0,range(n)] < self.tstar)[0]
-                vi = squeeze(array([self.v[I1],self.v[I2]]))
-                ti = squeeze(array([self.tv[n0,I1],self.tv[n0,I2]]))
-                self.vstar[i] = interp(self.tstar,ti,vi)
-                rhoi = squeeze(array([self.rho[n0,I1],self.rho[n0,I2]]))
-                self.rhostar[i] = interp(self.vstar[i],vi,rhoi)
-                rvi = squeeze(array([self.rv[n0,I1],self.rv[n0,I2]]))
-                self.rstar[i] = interp(self.vstar[i],vi,rvi)
-                Di = squeeze(array([self.D[n0,I1],self.D[n0,I2]]))
-                self.Dstar[i] = interp(self.vstar[i],vi,Di)                
-                Xi = squeeze(array([self.X[n0,I1],self.X[n0,I2]]))
-                self.Xstar[i] = interp(self.vstar[i],vi,Xi)
-                Hperpi = squeeze(array([self.Hperp[n0,I1],self.Hperp[n0,I2]]))
-                self.Hperpstar[i] = interp(self.vstar[i],vi,Hperpi)                
+                I1 = np.argwhere(self.tv[n0,range(n)] > self.tstar)[-1]
+                I2 = I1 + 1 #np.argwhere(self.tv[n0,range(n)] < self.tstar)[0]
+                vi = np.squeeze(np.array([self.v[I1],self.v[I2]]))
+                ti = np.squeeze(np.array([self.tv[n0,I1],self.tv[n0,I2]]))
+                self.vstar[i] = np.interp(self.tstar,ti,vi)
+                rhoi = np.squeeze(np.array([self.rho[n0,I1],self.rho[n0,I2]]))
+                self.rhostar[i] = np.interp(self.vstar[i],vi,rhoi)
+                rvi = np.squeeze(np.array([self.rv[n0,I1],self.rv[n0,I2]]))
+                self.rstar[i] = np.interp(self.vstar[i],vi,rvi)
+                Di = np.squeeze(np.array([self.D[n0,I1],self.D[n0,I2]]))
+                self.Dstar[i] = np.interp(self.vstar[i],vi,Di)
+                Xi = np.squeeze(np.array([self.X[n0,I1],self.X[n0,I2]]))
+                self.Xstar[i] = np.interp(self.vstar[i],vi,Xi)
+                Hperpi = np.squeeze(np.array([self.Hperp[n0,I1],self.Hperp[n0,I2]]))
+                self.Hperpstar[i] = np.interp(self.vstar[i],vi,Hperpi)
             self.vmaxstar = self.vstar[self.Istar-1]                 
             return 0
 
-    def get_vmaxi(self,A,i):
-        #Initial guess (Note the dirty fix on the index of Ap)
-        vp = self.vmax[i-1] - 0.5*A[self.vmaxi[i-1]-1]*self.delw
-        #Place holder
-        vprev = 0
-        #Counter
-        s = 0
-        #Iterate to find vmax[i]
-        while (abs(vp-vprev)>1e-5 and s < self.nitmax):
-            vprev = vp
-            jmax = int(floor(vp/self.delv + 1.0))             
-            if (jmax < 2):
-                #Flag if causal horizon reached
-                print "Warning causal horizon reached"
-                jmax = 2
-            elif jmax > self.NJ:
-                #Flag for unexpected behaviour
-                print "Something went wrong, got jmax > NJ"
-                jmax = self.NJ-1
-            #Interpolate to find Ap (since vp is not necessarily on a grid point)
-            Ap = A[jmax-2] + (vp-self.v[jmax-1])*(A[jmax-1] - A[jmax-2])/self.delv
-            vp = self.vmax[i-1] - 0.5*Ap*self.delw
-            s += 1
-        if (s >= self.nitmax):
-            print "Warning PNC cut-off did not converge"
-        self.vmax[i] = vp
-        self.vmaxi[i] = int(jmax)
-        return
+    # def get_vmaxi(self,A,i):
+    #     #Initial guess (Note the dirty fix on the index of Ap)
+    #     vp = self.vmax[i-1] - 0.5*A[self.vmaxi[i-1]-1]*self.delw
+    #     #Place holder
+    #     vprev = 0
+    #     #Counter
+    #     s = 0
+    #     #Iterate to find vmax[i]
+    #     while (abs(vp-vprev)>1e-5 and s < self.Nitmax):
+    #         vprev = vp
+    #         jmax = int(np.floor(vp/self.delv + 1.0))
+    #         if (jmax < 2):
+    #             #Flag if causal horizon reached
+    #             print "Warning causal horizon reached"
+    #             jmax = 2
+    #         elif jmax > self.NJ:
+    #             #Flag for unexpected behaviour
+    #             print "Something went wrong, got jmax > NJ"
+    #             jmax = self.NJ-1
+    #         #Interpolate to find Ap (since vp is not necessarily on a grid point)
+    #         Ap = A[jmax-2] + (vp-self.v[jmax-1])*(A[jmax-1] - A[jmax-2])/self.delv
+    #         vp = self.vmax[i-1] - 0.5*Ap*self.delw
+    #         s += 1
+    #     if (s >= self.Nitmax):
+    #         print "Warning PNC cut-off did not converge"
+    #     self.vmax[i] = vp
+    #     self.vmaxi[i] = int(jmax)
+    #     return
 
     def shear_test(self,i,NJ):
         n = int(self.vmaxi[i])
-        tmp = zeros(NJ)
+        tmp = np.zeros(NJ)
         tmp[0:n] = 1.0 - self.Hpar[0:n,i]/self.Hperp[0:n,i]
         return tmp
         
@@ -658,7 +651,7 @@ class SSU(object):
         dD = Dp/up
         #Get d2Dz
         d2D = (Dpp/up - Dp*upp/up**2)/up
-        tmp = zeros(NJ)
+        tmp = np.zeros(NJ)
         tmp[0:n] = 1.0 + H**2.0*(u**2.0*(D*d2D - dD**2.0) - D**2.0) + u*H*dH*D*(u*dD + D)
         return tmp
 
@@ -688,8 +681,8 @@ class SSU(object):
         z = u - 1.0
         vz = vzo(z)
         #First get mu(v)
-        mu = zeros(NJ)
-        mu[1::] = 5*log10(1.0e8*u[1::]**2*D[1::])
+        mu = np.zeros(NJ)
+        mu[1::] = 5*np.log10(1.0e8*u[1::]**2*D[1::])
         mu[0] = -1e-15 #Should be close enough to -inf
         #Get funcs at data points
         muzi = uvs(vz,mu,k=3,s=0.0)(vzo(self.zmudat))
@@ -702,44 +695,44 @@ class SSU(object):
         #print chi2mu,chi2H,chi2t0
         return chi2mu + chi2H + chi2t0 + chi2rho
 
-    def check_LLTB(self,D,S,Q,A,Z,u,rho,delw,Lam,NI,NJ):
-        #Get App
-        App = self.Zp #self.get_App(rho,Lam,D,S,Q,A)
-        self.App = App
-        #To store w derivs
-        Dww = zeros([NJ,NI])
-        Aw = zeros([NJ,NI])
-        #To store consistency rel
-        self.LLTBCon = zeros([NJ,NI])
-        jmax = int(self.vmaxi[-1])
-        for i in range(jmax):
-            if (i==0):
-                Dww[i,:] = 0.0
-                Aw[i,:] = 0.0
-            else:
-                #Get Dww
-                Dww[i,:] = FS.dd5f1d(D[i,:],-delw,NI,NI)
-                #Get Aw
-                Aw[i,:] = FS.d5f1d(A[i,:],-delw,NI,NI)
-            self.Dww = Dww
-            self.Aw = Aw
-            self.LLTBCon[i,:] = 0.5*A[i,:]*App[i,:]*D[i,:] - 2.0*Dww[i,:] + Z[i,:]*Q[i,:] - S[i,:]*Aw[i,:] + A[i,:]*Z[i,:]*S[i,:] - 0.25*kappa*rho[i,:]*D[i,:]*(1.0/u[i,:]**2.0 + u[i,:]**2.0*A[i,:]**2.0) + Lam*A[i,:]*D[i,:]
-        return
+    # def check_LLTB(self,D,S,Q,A,Z,u,rho,delw,Lam,NI,NJ):
+    #     #Get App
+    #     App = self.Zp #self.get_App(rho,Lam,D,S,Q,A)
+    #     self.App = App
+    #     #To store w derivs
+    #     Dww = np.zeros([NJ,NI])
+    #     Aw = np.zeros([NJ,NI])
+    #     #To store consistency rel
+    #     self.LLTBCon = np.zeros([NJ,NI])
+    #     jmax = int(self.vmaxi[-1])
+    #     for i in range(jmax):
+    #         if (i==0):
+    #             Dww[i,:] = 0.0
+    #             Aw[i,:] = 0.0
+    #         else:
+    #             #Get Dww
+    #             Dww[i,:] = CIVP.dd5f1d(D[i,:],-delw,NI,NI)
+    #             #Get Aw
+    #             Aw[i,:] = CIVP.d5f1d(A[i,:],-delw,NI,NI)
+    #         self.Dww = Dww
+    #         self.Aw = Aw
+    #         self.LLTBCon[i,:] = 0.5*A[i,:]*App[i,:]*D[i,:] - 2.0*Dww[i,:] + Z[i,:]*Q[i,:] - S[i,:]*Aw[i,:] + A[i,:]*Z[i,:]*S[i,:] - 0.25*kappa*rho[i,:]*D[i,:]*(1.0/u[i,:]**2.0 + u[i,:]**2.0*A[i,:]**2.0) + Lam*A[i,:]*D[i,:]
+    #     return
 
     def get_PLC0_observables(self,vzo,D,A,u,udot,up):
         #Get dzdw(v)
         dzdw = self.get_dzdw(u,udot,up,A)
         #Get mu(v)
-        #mu = zeros(self.NJ)
-        mu = zeros(self.NJ)
-        mu[1::] = 5*log10(1e8*u[1::]**2*D[1::])
+        #mu = np.zeros(self.NJ)
+        mu = np.zeros(self.NJ)
+        mu[1::] = 5*np.log10(1e8*u[1::]**2*D[1::])
         mu[0] = -1e-15  #Should be close enough to -inf
         #Convert to functions of z
         z = u-1
         vz = vzo(z)
         Dz = uvs(vz,D,k=3,s=0.0)(vzo(self.z))
-        muz=zeros(self.np)
-        muz[0] = -inf
+        muz=np.zeros(self.Np)
+        muz[0] = -np.inf
         muz[1::] = uvs(vz,mu,k=3,s=0.0)(vzo(self.z[1::]))
         dzdwz = uvs(vz,dzdw,k=3,s=0.0)(vzo(self.z))
         return Dz, muz, dzdwz
@@ -753,7 +746,7 @@ class SSU(object):
         njf = int(self.vmaxi[umax]) #This is the max value of index on final pnc considered
         
         #All functions will be returned with the domain normalised between 0 and 1
-        l = linspace(0,1,self.nret)
+        l = np.linspace(0,1,self.Nret)
         #Curvetest
         T2i = self.curve_test(0,self.NJ)
         #self.Kiraw = Ki
@@ -779,35 +772,35 @@ class SSU(object):
             I = range(self.Istar)
             rmax = self.rstar[self.Istar-1]
             r = self.rstar[I]/rmax
-            rhostar = interp(l,r,self.rhostar[I])
-            Dstar = interp(l,r,self.Dstar[I])
+            rhostar = np.interp(l,r,self.rhostar[I])
+            Dstar = np.interp(l,r,self.Dstar[I])
             Dstar[0] = 0.0
-            Xstar = interp(l,r,self.Xstar[I])
-            Hperpstar = interp(l,r,self.Hperpstar[I])
+            Xstar = np.interp(l,r,self.Xstar[I])
+            Hperpstar = np.interp(l,r,self.Hperpstar[I])
         else:
             rmax = self.rstar[0]
-            rhostar = tile(self.rhostar[0],(self.nret))
-            Dstar = tile(self.Dstar[0],(self.nret))
-            Xstar = tile(self.Xstar[0],(self.nret))
-            Hperpstar = tile(self.Hperpstar[0],(self.nret))
+            rhostar = np.tile(self.rhostar[0],(self.Nret))
+            Dstar = np.tile(self.Dstar[0],(self.Nret))
+            Xstar = np.tile(self.Xstar[0],(self.Nret))
+            Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
         return self.Dz,self.muz,self.dzdw,T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf,rhostar,Dstar,Xstar,Hperpstar,rmax,self.Om0,self.OL0,self.t0
         
 if __name__ == "__main__":
     #Set sparams
     zmax = 2.0
-    np = 250
-    zp = linspace(0,zmax,np)
-    Xrho = array([0.1,1.5]) 
-    XH = array([0.6,3.5])
+    Np = 250
+    zp = np.linspace(0,zmax,Np)
+    Xrho = np.array([0.1,1.5])
+    XH = np.array([0.6,3.5])
     tmin = 3.0
     err = 1e-5
-    nret = 100
+    Nret = 100
 
     #set characteristic variance of proposal distributions
     sigmaLam = 0.00555
     
-    zp = linspace(0,zmax,np)
-    U = SSU(zmax,tmin,np,err,XH,Xrho,sigmaLam,nret)
+    zp = np.linspace(0,zmax,Np)
+    U = SSU(zmax,tmin,Np,err,XH,Xrho,sigmaLam,Nret)
 
     D = U.D
     S = U.S
@@ -1111,7 +1104,7 @@ if __name__ == "__main__":
 #        plt.plot(zp,KH.simp_sample())
 #    print time.time() - t1    
 
-#    zH,Hz,sHz = loadtxt('C:\Users\BMAX\Documents\Algorithm\RawData\SimH.txt',unpack=True)
+#    zH,Hz,sHz = np.loadtxt('C:\Users\BMAX\Documents\Algorithm\RawData\SimH.txt',unpack=True)
 #    KH = GP(zH,Hz,sHz,zp,XH)
 #    Hm = KH.fmean
 #    fcov = KH.fcov

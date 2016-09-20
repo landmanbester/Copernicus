@@ -58,6 +58,5 @@ docs/_build/
 # PyBuilder
 target/
 
-#Compiled fortran mods
-.so
+#Compiled python mods
 .pyd
