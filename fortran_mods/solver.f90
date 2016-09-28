@@ -111,7 +111,6 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	do i=2,NI
 		!Predict fluid variables on next PLC
 		call predict(delw,D(:,i-1),S(:,i-1),Q(:,i-1),A(:,i-1),Z(:,i-1),rhop(:,i-1),up(:,i-1),NI,NJ,jmax,i,rho,u,rhod,ud)
-		
 		!Evaluate hypersurface variables with the predicted values
 		call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 		
@@ -148,7 +147,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 		
 		!Get X and dXdr
 		call getXandXr(X,dXdr,dwdr(:,i),dvdr(:,i),drdv(:,i),drdvp(:,i),drdvd(:,i),u(:,i),up(:,i),ud(:,i),NI,NJ,i,jmax)
-		
+!!$		write(*,*) "Got this far", i
 !!$		!Solve geodesic equations
 !!$		call geotr(t,r,u(:,i),up(:,i),X(:,i),dXdr(:,i),delv,w(i),NI,NJ,i,jmax)
 
