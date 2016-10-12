@@ -26,7 +26,7 @@ def readargs():
         "tstar"    : 3.25,
         "doplcf"   : True,
         "dotransform" : True,
-        "fname" : "/home/landman/Projects/CP_In/Data/",
+        "fname" : "/home/landman/Projects/CP_In/",
         "data_prior" : ["H","rho"],
         "data_lik" : ["D","H","dzdw"],
         "zmax" : 2.0,
