@@ -18,7 +18,7 @@ import os
 import sys
 import numpy as np
 from numpy.linalg import cholesky, solve, inv, slogdet, eigh
-from numpy.random import randn, random
+from numpy.random import randn, random, seed
 from scipy.integrate import odeint,quad
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
@@ -44,6 +44,8 @@ class GP(object):
                 prior_mean = function (lambda or spline or whatever) that can be evaluated at x/xp
                 mode = sets whether to train normally, iteratively or not train at all (if hypers already optimised)
         """
+        #Re-seed the random number generator
+        seed()
         #Compute quantities that are used often
         self.beta = beta
         self.N = x.size
@@ -73,8 +75,9 @@ class GP(object):
         self.Kpp = self.cov_func(self.THETA, self.XXpp)
         self.fmean = np.dot(self.LinvKp.T, self.Linvy)
         self.fcov = self.Kpp - np.dot(self.LinvKp.T, self.LinvKp)
-        self.W,self.V = eigh(self.fcov)
-        self.srtW = np.diag(np.nan_to_num(np.sqrt(self.W)))
+        self.W, self.V = eigh(self.fcov)
+        #print any(self.W < 0.0)
+        self.srtW = np.diag(np.nan_to_num(np.sqrt(np.nan_to_num(self.W))))
 
 
     # def meanf(self, theta, y, XXp):
@@ -218,6 +221,8 @@ class SSU(object):
                 Xrho = The optimised hyperparameter values for GP_rho
                 sigmaLam = The variance of the prior over Lambda
         """
+        #Re-seed the random number generator
+        seed()
         # Load the data
         self.fname = fname
         self.data_prior = data_prior.strip('[').strip(']').split(',')
@@ -243,7 +248,7 @@ class SSU(object):
         self.err = err # The error of the integration scheme used to set NJ and NI
 
         # Set beta (the parameter controlling acceptance rate
-        self.beta = 0.25
+        self.beta = 0.1
 
         # Create GP objects
         #print "Fitting H GP"
@@ -295,7 +300,7 @@ class SSU(object):
         # Accept the first step regardless (this performs the main integration and transform)
         self.accept(D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
                     rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2,
-                    vmaxi=vmaxi, v=v, w0=w[:, 0])
+                    vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
 
         
     def MCMCstep(self, logLik0, Hz0, rhoz0, Lam0):
@@ -323,7 +328,7 @@ class SSU(object):
                 #Accept sample
                 F = self.accept(D = D, S = S, Q = Q, A = A, Z = Z, rho = rho, u = u, up = up, upp = upp, udot = udot,
                                 rhodot = rhodot, rhop = rhop, Sp = Sp, Qp = Qp, Zp = Zp, LLTBCon = LLTBCon, T1 = T1,
-                                T2 = T2, vmaxi=vmaxi, v = v, w0 = w[:,0])
+                                T2 = T2, vmaxi=vmaxi, v = v, w0 = w[:,0], NJ=NJ, NI=NI)
                 return Hz,rhoz,Lam,logLik,F,1  #If F returns one we can't use solution inside PLC
 
     def load_Dat(self):
@@ -337,13 +342,13 @@ class SSU(object):
         self.my_F_data = {}
         self.my_sF_data = {}
         for s in self.data_lik:
-            self.my_z_data[s], self.my_F_data[s], self.my_sF_data[s] = np.loadtxt(self.fname + s + '.txt', dtype=float, unpack=True)
+            self.my_z_data[s], self.my_F_data[s], self.my_sF_data[s] = np.loadtxt(self.fname + "Data/" + s + '.txt', dtype=float, unpack=True)
 
         self.my_z_prior = {}
         self.my_F_prior = {}
         self.my_sF_prior = {}
         for s in self.data_prior:
-            self.my_z_prior[s], self.my_F_prior[s], self.my_sF_prior[s] = np.loadtxt(self.fname + s + '.txt', dtype=float, unpack=True)
+            self.my_z_prior[s], self.my_F_prior[s], self.my_sF_prior[s] = np.loadtxt(self.fname + "Data/" + s + '.txt', dtype=float, unpack=True)
         return
         
     def gen_sample(self, Hzi, rhozi, Lami):
@@ -360,7 +365,7 @@ class SSU(object):
         
     def accept(self,D=None, S=None, Q=None, A=None, Z=None, rho=None, u=None, up=None, upp=None, udot=None,
                rhodot=None, rhop=None, Sp=None, Qp=None, Zp=None, LLTBCon=None, T1=None, T2=None, vmaxi=None,
-               v = None, w0 = None):
+               v=None, w0=None, NJ=None, NI=None):
         """
         Stores all values of interest (i.e the values returned by self.integrate)
         """
@@ -386,6 +391,9 @@ class SSU(object):
         self.vmaxi = vmaxi
         self.v = v
         self.w0 = w0
+        self.NJ = NJ
+        self.NI = NI
+        #print " Actual Shape", self.T1.shape, " should be", NJ, NI
         return
 
     def get_age(self, Om0, Ok0, OL0, H0):
@@ -579,7 +587,7 @@ class SSU(object):
         # Add observables here
         return obs_dict
 
-    def get_funcs(self,F):
+    def get_funcs(self):
         """
         Return quantities of interest
         """
@@ -601,23 +609,197 @@ class SSU(object):
         #Curvetest
 
         #self.Kiraw = Ki
-        T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.0)
-        T2i = T2io(l)
+        try:
+            T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.0)
+            T2i = T2io(l)
+        except:
+            T2i = 0.0
+            print "Failed at T2i"
         #T2f = self.curve_test(umax,self.NJ)
         #self.Kfraw = Kf
-        T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0)
-        T2f = T2fo(l)
+        try:
+            T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0)
+            T2f = T2fo(l)
+        except:
+            T2f = 0.0
+            print "Failed at T2f"
         #shear test
         #T1i = self.shear_test(0,self.NJ)
-        T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.0)
-        T1i = T1io(l)
+        try:
+            T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.0)
+            T1i = T1io(l)
+        except:
+            T1i = 0.0
+            print "Failed at T1i"
         #T1f = self.shear_test(umax,self.NJ)
-        T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.0)
-        T1f = T1fo(l)
+        try:
+            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.0)
+            T1f = T1fo(l)
+        except:
+            T1f = 0.0
+            print "Failed at T1f"
         #Get the LLTB consistency relation
         jmaxf = self.vmaxi[-1]
-        LLTBConsi = uvs(self.v[0:jmaxf],self.LLTBCon[0,0:jmaxf],k=3,s=0.0)(l)
-        LLTBConsf = uvs(self.v[0:jmaxf],self.LLTBCon[-1,0:jmaxf],k=3,s=0.0)(l)
+        try:
+            LLTBConsi = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,0],k=3,s=0.0)(l)
+        except:
+            LLTBConsi = 0.0
+            print "failed at LLTBConsi. jmaxf = ", jmaxf, " NI = ", self.NI
+        try:
+            LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
+        except:
+            LLTBConsf = 0.0
+            print "failed at LLTBConsf. NI = ", self.NI
+        try:
+            Di = uvs(self.v/self.v[-1], self.D[:, 0], k=3, s=0.0)(l)
+        except:
+            Di = 0.0
+            print "failed at Di"
+        try:
+            Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Df = 0.0
+            print "failed at Df"
+        try:
+            Si = uvs(self.v/self.v[-1], self.S[:, 0], k=3, s=0.0)(l)
+        except:
+            Si = 0.0
+            print "failed at Si"
+        try:
+            Sf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.S[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Sf = 0.0
+            print "failed at Sf"
+        try:
+            Qi = uvs(self.v/self.v[-1], self.Q[:, 0], k=3, s=0.0)(l)
+        except:
+            Qi = 0.0
+            print "failed at Qi"
+        try:
+            Qf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Q[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Qf = 0.0
+            print "failed at Qf"
+        try:
+            Ai = uvs(self.v/self.v[-1], self.A[:, 0], k=3, s=0.0)(l)
+        except:
+            Ai = 0.0
+            print "failed at Ai"
+        try:
+            Af = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.A[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Af = 0.0
+            print "failed at Af"
+        try:
+            Zi = uvs(self.v/self.v[-1], self.Z[:, 0], k=3, s=0.0)(l)
+        except:
+            Zi = 0.0
+            print "failed at Zi"
+        try:
+            Zf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Z[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Zf = 0.0
+            print "failed at Zf"
+        try:
+            Spi = uvs(self.v/self.v[-1], self.Sp[:, 0], k=3, s=0.0)(l)
+        except:
+            Spi = 0.0
+            print "failed at Spi"
+        try:
+            Spf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Sp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Spf = 0.0
+            print "failed at Spf"
+        try:
+            Qpi = uvs(self.v/self.v[-1], self.Qp[:, 0], k=3, s=0.0)(l)
+        except:
+            Qpi = 0.0
+            print "failed at Qpi"
+        try:
+            Qpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Qp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Qpf = 0.0
+            print "failed at Qpf"
+        try:
+            Zpi = uvs(self.v/self.v[-1], self.Zp[:, 0], k=3, s=0.0)(l)
+        except:
+            Zpi = 0.0
+            print "failed at Zpi"
+        try:
+            Zpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Zp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Zpf = 0.0
+            print "failed at Zpf"
+        try:
+            ui = uvs(self.v/self.v[-1], self.u[:, 0], k=3, s=0.0)(l)
+        except:
+            ui = 0.0
+            print "failed at ui"
+        try:
+            uf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.u[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            uf = 0.0
+            print "failed at uf"
+        try:
+            upi = uvs(self.v/self.v[-1], self.up[:, 0], k=3, s=0.0)(l)
+        except:
+            upi = 0.0
+            print "failed at upi"
+        try:
+            upf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.up[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            upf = 0.0
+            print "failed at upf"
+        try:
+            uppi = uvs(self.v/self.v[-1], self.upp[:, 0], k=3, s=0.0)(l)
+        except:
+            uppi = 0.0
+            print "failed at uppi"
+        try:
+            uppf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.upp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            uppf = 0.0
+            print "failed at uppf"
+        try:
+            udoti = uvs(self.v/self.v[-1], self.udot[:, 0], k=3, s=0.0)(l)
+        except:
+            udoti = 0.0
+            print "failed at udoti"
+        try:
+            udotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.udot[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            udotf = 0.0
+            print "failed at udotf"
+        try:
+            rhoi = uvs(self.v/self.v[-1], self.rho[:, 0], k=3, s=0.0)(l)
+        except:
+            rhoi = 0.0
+            print "failed at rhoi"
+        try:
+            rhof = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rho[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhof = 0.0
+            print "failed at rhof"
+        try:
+            rhopi = uvs(self.v/self.v[-1], self.rhop[:, 0], k=3, s=0.0)(l)
+        except:
+            rhopi = 0.0
+            print "failed at rhopi"
+        try:
+            rhopf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhop[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhopf = 0.0
+            print "failed at rhopf"
+        try:
+            rhodoti = uvs(self.v/self.v[-1], self.rhodot[:, 0], k=3, s=0.0)(l)
+        except:
+            rhodoti = 0.0
+            print "failed at rhodoti"
+        try:
+            rhodotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhodot[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhodotf = 0.0
+            print "failed at rhodotf"
         # #Get constant t slices
         # if F == 0:
         #     I = range(self.Istar)
@@ -634,7 +816,8 @@ class SSU(object):
         #     Dstar = np.tile(self.Dstar[0],(self.Nret))
         #     Xstar = np.tile(self.Xstar[0],(self.Nret))
         #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
-        return T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf
+        return T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, Zpi, \
+               Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf
         
 if __name__ == "__main__":
     #Set sparams
