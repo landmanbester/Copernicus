@@ -10,6 +10,7 @@ from Copernicus import sampler
 from Copernicus.sampler import sampler
 from Copernicus import MCMC_Tools as MCT
 import matplotlib.pyplot as plt
+import Plotter
 
 def readargs():
     conf_parser = argparse.ArgumentParser(

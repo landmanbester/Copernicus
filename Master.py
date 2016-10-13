@@ -210,7 +210,7 @@ class GP(object):
         return -0.5*np.dot(Linvy.T, Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname):
+    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -274,9 +274,12 @@ class SSU(object):
         self.sigmaLam = sigmaLam
 
         # Now we do the initialisation starting with the background vals
-        Lam = 3*0.7*(70.0/299.79)**2
-        Hz = self.Hm
-        rhoz = self.rhom
+        if Lam is None:
+            Lam = 3*0.7*(70.0/299.79)**2
+        if Hz is None:
+            Hz = self.Hm
+        if rhoz is None:
+            rhoz = self.rhom
         #Set up spatial grid
         v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lam)
         self.NI = NI
