@@ -26,7 +26,7 @@ def readargs():
         "tstar"    : 3.25,
         "doplcf"   : True,
         "dotransform" : True,
-        "fname" : "/home/landman/Projects/CP_In/Data/",
+        "fname" : "/home/bester/Projects/CP_Dir/",
         "data_prior" : ["H","rho"],
         "data_lik" : ["D","H","dzdw"],
         "zmax" : 2.0,
@@ -37,7 +37,7 @@ def readargs():
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
         config.read([args.conf_file])
-        defaults = dict(config.items("Defaults"))
+        defaults = dict(config.items('Defaults'))
 
     # Don't surpress add_help here so it will handle -h
     parser = argparse.ArgumentParser(
