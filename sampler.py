@@ -14,17 +14,17 @@ from Copernicus.Master import SSU
 
 def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname):
     #Set sparams
-    Xrho = np.array([0.5,2.8])
-    XH = np.array([0.6,3.5])
+    Xrho = np.array([0.5, 2.8])
+    XH = np.array([0.6, 3.5])
 
     #set characteristic variance of Lambda prior (here 60%)
-    sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
+    sigmaLam = 0.5*3*0.7*(70.0/299.79)**2
     
     #Set z domain
     zp = np.linspace(0.0, zmax, Np)
     
     #Instantiate universe object
-    U = SSU(zmax,tmin,Np,err,XH,Xrho,sigmaLam,Nret,data_prior,data_lik,fname)
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname)
 
     #Get starting sample
     Hz = U.Hm

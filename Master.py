@@ -24,9 +24,7 @@ import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
-#import matplotlib as mpl
 import matplotlib.pyplot as plt
-#from genFLRW import FLRW
 from Copernicus.fortran_mods import CIVP
 
 global kappa
@@ -270,7 +268,7 @@ class SSU(object):
         # plt.show()
 
         # Set Lambda mean and variance (Here we use the background model)
-        self.Lam = 3*0.7*(70.0/299.79)**2        
+        self.Lam = 3*0.7*(70.0/299.79)**2
         self.sigmaLam = sigmaLam
 
         # Now we do the initialisation starting with the background vals
@@ -280,6 +278,8 @@ class SSU(object):
             Hz = self.Hm
         if rhoz is None:
             rhoz = self.rhom
+            while any(rhoz<0.0):
+                rhoz = self.GPrho.sample(rhoz)
         #Set up spatial grid
         v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lam)
         self.NI = NI
@@ -450,6 +450,7 @@ class SSU(object):
 
         #Get t0
         t0 = self.get_age(Om0,Ok0,OL0,Hz[0])
+        #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
 
         #Set affine parameter vals        
         dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to bve the most accurate way to do the numerical integration

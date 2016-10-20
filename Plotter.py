@@ -188,7 +188,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF = UF.get_funcs()
 
     # Do LTB integration
-    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=0.0)
+    LTB_z_funcs = np.load('/home/landman/Projects/CP_Dir/Processed_Data/LTB_z_funcs.npz')
+    HzLT = LTB_z_funcs['Hz']
+    rhozLT = LTB_z_funcs['rhoz']
+    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzLT, rhoz=rhozLT, Lam=0.0)
 
     # Get quantities of interrest
     T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \

@@ -16,7 +16,7 @@ class MCMC_diagnostics(object):
         #holder = np.load(fname + "Samps0" + '.npz')[func_to_test]
         #print holder.shape
         self.D, self.T = sampslist[0].shape
-        self.n = self.T/2 #Discards the first half of the parameters
+        self.n = self.T #Can be used to discard a fraction of the samples
         self.samps = np.zeros([self.M, self.n, self.D])  # array to store samps (one page for each chain with each column holding samples of a parameter)
         #self.samps[0] = holder[:, 0:self.n].T
         #self.X = np.zeros([self.M * self.n, self.D])
