@@ -69,7 +69,7 @@ def get_dzdw(u=None, udot=None, up=None, A=None):
 
 if __name__=="__main__":
     # Load LTB z funcs
-    z_funcs = np.load('/home/landman/Projects/CP_Dir/Processed_Data/LTB_z_funcs.npz')
+    z_funcs = np.load('/home/landman/Projects/CP_LTB/Processed_Data/LTB_z_funcs.npz')
     z = z_funcs['z']
     Hz = z_funcs['Hz']
     rhoz = z_funcs['rhoz']
@@ -92,13 +92,13 @@ if __name__=="__main__":
         v, delv, w, delw, u, rho, Lam, NI, NJ)
 
     # Get dzdw and convert to function of redshift
-    dzdw = get_dzdw(u=u, udot=ud, up=up, A=A)
-    dzdwz = uvs(v,dzdw[:,0],k=3,s=0.0)(vzo(z))
+    dzdw = get_dzdw(u=u[:,0], udot=ud[:,0], up=up[:,0], A=A[:,0])
+    dzdwz = uvs(v,dzdw,k=3,s=0.0)(vzo(z))
 
     #Get D(z) for comparison
     Dz = uvs(v,D[:,0],k=3,s=0.0)(vzo(z))
 
-    print "The two D(z) relations are identical: ", np.allclose(Dz, Dz1)
+    print "The two D(z) relations are identical: ", np.allclose(Dz, Dz1, atol=1e-4)
 
     # set z values for data points
     nD = 500
@@ -108,8 +108,9 @@ if __name__=="__main__":
 
     zD = np.sort(0.005 + np.random.ranf(nD) * (zmax - 0.005))
     zH = np.sort(np.random.ranf(nH) * zmax)
-    zH[0] = 0
+    #zH[0] = 0
     zrho = np.sort(np.random.ranf(nrho)*zmax)
+    #zrho[0] = 0.0
     zdzdw = 1.0 + np.sort(np.random.ranf(ndzdw) * zmax/2.0)
 
     # Set how the error grows
@@ -123,14 +124,14 @@ if __name__=="__main__":
     HzDat = uvs(z,Hz,k=3,s=0.0)(zH)
     DzDat = uvs(z, Dz, k=3, s=0.0)(zD)
     rhozDat = uvs(z, rhoz, k=3, s=0.0)(zrho)
-    dzdwDat = uvs(v,dzdw[:,0],k=3,s=0.0)(vzo(zdzdw))
+    dzdwDat = uvs(v,dzdw,k=3,s=0.0)(vzo(zdzdw))
 
     # set number of trials (controls Gaussianity of distribution)
     N = 21
     delD = 0.05
     delH = 0.1
-    delrho = 0.5
-    deldzdw = 0.1
+    delrho = 0.2
+    deldzdw = 0.2
 
     # Do simulation
     SimD = np.zeros([N, nD])
@@ -169,19 +170,19 @@ if __name__=="__main__":
 
     ##save data
     savedzdw = np.column_stack((zdzdw,meandzdw,(meandzdw-sigdzdw)))
-    dzdwf = open('/home/landman/Projects/CP_LTB/Data/Simdzdw.txt','w')
+    dzdwf = open('/home/landman/Projects/CP_LTB/Data/dzdw.txt','w')
     np.savetxt(dzdwf,savedzdw,fmt='%s')
     dzdwf.close()
     saveH = np.column_stack((zH,meanH,(meanH-sigH)))
-    Hf = open('/home/landman/Projects/CP_LTB/Data/SimH.txt','w')
+    Hf = open('/home/landman/Projects/CP_LTB/Data/H.txt','w')
     np.savetxt(Hf,saveH,fmt='%s')
     Hf.close()
-    saverho = np.column_stack((zrho, meanrho, sigrho))
-    rhof = open('/home/landman/Projects/CP_LTB/Data/Simrho.txt', 'w')
+    saverho = np.column_stack((zrho, meanrho, (meanrho-sigrho)))
+    rhof = open('/home/landman/Projects/CP_LTB/Data/rho.txt', 'w')
     np.savetxt(rhof, saverho, fmt='%s')
     rhof.close()
     saveD = np.column_stack((zD,meanD,(meanD-sigD)))
-    Df = open('/home/landman/Projects/CP_LTB/Data/SimD.txt','w')
+    Df = open('/home/landman/Projects/CP_LTB/Data/D.txt','w')
     np.savetxt(Df,saveD,fmt='%s')
     Df.close()
 
@@ -200,7 +201,7 @@ if __name__=="__main__":
     plt.show()
 
     plt.figure('rhosim')
-    plt.errorbar(zrho, meanrho, sigrho, fmt='xr')
+    plt.errorbar(zrho, meanrho, (meanrho - sigrho), fmt='xr')
     plt.plot(z, rhoz, linewidth=2)
     plt.show()
 

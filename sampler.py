@@ -12,19 +12,19 @@ import time
 import numpy as np
 from Copernicus.Master import SSU
 
-def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname):
+def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta):
     #Set sparams
     Xrho = np.array([0.5, 2.8])
     XH = np.array([0.6, 3.5])
 
     #set characteristic variance of Lambda prior (here 60%)
-    sigmaLam = 0.5*3*0.7*(70.0/299.79)**2
+    sigmaLam = 0.1*3*0.7*(70.0/299.79)**2
     
     #Set z domain
     zp = np.linspace(0.0, zmax, Np)
     
     #Instantiate universe object
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname)
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Lam=0.0, beta=beta)
 
     #Get starting sample
     Hz = U.Hm
@@ -33,8 +33,10 @@ def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform
     logLik = U.logLik
 
     #Array storage for posterior samples
+    Dzsamps = np.zeros([Np, Nsamp])
     Hzsamps = np.zeros([Np,Nsamp])
     rhozsamps = np.zeros([Np,Nsamp])
+    dzdwzsamps = np.zeros([Np, Nsamp])
     Lamsamps = np.zeros(Nsamp)
     # musamps = np.zeros([Np,Nsamp])
     Di = np.zeros([Nret,Nsamp])
@@ -90,9 +92,20 @@ def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
 
     print 'It took sampler'+str(j),(time.time() - t1)/60.0,'min to draw ',Nburn,' samples'
-
+    interval = Nsamp/10
     t1 = time.time()
     for i in range(Nsamp):
+        if i%interval == 0 and i != 0:
+            #Check acceptance rate
+            arate = accrate[0]/accrate[1]
+            if arate < 0.2:
+                beta /= 2.0
+                U.reset_beta(beta)
+                print "Acceptance rate of ", arate," is too low. Resetting beta to ", beta, i, j
+            elif arate > 0.5:
+                beta *= 2.0
+                U.reset_beta(beta)
+                print " Acceptance rate of ", arate, " is too high. Resetting beta to ", beta, i, j
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
         accrate += np.array([a,1])
         Hzsamps[:,i] = Hz
@@ -103,7 +116,7 @@ def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform
         T1i[:, i], T1f[:, i], T2i[:, i], T2f[:, i], LLTBConsi[:, i], LLTBConsf[:, i], Di[:, i], Df[:, i], Si[:, i], \
         Sf[:, i], Qi[:, i], Qf[:, i], Ai[:, i], Af[:, i], Zi[:, i], Zf[:, i], Spi[:, i], Spf[:, i], Qpi[:, i], Qpf[:, i], \
         Zpi[:, i], Zpf[:, i], ui[:, i], uf[:, i], upi[:, i], upf[:, i], uppi[:, i], uppf[:, i], udoti[:, i], udotf[:, i], \
-        rhoi[:, i], rhof[:, i], rhopi[:, i], rhopf[:, i], rhodoti[:, i], rhodotf[:, i] = U.get_funcs()
+        rhoi[:, i], rhof[:, i], rhopi[:, i], rhopf[:, i], rhodoti[:, i], rhodotf[:, i], Dzsamps[:,i], dzdwzsamps[:,i] = U.get_funcs()
         # print i
         # if F == 1:
         #     print "Flag raised"
@@ -112,7 +125,7 @@ def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform
 
     return Hzsamps, rhozsamps, Lamsamps, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
            Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-           rhodoti, rhodotf
+           rhodoti, rhodotf, Dzsamps, dzdwzsamps
 
     #print fname + "Samps"+str(j)+".npz"
     #print Hsamps.shape, rhosamps.shape, Lamsamps.shape, T1i.shape, T1f.shape, T2i.shape, T2f.shape, LLTBConsi.shape, LLTBConsf.shape

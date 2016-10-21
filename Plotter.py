@@ -160,7 +160,7 @@ class plh(object):
         return
 
 
-def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
+def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     print "Getting LCDM vals"
     # Get FLRW funcs for comparison
     Om0 = 0.3
@@ -172,6 +172,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
 
     # Do integration of FLRW funcs
     zp = np.linspace(0, zmax, Np)
+    zp2 = np.linspace(0, zmax, 200)
     LamF = 3 * 0.7 * 0.2335 ** 2
     Xrho = np.array([0.5,2.8])
     XH = np.array([0.6,3.5])
@@ -185,10 +186,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     T1iF, T1fF, T2iF, T2fF, LLTBConsiF, LLTBConsfF, DiF, DfF, SiF, \
     SfF, QiF, QfF, AiF, AfF, ZiF, ZfF, SpiF, SpfF, QpiF, QpfF, \
     ZpiF, ZpfF, uiF, ufF, upiF, upfF, uppiF, uppfF, udotiF, udotfF, \
-    rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF = UF.get_funcs()
+    rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF = UF.get_funcs()
 
     # Do LTB integration
-    LTB_z_funcs = np.load('/home/landman/Projects/CP_Dir/Processed_Data/LTB_z_funcs.npz')
+    LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
     HzLT = LTB_z_funcs['Hz']
     rhozLT = LTB_z_funcs['rhoz']
     ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzLT, rhoz=rhozLT, Lam=0.0)
@@ -197,18 +198,21 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \
     SfLT, QiLT, QfLT, AiLT, AfLT, ZiLT, ZfLT, SpiLT, SpfLT, QpiLT, QpfLT, \
     ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
-    rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT = ULT.get_funcs()
+    rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT = ULT.get_funcs()
 
     # # read in data
-    # zmu, muz, smuz = np.loadtxt('/home/landman/Algorithm/RawData/Simmu.txt', unpack=True)
-    # zH, Hz, sHz = np.loadtxt('/home/landman/Algorithm/RawData/SimH.txt', unpack=True)
-    # zrho, rhoz, srhoz = np.loadtxt("/home/landman/Algorithm/RawData/Simrho.txt", unpack=True)
+    zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
+    zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
+    zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
+    zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
 
     # Load first samples
     print "Loading Samps"
     holder = np.load(fname + 'Processed_Data/Samps.npz')
+    Dzlist = holder['Dz']
     Hzlist = holder['Hz']
     rhozlist = holder['rhoz']
+    dzdwzlist = holder['dzdwz']
     Lamlist = holder['Lam']
     T2ilist = holder['T2i']
     T2flist = holder['T2f']
@@ -222,8 +226,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     # Load the rest of the data
     for i in xrange(NSamplers):
         if i > 0:
+            Dzsamps = np.append(Dzsamps, Dzlist[i], axis=1)
             Hzsamps = np.append(Hzsamps, Hzlist[i], axis=1)
             rhozsamps = np.append(rhozsamps, rhozlist[i], axis=1)
+            dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
             Lamsamps = np.append(Lamsamps, Lamlist[i])
             T2i = np.append(T2i, T2ilist[i], axis=1)
             T2f = np.append(T2f, T2flist[i], axis=1)
@@ -232,8 +238,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
             LLTBConsi = np.append(LLTBConsi, LLTBConsilist[i], axis=1)
             LLTBConsf = np.append(LLTBConsf, LLTBConsflist[i], axis=1)
         else:
+            Dzsamps = Dzlist[0]
             Hzsamps = Hzlist[0]
             rhozsamps = rhozlist[0]
+            dzdwzsamps = dzdwzlist[0]
             Lamsamps = Lamlist[0]
             T2i = T2ilist[0]
             T2f = T2flist[0]
@@ -242,6 +250,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
             LLTBConsi = LLTBConsilist[0]
             LLTBConsf = LLTBConsflist[0]
 
+    Om0samps = 8 * np.pi * rhozsamps[0,:] / (3 * Hzsamps[0,:] ** 2)
+    OL0samps = Lamsamps / (3 * Hzsamps[0,:] ** 2)
 
     # 3 2x2 figures with functions contours
     # The first is for data on the PLC0
@@ -251,27 +261,27 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     # The third for t slice
     figts, axts = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
 
-    # Get contours and set figure labels and lims
-    # print 'PLC0'
-    # muplh = plh(musamps[1::, :], axPLC0[0, 0])
-    # axPLC0[0, 0].set_ylabel(r'$ \mu / [Gpc]$', fontsize=20)
-    # axPLC0[0, 0].set_ylim(34, 46.5)
-    #
-    # Hplh = plh(Hsamps, axPLC0[0, 1])
-    # axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
-    # axPLC0[0, 1].set_ylim(65, 220.0)
-    #
-    # rhoplh = plh(rhosamps, axPLC0[1, 0])
-    # axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
-    # axPLC0[1, 0].set_xlim(0, zmax)
-    # axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
-    # axPLC0[1, 0].set_ylim(0, 10.0)
-    #
-    # dzdwplh = plh(dzdwsamps, axPLC0[1, 1])
-    # axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
-    # axPLC0[1, 1].set_xlim(0, zmax)
-    # axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
-    # axPLC0[1, 1].set_ylim(-0.05, 0.125)
+    #Get contours and set figure labels and lims
+    print 'PLC0'
+    Dplh = plh(Dzsamps, axPLC0[0, 0])
+    axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
+    axPLC0[0, 0].set_ylim(0.0, 2.0)
+
+    Hplh = plh(Hzsamps, axPLC0[0, 1])
+    axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
+    axPLC0[0, 1].set_ylim(65, 220.0)
+
+    rhoplh = plh(rhozsamps, axPLC0[1, 0])
+    axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
+    axPLC0[1, 0].set_xlim(0, zmax)
+    axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
+    axPLC0[1, 0].set_ylim(0, 10.0)
+
+    dzdwplh = plh(dzdwzsamps, axPLC0[1, 1])
+    axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
+    axPLC0[1, 1].set_xlim(0, zmax)
+    axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
+    axPLC0[1, 1].set_ylim(-0.05, 0.125)
 
     print 'CP'
     T1iplh = plh(T1i, axCP[0, 0])
@@ -312,37 +322,33 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     print "Plotting"
     l = np.linspace(0, 1, Nret)
 
-    # # Plot mu(z) reconstruction and comparison
-    # muplh.draw_Contours(zp[1::])
-    # muplh.add_plot(zp, muzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # #    Dplh.add_plot(zp,DzConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    # #    Dplh.add_plot(zp,DzLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    # muplh.add_data(zmu, muz, smuz, alp=0.2)
-    # muplh.show_lab(4)
-    #
-    # # Plot H(z) reconstruction and comparison
-    # Hplh.draw_Contours(zp, scale=299.8)
-    # Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
-    # #    Hplh.add_plot(zp,HzConLTB,col='k',scale=299.8,lab=r'$LTB1$',wid=1.5)
-    # #    Hplh.add_plot(zp,HzLTB,col='m',scale=299.8,lab=r'$LTB2$',wid=1.5)
-    # Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=0.5)
-    # #    Hplh.show_lab(4)
-    #
-    # # Plot rho(z) reconstruction and comparison
-    # rhoplh.draw_Contours(zp, scale=153.66)
-    # rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
-    # #    rhoplh.add_plot(zp,rhozConLTB,col='k',scale=153.66,lab=r'$LTB1$',wid=1.5)
-    # #    rhoplh.add_plot(zp,rhozLTB,col='m',scale=153.66,lab=r'$LTB2$',wid=1.5)
-    # rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
-    # #    rhoplh.show_lab(2)
-    #
-    # # Plot dzdw(z) reconstruction and comparison
-    # dzdwplh.draw_Contours(zp)
-    # dzdwplh.add_plot(zp, dzdwF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # #    rhoplh.add_plot(zp,rhozConLTB,col='k',scale=153.66,lab=r'$LTB1$',wid=1.5)
-    # #    rhoplh.add_plot(zp,rhozLTB,col='m',scale=153.66,lab=r'$LTB2$',wid=1.5)
-    # # rhoplh.add_data(zrho,rhoz,srhoz,alp=0.5,scale=153.66)
-    # #    dzdwplh.show_lab(2)
+    # Plot mu(z) reconstruction and comparison
+    Dplh.draw_Contours(zp)
+    Dplh.add_plot(zp, DzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    Dplh.add_plot(zp, DzLT,col='m',lab=r'$LTB$',wid=1.5)
+    Dplh.add_data(zD, Dz, sDz, alp=0.2)
+    Dplh.show_lab(4)
+
+    # Plot H(z) reconstruction and comparison
+    Hplh.draw_Contours(zp, scale=299.8)
+    Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
+    Hplh.add_plot(zp,HzLT,col='k',scale=299.8,lab=r'$LTB$',wid=1.5)
+    Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=0.5)
+    Hplh.show_lab(4)
+
+    # Plot rho(z) reconstruction and comparison
+    rhoplh.draw_Contours(zp, scale=153.66)
+    rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
+    rhoplh.add_plot(zp,rhozLT,col='k',scale=153.66,lab=r'$LTB$',wid=1.5)
+    rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
+    rhoplh.show_lab(2)
+
+    # Plot dzdw(z) reconstruction and comparison
+    dzdwplh.draw_Contours(zp)
+    dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    dzdwplh.add_plot(zp, dzdwzLT,col='m',scale=153.66,lab=r'$LTB$',wid=1.5)
+    dzdwplh.add_data(zdzdw,dzdwz,sdzdwz,alp=0.5,scale=153.66)
+    dzdwplh.show_lab(2)
 
 
     # Plot T2i(z) reconstruction and comparison
@@ -409,31 +415,32 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     figCP.tight_layout(pad=1.08, h_pad=0.0, w_pad=0.0)
     #figts.tight_layout(pad=1.08, h_pad=0.0, w_pad=0.6)
 
-    #figPLC0.savefig('Figures/PLC0.png', dpi=250)
+    figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
     figCP.savefig(fname + 'Figures/CP.png', dpi=250)
     #figts.savefig('Figures/tslice.png', dpi=250)
 
-    # # Do contour plots
-    # print "Doing Om v OL and t0 v Lam contours"
-    # figConts, axConts = plt.subplots(nrows=1, ncols=2, figsize=(15, 9))
-    #
-    # # First Om v OL
-    # pl2d(Omsamps, OLsamps, axConts[0])
-    # axConts[0].plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
-    # axConts[0].set_xlabel(r'$\Omega_{m0}$', fontsize=25)
-    # axConts[0].set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
-    # axConts[0].set_xlim(0.0, 1.0)
-    # axConts[0].set_ylim(0.0, 1.5)
-    # handles, labels = axConts[0].get_legend_handles_labels()
-    # p1 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.8)
-    # handles.append(p1)
-    # labels.append(r'$1-\sigma$')
-    # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
-    # handles.append(p2)
-    # labels.append(r'$2-\sigma$')
-    # axConts[0].legend(handles, labels, loc=1)
+    # Do contour plots
+    print "Doing Om v OL contours"
+    figConts, axConts = plt.subplots(nrows=1, ncols=2, figsize=(15, 9))
+
+    # First Om v OL
+    pl2d(Om0samps, OL0samps, axConts[0])
+    axConts[0].plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
+    axConts[0].set_xlabel(r'$\Omega_{m0}$', fontsize=25)
+    axConts[0].set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
+    axConts[0].set_xlim(0.0, 1.0)
+    axConts[0].set_ylim(0.0, 1.5)
+    handles, labels = axConts[0].get_legend_handles_labels()
+    p1 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.8)
+    handles.append(p1)
+    labels.append(r'$1-\sigma$')
+    p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
+    handles.append(p2)
+    labels.append(r'$2-\sigma$')
+    axConts[0].legend(handles, labels, loc=1)
     #
     # pl2d(t0samps / 0.3064, Lamsamps, axConts[1])
+    axConts[1].hist2d(Om0samps,OL0samps)
     # axConts[1].set_xlabel(r'$t_0 /[Gyr]$', fontsize=25)
     # axConts[1].set_ylabel(r'$\Lambda$', fontsize=25)
     # axConts[1].set_xlim(10, 20)
@@ -446,8 +453,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname):
     # handles.append(p2)
     # labels.append(r'$2-\sigma$')
     # axConts[1].legend(handles, labels, loc=1)
-    #
-    # figConts.savefig('Figures/Contours.png', dpi=250)
+
+    figConts.savefig(fname + 'Figures/Contours.png', dpi=250)
 
 if __name__=="__main__":
     #Get config
@@ -469,4 +476,4 @@ if __name__=="__main__":
     err = GD["err"]
 
     # Do the plots
-    Plot_Data(zmax,Np,Nret,tstar,err,data_prior,data_lik,fname)
+    Plot_Data(zmax,Np,Nret,tstar,err,data_prior,data_lik,fname,Nsamp)

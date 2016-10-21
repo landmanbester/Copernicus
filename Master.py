@@ -208,7 +208,7 @@ class GP(object):
         return -0.5*np.dot(Linvy.T, Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None):
+    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -246,7 +246,10 @@ class SSU(object):
         self.err = err # The error of the integration scheme used to set NJ and NI
 
         # Set beta (the parameter controlling acceptance rate
-        self.beta = 0.1
+        if beta is not None:
+            self.beta = beta
+        else:
+            self.beta = 0.01
 
         # Create GP objects
         #print "Fitting H GP"
@@ -268,7 +271,7 @@ class SSU(object):
         # plt.show()
 
         # Set Lambda mean and variance (Here we use the background model)
-        self.Lam = 3*0.7*(70.0/299.79)**2
+        self.Lam = 0.0 #3*0.7*(70.0/299.79)**2
         self.sigmaLam = sigmaLam
 
         # Now we do the initialisation starting with the background vals
@@ -299,13 +302,21 @@ class SSU(object):
         
         # Get the likelihood of the first sample Hz,D,rho,u,vzo,t0,NJ,udot,up
         self.logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
-        
+
+        Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:, 0], A=A[:, 0], u=u[:, 0], udot=udot[:, 0], up=up[:, 0])
+
         # Accept the first step regardless (this performs the main integration and transform)
-        self.accept(D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
+        self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
                     rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2,
                     vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
 
-        
+
+    def reset_beta(self,beta):
+        self.beta = beta
+        self.GPH.beta = beta
+        self.GPrho.beta = beta
+        return
+
     def MCMCstep(self, logLik0, Hz0, rhoz0, Lam0):
         #Propose sample
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
@@ -319,7 +330,7 @@ class SSU(object):
             #Do integration on initial PLC
             D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(u, rho, Lam, v, delv, w, delw)
             #Get likelihood
-            logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Maker sure to pass Hz and rhoz to avoid the interpolation
+            logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
             logr = logLik - logLik0
             accprob = np.exp(-logr/2.0)
             #Accept reject step
@@ -329,7 +340,8 @@ class SSU(object):
                 return Hz0, rhoz0, Lam0, logLik0, 0, 0
             else:
                 #Accept sample
-                F = self.accept(D = D, S = S, Q = Q, A = A, Z = Z, rho = rho, u = u, up = up, upp = upp, udot = udot,
+                Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:,0], A=A[:,0], u=u[:,0], udot=udot[:,0], up=up[:,0])
+                self.accept(Dz=Dz, dzdwz=dzdwz, D = D, S = S, Q = Q, A = A, Z = Z, rho = rho, u = u, up = up, upp = upp, udot = udot,
                                 rhodot = rhodot, rhop = rhop, Sp = Sp, Qp = Qp, Zp = Zp, LLTBCon = LLTBCon, T1 = T1,
                                 T2 = T2, vmaxi=vmaxi, v = v, w0 = w[:,0], NJ=NJ, NI=NI)
                 return Hz,rhoz,Lam,logLik,F,1  #If F returns one we can't use solution inside PLC
@@ -358,7 +370,7 @@ class SSU(object):
         Hz = self.GPH.sample(Hzi)
         rhoz = self.GPrho.sample(rhozi)
         Lam0 = self.Lam - Lami
-        Lam = self.Lam + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*randn(1)
+        Lam = np.abs(self.Lam + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*np.random.randn(1))
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
             print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
@@ -366,13 +378,14 @@ class SSU(object):
         else:
             return Hz, rhoz, Lam, 0
         
-    def accept(self,D=None, S=None, Q=None, A=None, Z=None, rho=None, u=None, up=None, upp=None, udot=None,
+    def accept(self, Dz=None, dzdwz=None, D=None, S=None, Q=None, A=None, Z=None, rho=None, u=None, up=None, upp=None, udot=None,
                rhodot=None, rhop=None, Sp=None, Qp=None, Zp=None, LLTBCon=None, T1=None, T2=None, vmaxi=None,
                v=None, w0=None, NJ=None, NI=None):
         """
         Stores all values of interest (i.e the values returned by self.integrate)
         """
-        #Do CIVP integration
+        self.Dz = Dz
+        self.dzdwz = dzdwz
         self.D = D
         self.S = S
         self.Q = Q
@@ -590,6 +603,14 @@ class SSU(object):
             obs_dict["rho"] = uvs(self.z, rhoz, k=3, s=0.0)(self.my_z_data["rho"])
         # Add observables here
         return obs_dict
+
+    def get_Dz_and_dzdwz(self,vzo=None, D=None, A=None, u=None, udot=None, up=None):
+        z = u - 1.0
+        vz = vzo(z)
+        dzdw = self.get_dzdw(u=u, udot=udot, up=up, A=A)
+        dzdwz = uvs(vz, dzdw, k=3, s=0.0)(vzo(self.z))
+        Dz = uvs(vz, D, k=3, s=0.0)(vzo(self.z))
+        return Dz, dzdwz
 
     def get_funcs(self):
         """
@@ -821,7 +842,7 @@ class SSU(object):
         #     Xstar = np.tile(self.Xstar[0],(self.Nret))
         #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
         return T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, Zpi, \
-               Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf
+               Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, self.Dz, self.dzdwz
         
 if __name__ == "__main__":
     #Set sparams

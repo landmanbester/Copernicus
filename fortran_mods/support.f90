@@ -311,7 +311,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i)
 	real*8 :: vp, vprev, tol, Ap
 
 	maxit = 1000
-	tol = 1e-7
+	tol = 1e-6
 	
 	!Initial guess
 	vp = vmax(i-1) - 0.5*A(vmaxi(i-1))*delw
@@ -335,7 +335,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i)
 		counter = counter + 1
 	end do
 	if (counter >= maxit) then
-		write(*,*) 'Warning PNC cut-off did not converge'
+		write(*,*) 'Warning PNC cut-off did not converge abs(vp-vprev) = ', abs(vp-vprev)
 	endif
 	vmax(i) = vp
 	vmaxi(i) = jmax

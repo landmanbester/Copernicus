@@ -31,7 +31,8 @@ def readargs():
         "zmax" : 2.0,
         "np" : 200,
         "nret" : 100,
-        "err" : 1e-5
+        "err" : 1e-5,
+        "beta" : 0.01,
         }
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
@@ -61,6 +62,7 @@ def readargs():
     parser.add_argument("--np", type=int, help="The number of redshift points to use")
     parser.add_argument("--nret", type=int, help="The number of points at which to return quantities of interest")
     parser.add_argument("--err", type=float, help="Target error of the numerical integration scheme")
+    parser.add_argument("--beta", type=float, help="Parameter to control acceptance rate of the MCMC")
     args = parser.parse_args(remaining_argv)
 
 
@@ -143,10 +145,13 @@ if __name__ == "__main__":
     Np = GD["np"]
     Nret = GD["nret"]
     err = GD["err"]
+    beta = GD["beta"]
 
     futures = []
     Hzlist = []
+    Dzlist = []
     rhozlist = []
+    dzdwzlist = []
     Lamlist = []
     T1ilist = []
     T1flist = []
@@ -196,7 +201,7 @@ if __name__ == "__main__":
             for i in xrange(NSamplers):
                 # tmpstr = 'sampler' + str(i)
                 # SamplerDICT[tmpstr] =
-                future = executor.submit(sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname)
+                future = executor.submit(sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname,beta)
                 futures.append(future)
                 # cf.as_completed(SamplerDICT[tmpstr])
                 #cf.as_completed(executor.submit(sampler.sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname))
@@ -204,10 +209,12 @@ if __name__ == "__main__":
             for f in cf.as_completed(futures):
                 Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
                 Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-                rhodoti, rhodotf = f.result()
+                rhodoti, rhodotf, Dz, dzdwz = f.result()
 
+                Dzlist.append(Dz)
                 Hzlist.append(Hz)
                 rhozlist.append(rhoz)
+                dzdwzlist.append(dzdwz)
                 Lamlist.append(Lam)
                 T1ilist.append(T1i)
                 T1flist.append(T1f)
@@ -268,7 +275,7 @@ if __name__ == "__main__":
              Qi=Qilist, Qf=Qflist, Ai=Ailist, Af=Aflist, Zi=Zilist, Zf=Zflist, Spi=Spilist, Spf=Spflist, Qpi=Qpilist,
              Qpf=Qpflist, Zpi=Zpilist, Zpf=Zpflist, ui=uilist, uf=uflist, upi=upilist, upf=upflist, uppi=uppilist,
              uppf=uppflist, udoti=udotilist, udotf=udotflist, rhoi=rhoilist, rhof=rhoflist, rhopi=rhopilist,
-             rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers)
+             rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist)
 
     #print Hsamps.shape
     print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest
