@@ -373,7 +373,7 @@ class SSU(object):
         Lam = np.abs(self.Lam + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*np.random.randn(1))
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
-            print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
+            #print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
             return Hzi, rhozi,Lami, 1
         else:
             return Hz, rhoz, Lam, 0

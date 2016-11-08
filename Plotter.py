@@ -204,7 +204,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
     zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
     zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
-    zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
+    zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
 
     # Load first samples
     print "Loading Samps"
@@ -281,7 +281,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
     axPLC0[1, 1].set_xlim(0, zmax)
     axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
-    axPLC0[1, 1].set_ylim(-0.05, 0.125)
+    #axPLC0[1, 1].set_ylim(-1.25, 0.125)
 
     print 'CP'
     T1iplh = plh(T1i, axCP[0, 0])
@@ -293,7 +293,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     axCP[1, 0].set_ylabel(r'$ T_2 $', fontsize=20)
     axCP[1, 0].set_xlabel(r'$ \frac{v}{v_{max}} $', fontsize=20)
     axCP[1, 0].set_xlim(0.0, 1.0)
-    axCP[1, 0].set_ylim(-0.3, 0.3)
+    axCP[1, 0].set_ylim(-0.8, 0.3)
 
     T2fplh = plh(T2f, axCP[1, 1])
     axCP[1, 1].set_xlabel(r'$ \frac{v}{v_{max}} $', fontsize=20)
@@ -346,9 +346,9 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # Plot dzdw(z) reconstruction and comparison
     dzdwplh.draw_Contours(zp)
     dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    dzdwplh.add_plot(zp, dzdwzLT,col='m',scale=153.66,lab=r'$LTB$',wid=1.5)
-    dzdwplh.add_data(zdzdw,dzdwz,sdzdwz,alp=0.5,scale=153.66)
-    dzdwplh.show_lab(2)
+    dzdwplh.add_plot(zp, dzdwzLT,col='m',lab=r'$LTB$',wid=1.5)
+    dzdwplh.add_data(zdzdw,dzdwz,sdzdwz,alp=0.5)
+    dzdwplh.show_lab(3)
 
 
     # Plot T2i(z) reconstruction and comparison

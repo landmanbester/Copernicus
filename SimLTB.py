@@ -168,23 +168,23 @@ if __name__=="__main__":
     meanrho = Simrho[int(N/2),:]
     sigrho = Simrho[int(0.16*N),:]
 
-    ##save data
-    savedzdw = np.column_stack((zdzdw,meandzdw,(meandzdw-sigdzdw)))
-    dzdwf = open('/home/landman/Projects/CP_LTB/Data/dzdw.txt','w')
-    np.savetxt(dzdwf,savedzdw,fmt='%s')
-    dzdwf.close()
-    saveH = np.column_stack((zH,meanH,(meanH-sigH)))
-    Hf = open('/home/landman/Projects/CP_LTB/Data/H.txt','w')
-    np.savetxt(Hf,saveH,fmt='%s')
-    Hf.close()
-    saverho = np.column_stack((zrho, meanrho, (meanrho-sigrho)))
-    rhof = open('/home/landman/Projects/CP_LTB/Data/rho.txt', 'w')
-    np.savetxt(rhof, saverho, fmt='%s')
-    rhof.close()
-    saveD = np.column_stack((zD,meanD,(meanD-sigD)))
-    Df = open('/home/landman/Projects/CP_LTB/Data/D.txt','w')
-    np.savetxt(Df,saveD,fmt='%s')
-    Df.close()
+    # ##save data
+    # savedzdw = np.column_stack((zdzdw,meandzdw,(meandzdw-sigdzdw)))
+    # dzdwf = open('/home/landman/Projects/CP_LTB/Data/dzdw.txt','w')
+    # np.savetxt(dzdwf,savedzdw,fmt='%s')
+    # dzdwf.close()
+    # saveH = np.column_stack((zH,meanH,(meanH-sigH)))
+    # Hf = open('/home/landman/Projects/CP_LTB/Data/H.txt','w')
+    # np.savetxt(Hf,saveH,fmt='%s')
+    # Hf.close()
+    # saverho = np.column_stack((zrho, meanrho, (meanrho-sigrho)))
+    # rhof = open('/home/landman/Projects/CP_LTB/Data/rho.txt', 'w')
+    # np.savetxt(rhof, saverho, fmt='%s')
+    # rhof.close()
+    # saveD = np.column_stack((zD,meanD,(meanD-sigD)))
+    # Df = open('/home/landman/Projects/CP_LTB/Data/D.txt','w')
+    # np.savetxt(Df,saveD,fmt='%s')
+    # Df.close()
 
     mpl.rcParams.update({'font.size': 20, 'font.family': 'serif'})
 
