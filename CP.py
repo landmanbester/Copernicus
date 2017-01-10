@@ -9,6 +9,7 @@ from Copernicus.sampler import sampler
 from Copernicus import MCMC_Tools as MCT
 import matplotlib.pyplot as plt
 import Plotter
+from genFLRW import FLRW
 
 def readargs():
     conf_parser = argparse.ArgumentParser(
@@ -190,6 +191,15 @@ if __name__ == "__main__":
     rhodotilist = []
     rhodotflist = []
 
+    # Get FLRW funcs for comparison
+    Om0 = 0.3
+    OL0 = 0.7
+    H0 = 0.2335
+    LCDM = FLRW(Om0, OL0, H0, zmax, Np)
+    HzF = LCDM.Hz
+    rhozF = LCDM.getrho()
+    Lam = 3 * OL0 * H0 ** 2
+
     #sampler.sampler(zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,0,fname)
     #Create a pool for this number of samplers and submit the jobs
     Hsamps = np.zeros([NSamplers,Np,Nsamp])
@@ -199,12 +209,8 @@ if __name__ == "__main__":
     while cont and num_repeats < max_repeats:
         with cf.ProcessPoolExecutor(max_workers=NSamplers) as executor:
             for i in xrange(NSamplers):
-                # tmpstr = 'sampler' + str(i)
-                # SamplerDICT[tmpstr] =
-                future = executor.submit(sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname,beta)
+                future = executor.submit(sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname,beta,HzF,rhozF,Lam)
                 futures.append(future)
-                # cf.as_completed(SamplerDICT[tmpstr])
-                #cf.as_completed(executor.submit(sampler.sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname))
             k = 0
             for f in cf.as_completed(futures):
                 Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \

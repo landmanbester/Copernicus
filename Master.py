@@ -19,19 +19,20 @@ import sys
 import numpy as np
 from numpy.linalg import cholesky, solve, inv, slogdet, eigh
 from numpy.random import randn, random, seed
-from scipy.integrate import odeint,quad
+from scipy.integrate import odeint,quad,cumtrapz
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 from Copernicus.fortran_mods import CIVP
+from genFLRW import FLRW
 
 global kappa
 kappa = 8.0*np.pi
 
 class GP(object):
-    def __init__(self, x, y, sy, xp, THETA, beta):
+    def __init__(self, x, y, sy, xp, THETA, beta, prior_mean=None):
         """
         This is a simple Gaussian process class. It just trains the GP on the data
         Input:  x = independent variable of data point
@@ -46,6 +47,7 @@ class GP(object):
         seed()
         #Compute quantities that are used often
         self.beta = beta
+        self.ym = prior_mean
         self.N = x.size
         self.Nlog2pi = self.N*np.log(2.0*np.pi)
         self.Np = xp.size
@@ -56,7 +58,10 @@ class GP(object):
         self.XX = self.abs_diff(x, x)
         self.XXp = self.abs_diff(x, xp)
         self.XXpp = self.abs_diff(xp, xp)
-        self.ydat = y 
+        if self.ym is None:
+            self.ydat = y
+        else:
+            self.ydat = y - self.ym(x)
         self.SIGMA = np.diag(sy**2) #Set data covariance matrix
 
         # Train the GP
@@ -71,7 +76,10 @@ class GP(object):
         self.Kp = self.cov_func(self.THETA, self.XXp)
         self.LinvKp = np.dot(self.Linv, self.Kp)
         self.Kpp = self.cov_func(self.THETA, self.XXpp)
-        self.fmean = np.dot(self.LinvKp.T, self.Linvy)
+        if self.ym is None:
+            self.fmean = np.dot(self.LinvKp.T, self.Linvy)
+        else:
+            self.fmean = self.ym(xp) + np.dot(self.LinvKp.T, self.Linvy)
         self.fcov = self.Kpp - np.dot(self.LinvKp.T, self.LinvKp)
         self.W, self.V = eigh(self.fcov)
         #print any(self.W < 0.0)
@@ -208,7 +216,7 @@ class GP(object):
         return -0.5*np.dot(Linvy.T, Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None):
+    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None, setLamPrior=True):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -219,6 +227,7 @@ class SSU(object):
                 Xrho = The optimised hyperparameter values for GP_rho
                 sigmaLam = The variance of the prior over Lambda
         """
+        #print "Starting"
         #Re-seed the random number generator
         seed()
         # Load the data
@@ -249,48 +258,70 @@ class SSU(object):
         if beta is not None:
             self.beta = beta
         else:
-            self.beta = 0.01
+            self.beta = 0.1
 
         # Create GP objects
         #print "Fitting H GP"
-        self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta)
+        if Hz is None:
+            self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta)
+        else:
+            Hzo = uvs(self.z,Hz,k=3,s=0.0)
+            self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta, prior_mean=Hzo)
         self.XH = self.GPH.THETA
+        #print "Hz theta = ", self.XH
         self.Hm = self.GPH.fmean
         # plt.figure('H')
         # plt.plot(self.z,self.Hm)
-        # plt.errorbar(self.my_z_prior["SimH"],self.my_F_prior["SimH"],self.my_sF_prior["SimH"],fmt='xr')
-        # plt.show()
+        # plt.errorbar(self.my_z_prior["H"],self.my_F_prior["H"],self.my_sF_prior["H"],fmt='xr')
+        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/Hwithmean.png', dpi=200)
 
         #print "Fitting rho GP"
-        self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z,Xrho, self.beta)
+        if rhoz is None:
+            self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z,Xrho, self.beta)
+        else:
+            rhozo = uvs(self.z, rhoz, k=3, s=0.0)
+            self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z, Xrho,
+                            self.beta, prior_mean=rhozo)
         self.Xrho = self.GPrho.THETA
+        #print "rhoz theta =", self.Xrho
         self.rhom = self.GPrho.fmean
         # plt.figure('rho')
         # plt.plot(self.z,self.rhom)
-        # plt.errorbar(self.my_z_prior["Simrho"],self.my_F_prior["Simrho"],self.my_sF_prior["Simrho"],fmt='xr')
-        # plt.show()
+        # plt.errorbar(self.my_z_prior["rho"],self.my_F_prior["rho"],self.my_sF_prior["rho"],fmt='xr')
+        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/rhowithmean.png', dpi=200)
 
-        # Set Lambda mean and variance (Here we use the background model)
-        self.Lam = 0.0 #3*0.7*(70.0/299.79)**2
-        self.sigmaLam = sigmaLam
+        # Jointly optimise H and rho hypers
 
         # Now we do the initialisation starting with the background vals
-        if Lam is None:
-            Lam = 3*0.7*(70.0/299.79)**2
-        if Hz is None:
-            Hz = self.Hm
-        if rhoz is None:
-            rhoz = self.rhom
-            while any(rhoz<0.0):
-                rhoz = self.GPrho.sample(rhoz)
+        #print "Setting starting samps"
+        self.Hz = self.GPH.sample(self.Hm)
+        self.rhoz = self.GPrho.sample(self.rhom)
+        while any(self.rhoz<0.0):
+            self.rhoz = self.GPrho.sample(self.rhom)
+
+        # Set Lambda prior
+        #print "Setting Lambda prior"
+        if setLamPrior:
+            self.set_Lambda_Prior(self.Hz, self.rhoz)
+        else:
+            if Lam is None:
+                self.Lamm = 3 * 0.7 * self.Hz[0] ** 2
+            else:
+                self.Lamm = Lam
+            self.sigmaLam = 0.0004
+
+        self.Lam = np.abs(self.Lamm + self.sigmaLam*np.random.randn(1))
+
         #Set up spatial grid
-        v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lam)
+        #print "Setting spatial grid"
+        v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(self.Hz, self.rhoz, self.Lam)
         self.NI = NI
         self.NJ = NJ
         self.v = v
         
         # Set up time grid
-        w,delw = self.age_grid(NI, NJ, delv, t0)
+        #print "Setting temporal grid"
+        w, delw = self.age_grid(NI, NJ, delv, t0)
 
         # Get soln on C
         #rhoow, upow, uppow = self.get_C_sol(Om0, Ok0, OL0, Hz[0])
@@ -298,18 +329,70 @@ class SSU(object):
         #self.uppow=uppow
 
         #Do the first CIVP0 integration
-        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(ui, rhoi, Lam, v, delv, w, delw)
+        #print "Integrating"
+        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
         
         # Get the likelihood of the first sample Hz,D,rho,u,vzo,t0,NJ,udot,up
-        self.logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
+        #print "Getting likelihood"
+        self.logLik = self.get_Chi2(Hz=self.Hz, D=D, rhoz=self.rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
 
         Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:, 0], A=A[:, 0], u=u[:, 0], udot=udot[:, 0], up=up[:, 0])
 
         # Accept the first step regardless (this performs the main integration and transform)
+        #print "Accepting"
         self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
                     rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2,
                     vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
 
+
+    def set_Lambda_Prior(self,Hz,rhoz):
+        # Create Lambda grid
+        Ngrid = 50
+        Lamgrid = np.linspace(0, 0.225, Ngrid)
+        LikSamps = np.zeros(Ngrid)
+        #print "Setting Lambda prior"
+        for i in xrange(Ngrid):
+            v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lamgrid[i])
+            w, delw = self.age_grid(NI, NJ, delv, t0)
+            if NI < 5:
+                print "Passing"
+                pass
+            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = \
+                self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
+            LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
+            #print i, Lamgrid[i], LikSamps[i]
+
+        # Normalise for numerical stability
+        LikSamps /= LikSamps.min()
+
+        # convert loglik to lik
+        LikSamps = np.exp(-LikSamps)
+
+        # # Plot
+        # plt.figure('LamLik')
+        # plt.plot(Lamgrid,LikSamps)
+        # plt.xlabel(r'$\Lambda$', fontsize=18)
+        # plt.ylabel(r'Lik', fontsize= 18)
+        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTB_lik.png', dpi=200)
+
+        # set mean and variance of prior
+        I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
+        self.Lamm = Lamgrid[I]
+        I = np.argwhere(LikSamps >= LikSamps.max()/2.0).squeeze()
+        #Lamtmp = np.sort(Lamgrid[I],axis=0)
+        cdf = cumtrapz(LikSamps, Lamgrid, initial=0.0)
+        cdf /= cdf.max()
+        # Plot
+        # plt.figure('CDF')
+        # plt.plot(Lamgrid, cdf)
+        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTB_cdf.png', dpi=200)
+        Id = np.argwhere(cdf <= 0.16)[-1]  # lower 1sig
+        Lamd = Lamgrid[Id]
+        Iu = np.argwhere(cdf <= 0.84)[-1]  # upper 1sig
+        Lamu = Lamgrid[Iu]
+        self.sigmaLam = 0.012*np.abs(Lamu - Lamd)
+        print self.Lamm, self.sigmaLam
+        return
 
     def reset_beta(self,beta):
         self.beta = beta
@@ -320,7 +403,9 @@ class SSU(object):
     def MCMCstep(self, logLik0, Hz0, rhoz0, Lam0):
         #Propose sample
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
+        #print Lam, Lam0
         if F == 1:
+            print "Negative sample"
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
             #Set up spatial grid
@@ -331,6 +416,7 @@ class SSU(object):
             D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(u, rho, Lam, v, delv, w, delw)
             #Get likelihood
             logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
+            #print "logLik proposed = ", logLik
             logr = logLik - logLik0
             accprob = np.exp(-logr/2.0)
             #Accept reject step
@@ -369,8 +455,9 @@ class SSU(object):
     def gen_sample(self, Hzi, rhozi, Lami):
         Hz = self.GPH.sample(Hzi)
         rhoz = self.GPrho.sample(rhozi)
-        Lam0 = self.Lam - Lami
-        Lam = np.abs(self.Lam + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*np.random.randn(1))
+        # Lam0 = self.Lamm - Lami
+        # Lam = self.Lamm + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*np.random.randn(1)
+        Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
             #print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
@@ -612,6 +699,20 @@ class SSU(object):
         Dz = uvs(vz, D, k=3, s=0.0)(vzo(self.z))
         return Dz, dzdwz
 
+    def track_max_lik(self, logLik, Hz, rhoz, Lam):
+        """
+        A function to keep track of the max lik samples during the burnin period
+        """
+        if logLik < self.logLik:
+            self.logLik = logLik
+            self.Hz = Hz
+            self.GPH.fmean = Hz
+            self.rhoz = rhoz
+            self.GPrho.fmean = rhoz
+            self.Lamm = Lam
+            print "Max lik tracked"
+        return
+
     def get_funcs(self):
         """
         Return quantities of interest
@@ -635,7 +736,7 @@ class SSU(object):
 
         #self.Kiraw = Ki
         try:
-            T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.0)
+            T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.000001)
             T2i = T2io(l)
         except:
             T2i = 0.0
@@ -643,7 +744,7 @@ class SSU(object):
         #T2f = self.curve_test(umax,self.NJ)
         #self.Kfraw = Kf
         try:
-            T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0)
+            T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.00001)
             T2f = T2fo(l)
         except:
             T2f = 0.0
@@ -651,14 +752,14 @@ class SSU(object):
         #shear test
         #T1i = self.shear_test(0,self.NJ)
         try:
-            T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.0)
+            T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.000001)
             T1i = T1io(l)
         except:
             T1i = 0.0
             print "Failed at T1i"
         #T1f = self.shear_test(umax,self.NJ)
         try:
-            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.0)
+            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.00001)
             T1f = T1fo(l)
         except:
             T1f = 0.0
@@ -845,147 +946,128 @@ class SSU(object):
                Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, self.Dz, self.dzdwz
         
 if __name__ == "__main__":
-    #Set sparams
+    #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
     zmax = 2.0
-    Np = 250
-    zp = np.linspace(0,zmax,Np)
-    Xrho = np.array([0.1,1.5])
-    XH = np.array([0.6,3.5])
-    tmin = 3.0
+    tmin = 3.25
+    Np = 1000
     err = 1e-5
-    Nret = 100
+    XH = np.array([0.6, 3.5])
+    Xrho = np.array([0.1,1.5])
+    sigmaLam = 0.05
+    Nret = 300
+    data_prior = "[H,rho]"
+    data_lik = "[D,H,dzdw]"
+    fname = "/home/landman/Projects/CP_LCDM/"
 
-    #set characteristic variance of proposal distributions
-    sigmaLam = 0.00555
-    
-    zp = np.linspace(0,zmax,Np)
-    U = SSU(zmax,tmin,Np,err,XH,Xrho,sigmaLam,Nret)
+    print "Getting LCDM vals"
+    # Get FLRW funcs for comparison
+    Om0 = 0.3
+    OL0 = 0.7
+    H0 = 0.2335
+    LCDM = FLRW(Om0, OL0, H0, zmax, Np)
+    HzF = LCDM.Hz
+    rhozF = LCDM.getrho()
+    Lam = 3 * OL0 * H0 ** 2
+    z = LCDM.z
 
-    D = U.D
-    S = U.S
-    Q = U.Q
-    A = U.A
-    Z = U.Z
-    #Zi = U.Z0
-    rho = U.rho
-    rhop = U.rhop
-    rhod = U.rhod
-    u = U.u
-    up = U.up
-    upp = U.upp
-    uppow = U.uppow
-    ud = U.ud
-    Ki = U.curve_test(0,U.NJ)
-    Kf = U.curve_test(U.NI-1,U.NJ)
-    sheari = U.shear_test(0,U.NJ)
-    shearf = U.shear_test(U.NI-1,U.NJ)
-    drdv = U.drdv
-    drdvp = U.drdvp
-    X = U.X
-    dXdr = U.dXdr
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
+    logLik = U.logLik
+    Hz = U.Hz
+    rhoz = U.rhoz
+    Lam = U.Lam
 
-    #Dsamps,musamps,dzdwsamps,T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf,rhostar,Dstar,Xstar,Hperpstar,rmax,Omsamps,OLsamps,t0samps = U.get_funcs(0)
-#    D2 = U.D2
-#    S2 = U.S2
-#    Q2 = U.Q2
-#    A2 = U.A2
-#    Z2 = U.Z2
-#    #Zi = U.Z0
-#    rho2 = U.rho2
-#    rhop2 = U.rhop2
-#    rhod2 = U.rhod2
-#    u2 = U.u2
-#    up2 = U.up2
-#    upp2 = U.upp2
-#    uppow2 = U.uppow
-#    ud2 = U.ud2
-#    LLTBCon = U.LLTBCon
-#    Xstar = U.Xstar
-#    Dstar = U.Dstar
-#    rhostar = U.rhostar
-    LLTBCon = U.LLTBCon
-    LLTBCon2 = U.LLTBCon2
-    Aw = U.Aw
-    Aw2 = U.Aw2
-    Dww = U.Dww
-    Dww2 = U.Dww2
-    App = U.App
+    accrate = np.zeros(2)
 
-#    vmax = U.vmax
-    vmaxi = U.vmaxi
-#    jmax = vmaxi[-1]
-#    
-    NI = U.NI
-    v = U.v
-#    tv = U.tv
-#    rv = U.rv
-#    
-#    D2 = U.D2
-#    S2 = U.S2
-#    Q2 = U.Q2
-#    A2 = U.A2
-#    W2 = U.W2
-#    Wp = (W2[0,2::] - W2[0,0:-1])/(2*U.delv)
-#    Z2 = Wp/D2[1:-1] - W2[1:-1]*S2[1:-1]/D2[1:-1]**2
-#    rho2 = U.rho2
-#    rhop2 = U.rhop2
-#    rhod2 = U.rhod2
-#    u2 = U.u2
-#    up2 = U.up2
-#    upp2 = U.upp2
-#    ud2 = U.ud2
-#
-#    D3 = U.Dfort
-#    S3 = U.Sfort
-#    Q3 = U.Qfort
-#    A3 = U.Afort
-#    Z3 = U.Zfort
-#    
-#    rho3 = U.rhofort
-#    rhop3 = U.rhopfort
-#    rhod3 = U.rhodfort
-#    u3 = U.ufort
-#    up3 = U.upfort
-#    upp3 = U.uppfort
-#    ud3 = U.udfort 
-#    
-#    drdv = U.drdv
-#    drdvp = U.drdvp
-#    X = U.Xfort
-#    Xr = U.Xrfort
-#    t = U.tfort
-#    r = U.rfort
-    
-    n = NI-1
-    njf = vmaxi[n]
-    
-    plt.figure('LLTBConi')
-    plt.plot(v[0:njf],LLTBCon[0:njf,0])
-    plt.plot(v[0:-1],LLTBCon2[0:-1,0])
-    
-    plt.figure('LLTBConf')
-    plt.plot(v[0:njf],LLTBCon[0:njf,-10])
-    plt.plot(v[0:njf],LLTBCon2[0:njf,-10])
+    # Do the burnin period
+    Nburn = 500
+    Hsamps = np.zeros([Np,Nburn])
+    rhosamps = np.zeros([Np, Nburn])
+    Lamsamps = np.zeros([Nburn])
+    Hpsamps = np.zeros([Np,Nburn])
+    rhopsamps = np.zeros([Np, Nburn])
+    Lampsamps = np.zeros([Nburn])
 
-##    plt.figure('Dww')
-##    plt.plot(v[0:njf],Dww[0:njf,-5])
-##
-##    plt.figure('Aw')
-##    plt.plot(v[0:njf],Aw[0:njf,-5])
-#
-    plt.figure('sheari')        
-    plt.plot(v,sheari,'b')
-    #plt.plot(v,U.sheari2,'g')
+    print "Sampling prior"
+    for i in range(Nburn):
+        Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
+        Hpsamps[:,i] = Hz
+        rhopsamps[:,i] = rhoz
+        Lampsamps[i] = Lam
 
-    plt.figure('shearf')
-    plt.plot(v[0:njf],shearf[0:njf])
-    
-    plt.figure('Ki')        
-    plt.plot(v,Ki,'b')
-    #plt.plot(v,U.Ki2,'g')
+    print "Sampling"
+    for i in range(Nburn):
+        print "logLik = ", logLik
+        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+        U.track_max_lik(logLik, Hz, rhoz, Lam)
+        Hsamps[:,i] = Hz
+        rhosamps[:,i] = rhoz
+        Lamsamps[i] = Lam
+        accrate += np.array([a, 1])
 
-    plt.figure('Kf')
-    plt.plot(v[0:njf],Kf[0:njf])
+    print "Accrate =", accrate[0]/accrate[1]
+
+    print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
+
+    plt.figure('Hp')
+    plt.plot(z,Hpsamps,'b',alpha=0.2)
+    plt.figure('rhop')
+    plt.plot(z,rhopsamps,'b',alpha=0.2)
+    plt.figure('Lamp')
+    plt.hist(Lampsamps)
+
+    plt.figure('H')
+    plt.plot(z,Hsamps,'b',alpha=0.2)
+    plt.figure('rho')
+    plt.plot(z,rhosamps,'b',alpha=0.2)
+    plt.figure('Lam')
+    plt.hist(Lamsamps)
+
+    plt.show()
+    # l = np.linspace(0,1,Nret)
+    # T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, \
+    # Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, Dzsamps, dzdwzsamps = U.get_funcs()
+    #
+    # plt.figure('LLTBCon')
+    # plt.plot(l, LLTBConsi, 'b')
+    # plt.plot(l, LLTBConsf, 'g')
+    # plt.show()
+    #
+    # plt.figure('T1')
+    # plt.plot(l, T1i, 'b')
+    # plt.plot(l, T1f, 'g')
+    # plt.show()
+    #
+    # plt.figure('T2')
+    # plt.plot(l, T2i, 'b')
+    # plt.plot(l, T2f, 'g')
+    # plt.show()
+    #
+    # logLik = U.logLik
+    # Hz = HzF
+    # rhoz = rhozF
+    #
+    # print "logLik = ", logLik
+    #
+    # Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+    #
+    # print "logLik = ", logLik
+    #
+    #
+    # plt.figure('Hz')
+    # plt.plot(z, HzF, 'b')
+    # plt.plot(z, Hz, 'g')
+    # plt.show()
+    #
+    # plt.figure('rhoz')
+    # plt.plot(z, rhozF, 'b')
+    # plt.plot(z, rhoz, 'g')
+    # plt.show()
+
+    # plt.figure('T2')
+    # plt.plot(l, T2i, 'b')
+    # plt.plot(l, T2f, 'g')
+    # plt.show()
+
 #
 #    plt.figure('u')
 ##    plt.plot(v[0:njf],u[n,0:njf],'b')
@@ -1074,96 +1156,3 @@ if __name__ == "__main__":
 #
 #    plt.figure('Xr')
 #    plt.plot(v[0:njf],dXdr[0:njf,n])
-
-#    dzdw = U.get_dzdw()
-#    
-#    plt.plot(dzdw)
-#    
-#    U2 = SSU2(Lam,HzF,rhoF,zmax,NJ)
-#    #Get D
-#    D2,F2 = U2.get_D(U2.Hmax,U2.rhomax,U2.z)
-#    
-#    #set up the three different spatial grids
-#    nu2,H2,rho2,u12,NI2,delnu2 = U2.affine_grid(U2.z,U2.Hmax,U2.rhomax)
-#    
-#    #set the three time grids
-#    u2, delu2 = U2.age_grid(NI2,NJ,delnu2)
-#    
-#    #Initialise storage arrays
-#    U2.init_storage(NI2,NJ)
-#    
-#    #Do integration
-#    U2.integrate(NJ,NI2,delu2,delnu2,nu2,u2,D2,u12,rho2,Lam)
-#    
-#    D2 = U2.r
-#    S2 = U2.S
-#    Q2 = U2.RR
-#    A2 = U2.A
-#    Z2 = U2.Anu
-#    
-#    rho2 = U2.rhof
-#    
-
-#    U.transform()
-#    
-#    NJ = U.NJ
-#    NI = U.NI
-#    
-#    X = U.X
-#    dXdr = U.dXdr
-#    d = U.d
-#    ljmax = U.ljmax
-#    Hr = U.Hr
-#    
-#    for i in range(NI):
-#        jmax = int(ljmax[i])
-#        plt.plot(Hr[i,0:jmax])
-#        
-#    Ftr = U.get_tvrv()
-#    Fts = U.get_tslice()
-#    
-#    zfmax, Ki, Kf,sheari,shearf,t0,rhostar,Dstar,Xstar,rmax,vmax = U.get_funcs()
-#    
-#    d2D = U.dDk
-#    d2D = U.d2Dk
-#    dD = U.dDk
-#    D = U.Dk
-#    H = U.Hk
-#    dH = U.dHk
-#    Kir = U.Kiraw
-#    Kfr = U.Kfraw
-#    z = U.zk
-#    
-#    plt.figure('D')
-#    plt.plot(D)
-#    plt.figure('dD')
-#    plt.plot(dD)
-#    plt.figure('d2D')
-#    plt.plot(d2D)
-#    plt.figure('H')
-#    plt.plot(H)
-#    plt.figure('dH')
-#    plt.plot(dH)
-#    plt.figure('z')
-#    plt.plot(z)
-#    plt.figure('Ki')
-#    plt.plot(Kir)
-#    plt.figure('Kf')
-#    plt.plot(Kfr)
-
-
-#    plt.figure(1)
-#    t1 = time.time()
-#    for i in xrange(100):
-#        plt.plot(zp,KH.sample(Hm))
-#    print time.time() - t1
-#    plt.figure(2)
-#    t1 = time.time()
-#    for i in xrange(100):
-#        plt.plot(zp,KH.simp_sample())
-#    print time.time() - t1    
-
-#    zH,Hz,sHz = np.loadtxt('C:\Users\BMAX\Documents\Algorithm\RawData\SimH.txt',unpack=True)
-#    KH = GP(zH,Hz,sHz,zp,XH)
-#    Hm = KH.fmean
-#    fcov = KH.fcov

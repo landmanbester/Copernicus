@@ -172,7 +172,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
 
     # Do integration of FLRW funcs
     zp = np.linspace(0, zmax, Np)
-    zp2 = np.linspace(0, zmax, 200)
+    #zp2 = np.linspace(0, zmax, 200)
     LamF = 3 * 0.7 * 0.2335 ** 2
     Xrho = np.array([0.5,2.8])
     XH = np.array([0.6,3.5])
@@ -180,7 +180,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
 
     # Do LCDM integration
-    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=LamF)
+    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=LamF, setLamPrior=False)
 
     # Get quantities of interrest
     T1iF, T1fF, T2iF, T2fF, LLTBConsiF, LLTBConsfF, DiF, DfF, SiF, \
@@ -189,12 +189,26 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF = UF.get_funcs()
 
     # Do LTB integration
+    print "Getting LTB vals"
     LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
     HzLT = LTB_z_funcs['Hz']
     rhozLT = LTB_z_funcs['rhoz']
-    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzLT, rhoz=rhozLT, Lam=0.0)
+    zLT = LTB_z_funcs['z']
+    HzLT = uvs(zLT,HzLT,k=3,s=0.0)(zp)
+    rhozLT = uvs(zLT, rhozLT, k=3, s=0.0)(zp)
+    # plt.figure('Hz')
+    # plt.plot(zp,HzLT,'b')
+    # plt.plot(zp,HzF,'g')
+    # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTBvLCDM_Hz.png',dpi=200)
+    # plt.figure('rhoz')
+    # plt.plot(zp,rhozLT,'b')
+    # plt.plot(zp,rhozF,'g')
+    # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTBvLCDM_rhoz.png', dpi=200)
+    fnameLT = '/home/landman/Projects/CP_LTB/'
+    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fnameLT, Hz=HzLT, rhoz=rhozLT, Lam=0.0, setLamPrior=False)
 
     # Get quantities of interrest
+    print "Getting quantities of interest"
     T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \
     SfLT, QiLT, QfLT, AiLT, AfLT, ZiLT, ZfLT, SpiLT, SpfLT, QpiLT, QpfLT, \
     ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
@@ -355,33 +369,23 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     T2iplh.draw_Contours(l)
     T2iplh.add_plot(l, T2iF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T2iplh.add_plot(l, T2iLT, col='k', lab=r'$LTB$', wid=1.5)
-    #    Kiplh.add_plot(l,KiConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    #    Kiplh.add_plot(l,KiLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    #    T2iplh.show_lab(2)
 
     # Plot Kf(z) reconstruction and comparison
     T2fplh.draw_Contours(l)
     T2fplh.add_plot(l, T2fF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T2fplh.add_plot(l, T2fLT, col='k', lab=r'$LTB$', wid=1.5)
-    # T2fplh.add_plot(l,KfConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    # T2fplh.add_plot(l,KfLTB,col='m',lab=r'$LTB2$',wid=1.5)
     T2fplh.show_lab(2)
 
     # Plot sheari(z) reconstruction and comparison
     T1iplh.draw_Contours(l)
     T1iplh.add_plot(l, T1iF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T1iplh.add_plot(l, T1iLT, col='k', lab=r'$LTB$', wid=1.5)
-    #    T1iplh.add_plot(l,T1iConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    #    T1iplh.add_plot(l,T1iLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    #    T1iplh.show_lab(3)
 
     # Plot T1f(z) reconstruction and comparison
     T1fplh.draw_Contours(l)
     T1fplh.add_plot(l, T1fF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T1fplh.add_plot(l, T1fLT, col='k', lab=r'$LTB$', wid=1.5)
-    #    T1fplh.add_plot(l,T1fConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    #    T1fplh.add_plot(l,T1fLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    # T1fplh.show_lab(2)
+
 
     # # Plot rhostar reconstruction and comparison
     # rhosplh.draw_Contours(l, scale=153.66)
