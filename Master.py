@@ -273,7 +273,7 @@ class SSU(object):
         # plt.figure('H')
         # plt.plot(self.z,self.Hm)
         # plt.errorbar(self.my_z_prior["H"],self.my_F_prior["H"],self.my_sF_prior["H"],fmt='xr')
-        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/Hwithmean.png', dpi=200)
+        # plt.savefig(self.fname + 'Figures/rhowithmean.png', dpi=200)
 
         #print "Fitting rho GP"
         if rhoz is None:
@@ -288,7 +288,7 @@ class SSU(object):
         # plt.figure('rho')
         # plt.plot(self.z,self.rhom)
         # plt.errorbar(self.my_z_prior["rho"],self.my_F_prior["rho"],self.my_sF_prior["rho"],fmt='xr')
-        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/rhowithmean.png', dpi=200)
+        # plt.savefig(self.fname + 'Figures/rhowithmean.png', dpi=200)
 
         # Jointly optimise H and rho hypers
 
@@ -296,21 +296,31 @@ class SSU(object):
         #print "Setting starting samps"
         self.Hz = self.GPH.sample(self.Hm)
         self.rhoz = self.GPrho.sample(self.rhom)
-        while any(self.rhoz<0.0):
+        while any(self.rhoz < 0.0):
             self.rhoz = self.GPrho.sample(self.rhom)
 
-        # Set Lambda prior
+        # Set Lambda prior (note if neither dzdw or t0 data is given we use a flat prior)
         #print "Setting Lambda prior"
-        if setLamPrior:
-            self.set_Lambda_Prior(self.Hz, self.rhoz)
-        else:
-            if Lam is None:
-                self.Lamm = 3 * 0.7 * self.Hz[0] ** 2
+        if 'dzdw' in self.data_lik or 't0' in self.data_lik:
+            if setLamPrior:
+                self.set_Lambda_Prior(self.Hz, self.rhoz)
             else:
-                self.Lamm = Lam
-            self.sigmaLam = 0.0004
+                if Lam is None:
+                    self.Lamm = 3 * 0.7 * self.Hz[0] ** 2
+                else:
+                    self.Lamm = Lam
+                sigmaLam = 0.0004
+                self.sigmaLam = sigmaLam
+                self.sample_lambda = lambda *args: args[0] + beta*sigmaLam*np.random.randn(1)
+        else:
+            # print "Got here"
+            self.LambdaMode = 'Flat'
+            self.Lamm = 0.11 # In this case we use a flat prior and the value of Lamm is irrelevant
+            self.sigmaLam = 0.00025
+            self.sample_lambda = lambda *args: 0.025 + 0.175*np.random.random(1)
 
-        self.Lam = np.abs(self.Lamm + self.sigmaLam*np.random.randn(1))
+        # Draw initial sample of Lam (note abs is here to make sure it is positive)
+        self.Lam = np.abs(self.sample_lambda(self.Lamm))
 
         #Set up spatial grid
         #print "Setting spatial grid"
@@ -344,10 +354,12 @@ class SSU(object):
                     rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2,
                     vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
 
+        self.track_max_lik(self.logLik, self.Hz, self.rhoz, self.Lam)
+
 
     def set_Lambda_Prior(self,Hz,rhoz):
         # Create Lambda grid
-        Ngrid = 50
+        Ngrid = 15
         Lamgrid = np.linspace(0, 0.225, Ngrid)
         LikSamps = np.zeros(Ngrid)
         #print "Setting Lambda prior"
@@ -368,17 +380,16 @@ class SSU(object):
         # convert loglik to lik
         LikSamps = np.exp(-LikSamps)
 
-        # # Plot
-        # plt.figure('LamLik')
-        # plt.plot(Lamgrid,LikSamps)
-        # plt.xlabel(r'$\Lambda$', fontsize=18)
-        # plt.ylabel(r'Lik', fontsize= 18)
-        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTB_lik.png', dpi=200)
+        # Plot
+        plt.figure('LamLik')
+        plt.plot(Lamgrid,LikSamps)
+        plt.xlabel(r'$\Lambda$', fontsize=18)
+        plt.ylabel(r'Lik', fontsize= 18)
+        plt.savefig('/home/landman/Projects/CP_LCDM_DHrho/Figures/LTB_lik.png', dpi=200)
 
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
         self.Lamm = Lamgrid[I]
-        I = np.argwhere(LikSamps >= LikSamps.max()/2.0).squeeze()
         #Lamtmp = np.sort(Lamgrid[I],axis=0)
         cdf = cumtrapz(LikSamps, Lamgrid, initial=0.0)
         cdf /= cdf.max()
@@ -390,36 +401,50 @@ class SSU(object):
         Lamd = Lamgrid[Id]
         Iu = np.argwhere(cdf <= 0.84)[-1]  # upper 1sig
         Lamu = Lamgrid[Iu]
-        self.sigmaLam = 0.012*np.abs(Lamu - Lamd)
-        print self.Lamm, self.sigmaLam
+        sigmaLam = 0.012*np.abs(Lamu - Lamd)
+        self.sigmaLam = sigmaLam
+        self.sample_lambda = lambda *args: args[0] + sigmaLam * np.random.randn(1)
+        #print self.Lamm, self.sigmaLam
         return
 
-    def reset_beta(self,beta):
+    def reset_beta(self, beta):
+        """
+        This function can be used to monitor and adjust the acceptance rate of the MCMC
+        """
         self.beta = beta
         self.GPH.beta = beta
         self.GPrho.beta = beta
+        if self.LambdaMode != 'Flat': # We only reset Lambda prior if we are not using a flat prior
+            self.sample_lambda = lambda *args: args[0] + beta*self.sigmaLam.copy()*np.random.randn(1)
+        else:
+            pass
         return
 
     def MCMCstep(self, logLik0, Hz0, rhoz0, Lam0):
-        #Propose sample
+        """
+        Here we perform one MCMC step.
+            Input = values of logLik, Hz, rhoz, and Lam on previous step
+            Output = values of logLik, Hz, rhoz, and Lam determined by MCMC
+        """
+        # Propose sample
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
         #print Lam, Lam0
         if F == 1:
             print "Negative sample"
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
-            #Set up spatial grid
+            # Set up spatial grid
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lam)
-            #Set temporal grid
+            # Set temporal grid
             w, delw = self.age_grid(NI, NJ, delv, t0)
-            #Do integration on initial PLC
+            # Do integration on initial PLC
             D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(u, rho, Lam, v, delv, w, delw)
-            #Get likelihood
+            # Get likelihood
             logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
-            #print "logLik proposed = ", logLik
+            # print "logLik proposed = ", logLik
             logr = logLik - logLik0
             accprob = np.exp(-logr/2.0)
-            #Accept reject step
+            # Accept reject step
             tmp = random(1)
             if tmp > accprob:
                 #Reject sample
@@ -430,7 +455,7 @@ class SSU(object):
                 self.accept(Dz=Dz, dzdwz=dzdwz, D = D, S = S, Q = Q, A = A, Z = Z, rho = rho, u = u, up = up, upp = upp, udot = udot,
                                 rhodot = rhodot, rhop = rhop, Sp = Sp, Qp = Qp, Zp = Zp, LLTBCon = LLTBCon, T1 = T1,
                                 T2 = T2, vmaxi=vmaxi, v = v, w0 = w[:,0], NJ=NJ, NI=NI)
-                return Hz,rhoz,Lam,logLik,F,1  #If F returns one we can't use solution inside PLC
+                return Hz, rhoz, Lam, logLik, F, 1  # If F returns one we can't use solution inside PLC
 
     def load_Dat(self):
         """
@@ -455,9 +480,8 @@ class SSU(object):
     def gen_sample(self, Hzi, rhozi, Lami):
         Hz = self.GPH.sample(Hzi)
         rhoz = self.GPrho.sample(rhozi)
-        # Lam0 = self.Lamm - Lami
-        # Lam = self.Lamm + np.sqrt(1 - self.beta**2)*Lam0 + self.beta*self.sigmaLam*np.random.randn(1)
-        Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
+        Lam = self.sample_lambda(Lami)
+        #Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
             #print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
@@ -593,7 +617,7 @@ class SSU(object):
         TODO: write the Fortran code to compute t(v) and r(v) and also find a current time slice t = tmin
         """
         NI, NJ = w.shape
-        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2 = CIVP.solve(v,delv,w,delw,u,rho,Lam,NI,NJ)
+        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2 = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
         #self.vmaxi = vmaxi
         return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi
 
@@ -710,7 +734,7 @@ class SSU(object):
             self.rhoz = rhoz
             self.GPrho.fmean = rhoz
             self.Lamm = Lam
-            print "Max lik tracked"
+            #print "Max lik tracked"
         return
 
     def get_funcs(self):
@@ -729,6 +753,9 @@ class SSU(object):
         #Here we do the shear and curvature tests on two pncs
         umax = int(self.Istar)
         njf = int(self.vmaxi[umax]) #This is the max value of index on final pnc considered
+
+        if njf == 2:
+            print "Hey man you fucker!!"
         
         #All functions will be returned with the domain normalised between 0 and 1
         l = np.linspace(0, 1, self.Nret)
@@ -949,15 +976,15 @@ if __name__ == "__main__":
     #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
     zmax = 2.0
     tmin = 3.25
-    Np = 1000
+    Np = 500
     err = 1e-5
     XH = np.array([0.6, 3.5])
     Xrho = np.array([0.1,1.5])
     sigmaLam = 0.05
     Nret = 300
     data_prior = "[H,rho]"
-    data_lik = "[D,H,dzdw]"
-    fname = "/home/landman/Projects/CP_LCDM/"
+    data_lik = "[D,H,rho]"
+    fname = "/home/landman/Projects/CP_LCDM_DHrho/"
 
     print "Getting LCDM vals"
     # Get FLRW funcs for comparison
@@ -979,7 +1006,7 @@ if __name__ == "__main__":
     accrate = np.zeros(2)
 
     # Do the burnin period
-    Nburn = 500
+    Nburn = 2000
     Hsamps = np.zeros([Np,Nburn])
     rhosamps = np.zeros([Np, Nburn])
     Lamsamps = np.zeros([Nburn])
@@ -987,12 +1014,12 @@ if __name__ == "__main__":
     rhopsamps = np.zeros([Np, Nburn])
     Lampsamps = np.zeros([Nburn])
 
-    print "Sampling prior"
-    for i in range(Nburn):
-        Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
-        Hpsamps[:,i] = Hz
-        rhopsamps[:,i] = rhoz
-        Lampsamps[i] = Lam
+    # print "Sampling prior"
+    # for i in range(Nburn):
+    #     Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
+    #     Hpsamps[:,i] = Hz
+    #     rhopsamps[:,i] = rhoz
+    #     Lampsamps[i] = Lam
 
     print "Sampling"
     for i in range(Nburn):

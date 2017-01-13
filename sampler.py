@@ -8,11 +8,24 @@ The 2nd Driver routine
 
 """
 
+import sys
+import traceback
 import time
 import numpy as np
 from Copernicus.Master import SSU
 
-def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam):
+def sampler(*args, **kwargs):
+    """
+    This here is to get the stack trace when an exception is thrown
+    """
+    try:
+        return sampler_impl(*args, **kwargs)
+    except BaseException as e:
+        traceback_str = traceback.format_exc(e)
+        raise StandardError("Error occurred. Original traceback "
+                            "is\n%s\n" % traceback_str)
+
+def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam):
     #Set sparams
     Xrho = np.array([0.8, 3.5])
     XH = np.array([0.6, 3.5])
@@ -87,19 +100,21 @@ def sampler(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform
     accrate = np.zeros(2)
     
     #Do the burnin period
+    print "Sampler ",j, "started burnin"
     t1 = time.time()
     for i in range(Nburn):
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
         U.track_max_lik(logLik,Hz,rhoz,Lam)
         accrate += np.array([a, 1])
 
-    print 'It took sampler'+str(j),(time.time() - t1)/60.0,'min to draw ',Nburn,' samples'
+    print 'It took sampler'+str(j),(time.time() - t1)/60.0,'min to draw ',Nburn,' samples with an accrate of ', accrate[0]/accrate[1]
     interval = Nsamp/10
     accrate = np.zeros(2)
     t1 = time.time()
     for i in range(Nsamp):
+        if i%Nburn == 0:
+            print "Sampler ",j," is at sample ",i
         if i%interval == 0 and i != 0:
-            print i
             #Check acceptance rate
             arate = accrate[0]/accrate[1]
             if arate < 0.2:
