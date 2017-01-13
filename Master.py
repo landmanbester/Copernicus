@@ -385,7 +385,7 @@ class SSU(object):
         plt.plot(Lamgrid,LikSamps)
         plt.xlabel(r'$\Lambda$', fontsize=18)
         plt.ylabel(r'Lik', fontsize= 18)
-        plt.savefig('/home/landman/Projects/CP_LCDM_DHrho/Figures/LTB_lik.png', dpi=200)
+        plt.savefig(self.fname + 'Figures/LTB_lik.png', dpi=200)
 
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
