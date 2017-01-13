@@ -298,11 +298,11 @@ subroutine correct(rho,rhod,u,ud,delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i)
 	
 end subroutine
 
-subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i)
+subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err)
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI,NJ,i
-	real*8, intent(in) :: delv,delw
+	real*8, intent(in) :: delv,delw,err
 	real*8, dimension(NJ), intent(in) :: v, A
 	real*8, dimension(NI), intent(inout) :: vmax
 	integer, dimension(NI), intent(inout) :: vmaxi
@@ -310,8 +310,8 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i)
 	integer :: j, counter, maxit, jmax
 	real*8 :: vp, vprev, tol, Ap
 
-	maxit = 1000
-	tol = 1e-6
+	maxit = 10000
+	tol = err
 	
 	!Initial guess
 	vp = vmax(i-1) - 0.5*A(vmaxi(i-1))*delw

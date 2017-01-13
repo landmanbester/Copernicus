@@ -22,11 +22,11 @@ end program
 !---------------------------------------------------------------
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
-        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,NI,NJ) !These are all outputs except NI and NJ which are optional
+        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,err,NI,NJ) !These are all outputs except NI and NJ which are optional
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
-	real*8, intent(in) :: Lam,delv,delw
+	real*8, intent(in) :: Lam,delv,delw,err
         real*8, dimension(NI), intent(in)  :: w
 	real*8, dimension(NJ), intent(in) :: v,ui,rhoi
 	real*8, dimension(NI), intent(out) :: vmax
@@ -115,7 +115,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 		call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 		
 		!Get the predicted characteristic cut off
-		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i)
+		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err)
 		jmax = vmaxi(i)
 
                 !Do iterative step (5 was chosen at random, most of the time there is not much improvement beyond 5 iterations)
