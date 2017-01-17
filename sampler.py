@@ -20,7 +20,7 @@ def sampler(*args, **kwargs):
     """
     try:
         return sampler_impl(*args, **kwargs)
-    except BaseException as e:
+    except Exception as e:
         traceback_str = traceback.format_exc(e)
         raise StandardError("Error occurred. Original traceback "
                             "is\n%s\n" % traceback_str)
@@ -86,6 +86,8 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     T2f = np.zeros([Nret,Nsamp])
     T1i = np.zeros([Nret,Nsamp])
     T1f = np.zeros([Nret,Nsamp])
+    sigmasqi = np.zeros([Nret,Nsamp])
+    sigmasqf = np.zeros([Nret,Nsamp])
     LLTBConsi = np.zeros([Nret,Nsamp])
     LLTBConsf = np.zeros([Nret,Nsamp])
     # rhostar = np.zeros([Nret,Nsamp])
@@ -134,7 +136,8 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
         T1i[:, i], T1f[:, i], T2i[:, i], T2f[:, i], LLTBConsi[:, i], LLTBConsf[:, i], Di[:, i], Df[:, i], Si[:, i], \
         Sf[:, i], Qi[:, i], Qf[:, i], Ai[:, i], Af[:, i], Zi[:, i], Zf[:, i], Spi[:, i], Spf[:, i], Qpi[:, i], Qpf[:, i], \
         Zpi[:, i], Zpf[:, i], ui[:, i], uf[:, i], upi[:, i], upf[:, i], uppi[:, i], uppf[:, i], udoti[:, i], udotf[:, i], \
-        rhoi[:, i], rhof[:, i], rhopi[:, i], rhopf[:, i], rhodoti[:, i], rhodotf[:, i], Dzsamps[:,i], dzdwzsamps[:,i] = U.get_funcs()
+        rhoi[:, i], rhof[:, i], rhopi[:, i], rhopf[:, i], rhodoti[:, i], rhodotf[:, i], Dzsamps[:,i], dzdwzsamps[:,i], \
+        sigmasqi[:, i], sigmasqf[:, i] = U.get_funcs()
         # print i
         # if F == 1:
         #     print "Flag raised"
@@ -143,7 +146,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
 
     return Hzsamps, rhozsamps, Lamsamps, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
            Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-           rhodoti, rhodotf, Dzsamps, dzdwzsamps
+           rhodoti, rhodotf, Dzsamps, dzdwzsamps, sigmasqi, sigmasqf
 
     #print fname + "Samps"+str(j)+".npz"
     #print Hsamps.shape, rhosamps.shape, Lamsamps.shape, T1i.shape, T1f.shape, T2i.shape, T2f.shape, LLTBConsi.shape, LLTBConsf.shape

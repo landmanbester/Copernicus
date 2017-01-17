@@ -158,6 +158,8 @@ if __name__ == "__main__":
     T1flist = []
     T2ilist = []
     T2flist = []
+    sigmasqilist = []
+    sigmasqflist = []
     LLTBConsilist = []
     LLTBConsflist = []
     Dilist = []
@@ -215,7 +217,7 @@ if __name__ == "__main__":
             for f in cf.as_completed(futures):
                 Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
                 Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-                rhodoti, rhodotf, Dz, dzdwz = f.result()
+                rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf = f.result()
 
                 Dzlist.append(Dz)
                 Hzlist.append(Hz)
@@ -226,6 +228,8 @@ if __name__ == "__main__":
                 T1flist.append(T1f)
                 T2ilist.append(T2i)
                 T2flist.append(T2f)
+                sigmasqilist.append(sigmasqi)
+                sigmasqflist.append(sigmasqf)
                 LLTBConsilist.append(LLTBConsi)
                 LLTBConsflist.append(LLTBConsf)
                 Dilist.append(Di)
@@ -281,7 +285,8 @@ if __name__ == "__main__":
              Qi=Qilist, Qf=Qflist, Ai=Ailist, Af=Aflist, Zi=Zilist, Zf=Zflist, Spi=Spilist, Spf=Spflist, Qpi=Qpilist,
              Qpf=Qpflist, Zpi=Zpilist, Zpf=Zpflist, ui=uilist, uf=uflist, upi=upilist, upf=upflist, uppi=uppilist,
              uppf=uppflist, udoti=udotilist, udotf=udotflist, rhoi=rhoilist, rhof=rhoflist, rhopi=rhopilist,
-             rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist)
+             rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist,
+             sigmasqi=sigmasqilist, sigmasqf=sigmasqflist)
 
     #print Hsamps.shape
     print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest

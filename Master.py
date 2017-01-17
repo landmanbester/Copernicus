@@ -324,7 +324,7 @@ class SSU(object):
 
         #Set up spatial grid
         #print "Setting spatial grid"
-        v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(self.Hz, self.rhoz, self.Lam)
+        v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(self.Hz, self.rhoz, self.Lam)
         self.NI = NI
         self.NJ = NJ
         self.v = v
@@ -340,7 +340,7 @@ class SSU(object):
 
         #Do the first CIVP0 integration
         #print "Integrating"
-        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
+        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
         
         # Get the likelihood of the first sample Hz,D,rho,u,vzo,t0,NJ,udot,up
         #print "Getting likelihood"
@@ -351,7 +351,7 @@ class SSU(object):
         # Accept the first step regardless (this performs the main integration and transform)
         #print "Accepting"
         self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
-                    rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2,
+                    rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, T2=T2, sigmasq=sigmasq,
                     vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
 
         self.track_max_lik(self.logLik, self.Hz, self.rhoz, self.Lam)
@@ -359,17 +359,17 @@ class SSU(object):
 
     def set_Lambda_Prior(self,Hz,rhoz):
         # Create Lambda grid
-        Ngrid = 15
+        Ngrid = 25
         Lamgrid = np.linspace(0, 0.225, Ngrid)
         LikSamps = np.zeros(Ngrid)
         #print "Setting Lambda prior"
         for i in xrange(Ngrid):
-            v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lamgrid[i])
+            v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lamgrid[i])
             w, delw = self.age_grid(NI, NJ, delv, t0)
             if NI < 5:
                 print "Passing"
                 pass
-            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = \
+            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = \
                 self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
             LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
             #print i, Lamgrid[i], LikSamps[i]
@@ -434,28 +434,32 @@ class SSU(object):
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
             # Set up spatial grid
-            v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0 = self.affine_grid(Hz, rhoz, Lam)
-            # Set temporal grid
-            w, delw = self.age_grid(NI, NJ, delv, t0)
-            # Do integration on initial PLC
-            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi = self.integrate(u, rho, Lam, v, delv, w, delw)
-            # Get likelihood
-            logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
-            # print "logLik proposed = ", logLik
-            logr = logLik - logLik0
-            accprob = np.exp(-logr/2.0)
-            # Accept reject step
-            tmp = random(1)
-            if tmp > accprob:
-                #Reject sample
+            v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lam)
+            if F == 1:
+                print "t0 < tmin"
                 return Hz0, rhoz0, Lam0, logLik0, 0, 0
             else:
-                #Accept sample
-                Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:,0], A=A[:,0], u=u[:,0], udot=udot[:,0], up=up[:,0])
-                self.accept(Dz=Dz, dzdwz=dzdwz, D = D, S = S, Q = Q, A = A, Z = Z, rho = rho, u = u, up = up, upp = upp, udot = udot,
-                                rhodot = rhodot, rhop = rhop, Sp = Sp, Qp = Qp, Zp = Zp, LLTBCon = LLTBCon, T1 = T1,
-                                T2 = T2, vmaxi=vmaxi, v = v, w0 = w[:,0], NJ=NJ, NI=NI)
-                return Hz, rhoz, Lam, logLik, F, 1  # If F returns one we can't use solution inside PLC
+                # Set temporal grid
+                w, delw = self.age_grid(NI, NJ, delv, t0)
+                # Do integration on initial PLC
+                D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = self.integrate(u, rho, Lam, v, delv, w, delw)
+                # Get likelihood
+                logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
+                # print "logLik proposed = ", logLik
+                logr = logLik - logLik0
+                accprob = np.exp(-logr/2.0)
+                # Accept reject step
+                tmp = random(1)
+                if tmp > accprob:
+                    #Reject sample
+                    return Hz0, rhoz0, Lam0, logLik0, 0, 0
+                else:
+                    #Accept sample
+                    Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:, 0], A=A[:,0], u=u[:, 0], udot=udot[:, 0], up=up[:, 0])
+                    self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
+                                    rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, sigmasq=sigmasq,
+                                    T2=T2, vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
+                    return Hz, rhoz, Lam, logLik, F, 1  # If F returns one we can't use solution inside PLC
 
     def load_Dat(self):
         """
@@ -490,7 +494,7 @@ class SSU(object):
             return Hz, rhoz, Lam, 0
         
     def accept(self, Dz=None, dzdwz=None, D=None, S=None, Q=None, A=None, Z=None, rho=None, u=None, up=None, upp=None, udot=None,
-               rhodot=None, rhop=None, Sp=None, Qp=None, Zp=None, LLTBCon=None, T1=None, T2=None, vmaxi=None,
+               rhodot=None, rhop=None, Sp=None, Qp=None, Zp=None, LLTBCon=None, T1=None, T2=None, sigmasq=None, vmaxi=None,
                v=None, w0=None, NJ=None, NI=None):
         """
         Stores all values of interest (i.e the values returned by self.integrate)
@@ -515,6 +519,7 @@ class SSU(object):
         self.LLTBCon = LLTBCon
         self.T1 = T1
         self.T2 = T2
+        self.sigmasq = sigmasq
         self.vmaxi = vmaxi
         self.v = v
         self.w0 = w0
@@ -574,6 +579,10 @@ class SSU(object):
 
         #Get t0
         t0 = self.get_age(Om0,Ok0,OL0,Hz[0])
+        if t0 < self.tmin:
+            F = 1
+        else:
+            F = 0
         #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
 
         #Set affine parameter vals        
@@ -598,7 +607,7 @@ class SSU(object):
         uo = uvs(vz,self.uz,s=0.0,k=3)
         u = uo(v)
         u[0] = 1.0
-        return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0
+        return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F
         
     def age_grid(self, NI, NJ, delv, t0):
         w0 = np.linspace(t0, self.tmin, NI)
@@ -617,9 +626,9 @@ class SSU(object):
         TODO: write the Fortran code to compute t(v) and r(v) and also find a current time slice t = tmin
         """
         NI, NJ = w.shape
-        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2 = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
+        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
         #self.vmaxi = vmaxi
-        return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi
+        return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq
 
     # def get_tslice(self):
     #     #Here we get the constant time slice closest to t
@@ -759,38 +768,44 @@ class SSU(object):
         
         #All functions will be returned with the domain normalised between 0 and 1
         l = np.linspace(0, 1, self.Nret)
-        #Curvetest
 
-        #self.Kiraw = Ki
+        #Curvetest
         try:
             T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.000001)
             T2i = T2io(l)
         except:
             T2i = 0.0
             print "Failed at T2i"
-        #T2f = self.curve_test(umax,self.NJ)
-        #self.Kfraw = Kf
         try:
             T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.00001)
             T2f = T2fo(l)
         except:
             T2f = 0.0
             print "Failed at T2f"
-        #shear test
-        #T1i = self.shear_test(0,self.NJ)
         try:
             T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.000001)
             T1i = T1io(l)
         except:
             T1i = 0.0
             print "Failed at T1i"
-        #T1f = self.shear_test(umax,self.NJ)
         try:
             T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.00001)
             T1f = T1fo(l)
         except:
             T1f = 0.0
             print "Failed at T1f"
+        try:
+            sigmasqio = uvs(self.v/self.v[-1], self.sigmasq[:, 0], k=3, s=0.0)
+            sigmasqi = sigmasqio(l)
+        except:
+            sigmasqi = 0.0
+            print "Failed at sigmasqi"
+        try:
+            sigmasqfo = uvs(self.v[0:njf]/self.v[njf-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
+            sigmasqf = sigmasqfo(l)
+        except:
+            sigmasqf = 0.0
+            print "Failed at sigmasqf"
         #Get the LLTB consistency relation
         jmaxf = self.vmaxi[-1]
         try:
@@ -970,7 +985,8 @@ class SSU(object):
         #     Xstar = np.tile(self.Xstar[0],(self.Nret))
         #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
         return T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, Zpi, \
-               Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, self.Dz, self.dzdwz
+               Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, self.Dz, \
+               self.dzdwz, sigmasqi, sigmasqf
         
 if __name__ == "__main__":
     #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname

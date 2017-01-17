@@ -22,7 +22,7 @@ end program
 !---------------------------------------------------------------
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
-        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,err,NI,NJ) !These are all outputs except NI and NJ which are optional
+        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ) !These are all outputs except NI and NJ which are optional
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
@@ -31,7 +31,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	real*8, dimension(NJ), intent(in) :: v,ui,rhoi
 	real*8, dimension(NI), intent(out) :: vmax
 	integer, dimension(NI), intent(out) :: vmaxi
-	real*8, dimension(NJ,NI), intent(out) :: D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,X,dXdr,T1,T2
+	real*8, dimension(NJ,NI), intent(out) :: D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,X,dXdr,T1,T2,sigmasq
         real*8, dimension(NJ,NI), intent(out) :: t,r,drdv,drdvp,dSdvp,dQdvp,dZdvp,LLTBCon,Dww,Aw
 	!Local variables
 	integer :: i, jmax, k
@@ -73,6 +73,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
         Aw = 0.0D0
         T1 = 0.0
         T2 = 0.0
+        sigmasq = 0.0 
 
         !To store partial derivs involving t
 	dtdw = 0.D0
@@ -92,6 +93,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
         !Do Tests of CP
         call shear_test(T1,u(:,1),up(:,1),D(:,1),S(:,1),Q(:,1),A(:,1),vmaxi,1,NI,NJ)
         call curve_test(T2,D(:,1),S(:,1),dSdvp(:,1),u(:,1),up(:,1),upp(:,1),vmaxi,1,NI,NJ)
+        call get_sigmasq(sigmasq,u(:,1),up(:,1),ud(:,1),D(:,1),S(:,1),Q(:,1),A(:,1),Z(:,1),vmaxi,1,NI,NJ)
 
 	!Get partial_t components
 	call transt(dtdw,dwdt,dtdv,dvdt,A(:,1),u(:,1),NI,NJ,1,jmax)
@@ -135,6 +137,7 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
                 !Do Tests of CP
                 call shear_test(T1,u(:,i),up(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),vmaxi,i,NI,NJ)
                 call curve_test(T2,D(:,i),S(:,i),dSdvp(:,i),u(:,i),up(:,i),upp(:,i),vmaxi,i,NI,NJ)
+                call get_sigmasq(sigmasq,u(:,i),up(:,i),ud(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),vmaxi,i,NI,NJ)
 
 		!Get partial derivs involving t
 		call transt(dtdw,dwdt,dtdv,dvdt,A(:,i),u(:,i),NI,NJ,i,jmax)

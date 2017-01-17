@@ -253,3 +253,26 @@ subroutine shear_test(T1,u,up,D,S,Q,A,vmaxi,i,NI,NJ)
         T1(1,i) = 0.0D0
 
 end subroutine
+
+subroutine get_sigmasq(sigmasq,u,up,udot,D,S,Q,A,Z,vmaxi,i,NI,NJ)
+        implicit none
+        !subroutine parameters
+	integer, intent(in) :: NI,NJ,vmaxi(NI),i
+	real*8, dimension(NJ), intent(in) :: D,S,Q,A,Z,u,up,udot
+        real*8, dimension(NJ,NI), intent(inout) :: sigmasq
+        !Local parameters
+        integer :: njf
+
+        njf = vmaxi(i)
+
+        sigmasq(:,i) = (  u**2.D0*( A**2.D0*S**2.D0 + D**2*Z**2 + 4.D0*Q**2.D0 + 4.D0*A*Q*S - 4.D0*D*Q*Z - 2.D0*A*D*S*Z ) + &
+        u*( 4.D0*udot*(D**2*Z - 2.D0*D*Q - A*D*S) + 2.D0*up*(-A**2.D0*D*S - 2.D0*A*D*Q + A*D**2.D0*Z) ) + &
+        ( -2.D0*A*S**2.D0 - 4.D0*Q*S + 4.D0*udot**2.D0*D**2.D0 + &
+        up**2.D0*A**2.D0*D**2.D0 + 2.D0*D*S*Z + 4.D0*up*udot*A*D**2.D0 ) + &
+        ( 2.D0*up*D**2.D0*Z + 4.D0*udot*D*S - 4.D0*up*D*Q  )/u + &
+        ( S**2.D0 + 4.D0*up*udot*D**2.D0 + 2.D0*up**2.D0*A*D**2.D0 )/u**2.D0 + &
+        ( 2.D0*up*D*S )/u**3.D0 + &
+        ( up**2.D0*D**2.D0 )/u**4.D0  ) / 12.D0
+
+end subroutine
+        
