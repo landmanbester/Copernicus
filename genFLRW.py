@@ -7,6 +7,7 @@ Created on Thu Aug 21 09:40:27 2014
 Class to create FLRW universe object
 
 """
+import numpy as np
 from numpy import linspace, sqrt, sin, sinh, pi, ones, zeros
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
@@ -69,6 +70,49 @@ class FLRW(object):
         dvdzo = uvs(self.z,1/((1+self.z)**2*self.Hz),k=3,s=0.0)
         v = dvdzo.antiderivative()(self.z)
         return v
+
+    def get_sigmasq(self,DelRSq,UV_cut):
+        """
+        Compute the magnitude of sigma^2*D^2/H^2 in perturbed FLRW
+        DelRSq = amplitude of primordial fluctuations
+        UV_cut = the UV cut-off
+        """
+        # Get normalisation of growth suppression function
+        ginf = 2*(self.Om0**(4.0/7) - self.OL0 + (1+self.Om0/2.0)*(1+self.OL0/70.0))/(5*self.Om0)
+
+        #Hubble scale
+        h = self.Hz[0]*299.8/100 #the 299.8 is a unit conversion
+        kH0 = h/3.0e3
+
+        # Normalised densities (remember to check against Julien's result
+        Omz = self.Om0*(1+self.z)**3/(self.OL0 + self.Om0*(1+self.z)**3)
+        OLz = self.OL0/(self.OL0 + self.Om0*(1+self.z)**3)
+
+        # Growth suppression function and derived evolution function for the shear
+        g = 5*ginf*self.Om/(2*(self.Om**(4.0/7) - self.OL + (1+self.Om/2)*(1+self.OL/70)))
+        go = uvs(self.z, g, k=3, s=0.0)
+        dgo = go.derivative()
+        dg = dgo(self.z)
+
+        G = (dg**2)**(1+self.z)**2 - 2*(1+self.z)*dg + g**2
+
+        # Get the UV cut-off
+        kUV = UV_cut/kH0
+
+        # Transfer function
+        k = linspace(0,kUV,1000)
+        q = k*kH0/(self.Om0*h**2)
+        T = np.log(1 + 2.34*q)/(2.34*q*(1+3.89*q + (16.1*q)**2 + (5.46*q)**3 + (6.71*q)**4))**0.25
+        T[0] = 0.0
+
+        dSo = uvs(k, k**3*T**2, k=3, s=0.0)
+        So = dSo.antiderivative() #Maybe do this with quad!!!!
+        S = So(kUV)
+
+        # Expectation value of sigmasq*D**2/H**2
+        sigmasq = 4*DelRSq*G*S*self.Dz**2/((1+self.z)**2*75*self.Om0*ginf**2)
+
+        return sigmasq
 
 
 if __name__=="__main__":

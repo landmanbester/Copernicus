@@ -169,6 +169,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     LCDM = FLRW(Om0, OL0, H0, zmax, Np)
     HzF = LCDM.Hz
     rhozF = LCDM.getrho()
+    sigmasqFz = LCDM.get_sigmasq(2.41e-9, 0.1)*HzF**2
+    v = LCDM.getnuz()
+    sigmasqo = uvs(v/v[-1], sigmasqFz, k =3, s=0.0)
+    #sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
 
     # Do integration of FLRW funcs
     zp = np.linspace(0, zmax, Np)
@@ -180,13 +184,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
 
     # Do LCDM integration
-    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=LamF, setLamPrior=False)
+    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=LamF, useInputFuncs=True)
 
     # Get quantities of interrest
     T1iF, T1fF, T2iF, T2fF, LLTBConsiF, LLTBConsfF, DiF, DfF, SiF, \
     SfF, QiF, QfF, AiF, AfF, ZiF, ZfF, SpiF, SpfF, QpiF, QpfF, \
     ZpiF, ZpfF, uiF, ufF, upiF, upfF, uppiF, uppfF, udotiF, udotfF, \
-    rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF = UF.get_funcs()
+    rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF, sigmasqiF, sigmasqfF = UF.get_funcs()
+    sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
 
     # Do LTB integration
     print "Getting LTB vals"
@@ -205,14 +210,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # plt.plot(zp,rhozF,'g')
     # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTBvLCDM_rhoz.png', dpi=200)
     fnameLT = '/home/landman/Projects/CP_LTB/'
-    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fnameLT, Hz=HzLT, rhoz=rhozLT, Lam=0.0, setLamPrior=False)
+    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fnameLT, Hz=HzLT, rhoz=rhozLT, Lam=0.0, useInputFuncs=True)
 
     # Get quantities of interrest
     print "Getting quantities of interest"
     T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \
     SfLT, QiLT, QfLT, AiLT, AfLT, ZiLT, ZfLT, SpiLT, SpfLT, QpiLT, QpfLT, \
     ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
-    rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT = ULT.get_funcs()
+    rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT, sigmasqiLT, sigmasqfLT = ULT.get_funcs()
 
     # # read in data
     zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
@@ -232,6 +237,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     T2flist = holder['T2f']
     T1ilist = holder['T1i']
     T1flist = holder['T1f']
+    sigmasqilist = holder['sigmasqi']
+    sigmasqflist = holder['sigmasqf']
     LLTBConsilist = holder['LLTBConsi']
     LLTBConsflist = holder['LLTBConsf']
     NSamplers = holder['NSamplers']
@@ -249,6 +256,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
             T2f = np.append(T2f, T2flist[i], axis=1)
             T1i = np.append(T1i, T1ilist[i], axis=1)
             T1f = np.append(T1f, T1flist[i], axis=1)
+            sigmasqi = np.append(sigmasqi, sigmasqilist[i], axis=1)
+            sigmasqf = np.append(sigmasqf, sigmasqflist[i], axis=1)
             LLTBConsi = np.append(LLTBConsi, LLTBConsilist[i], axis=1)
             LLTBConsf = np.append(LLTBConsf, LLTBConsflist[i], axis=1)
         else:
@@ -261,6 +270,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
             T2f = T2flist[0]
             T1i = T1ilist[0]
             T1f = T1flist[0]
+            sigmasqi = sigmasqilist[0]
+            sigmasqf = sigmasqflist[0]
             LLTBConsi = LLTBConsilist[0]
             LLTBConsf = LLTBConsflist[0]
 
@@ -273,7 +284,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # The second for CP tests
     figCP, axCP = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True, sharey=True)
     # The third for t slice
-    figts, axts = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
+    figsigmasq, axsigmasq = plt.subplots(nrows=1, ncols=2, figsize=(15, 5), sharex=True)
 
     #Get contours and set figure labels and lims
     print 'PLC0'
@@ -312,14 +323,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     T2fplh = plh(T2f, axCP[1, 1])
     axCP[1, 1].set_xlabel(r'$ \frac{v}{v_{max}} $', fontsize=20)
 
-    # print 't-slice'
-    # Dsplh = plh(Dstar, axts[0, 0])
-    # axts[0, 0].set_ylabel(r'$  R^* $', fontsize=20)
-    # axts[0, 0].set_ylim(0, 1.5)
-    #
-    # Xsplh = plh(Xstar, axts[0, 1])
-    # axts[0, 1].set_ylabel(r'$  X^* $', fontsize=20)
-    # axts[0, 1].set_ylim(0.4, 1.0)
+    print 'sigmasq'
+    sigmasqiplh = plh(sigmasqi, axsigmasq[0])
+    axsigmasq[0].set_ylabel(r'$  \sigma^2_iD^2_i $', fontsize=20)
+    #axsigmasq[0, 0].set_ylim(0, 1.5)
+
+    sigmasqfplh = plh(sigmasqf, axsigmasq[1])
+    axsigmasq[1].set_ylabel(r'$  \sigma^2_fD^2_f $', fontsize=20)
+    #axsigmasq[0, 1].set_ylim(0.4, 1.0)
     #
     # rhosplh = plh(rhostar, axts[1, 0])
     # axts[1, 0].set_ylabel(r'$  \frac{\rho^*}{\rho_c} $', fontsize=30)
@@ -365,23 +376,23 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     dzdwplh.show_lab(3)
 
 
-    # Plot T2i(z) reconstruction and comparison
+    # Plot T2i(v) reconstruction and comparison
     T2iplh.draw_Contours(l)
     T2iplh.add_plot(l, T2iF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T2iplh.add_plot(l, T2iLT, col='k', lab=r'$LTB$', wid=1.5)
 
-    # Plot Kf(z) reconstruction and comparison
+    # Plot T2f(v) reconstruction and comparison
     T2fplh.draw_Contours(l)
     T2fplh.add_plot(l, T2fF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T2fplh.add_plot(l, T2fLT, col='k', lab=r'$LTB$', wid=1.5)
     T2fplh.show_lab(2)
 
-    # Plot sheari(z) reconstruction and comparison
+    # Plot T1i(v) reconstruction and comparison
     T1iplh.draw_Contours(l)
     T1iplh.add_plot(l, T1iF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T1iplh.add_plot(l, T1iLT, col='k', lab=r'$LTB$', wid=1.5)
 
-    # Plot T1f(z) reconstruction and comparison
+    # Plot T1f(v) reconstruction and comparison
     T1fplh.draw_Contours(l)
     T1fplh.add_plot(l, T1fF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
     T1fplh.add_plot(l, T1fLT, col='k', lab=r'$LTB$', wid=1.5)
@@ -393,21 +404,19 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # # rhosplh.add_plot(l,rhostarConLTB,col='k',scale=153.66,lab=r'$LTB1$',wid=1.5)
     # # rhosplh.add_plot(l,rhostarLTB,col='m',scale=153.66,lab=r'$LTB2$',wid=1.5)
     # # rhosplh.show_lab(2)
-    #
-    # # Plot Dstar reconstruction
-    # Dsplh.draw_Contours(l)
-    # Dsplh.add_plot(l, DstarF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # # Dsplh.add_plot(l,DstarConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    # # Dsplh.add_plot(l,DstarLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    # Dsplh.show_lab(4)
-    #
-    # # Plot Xstar reconstruction
-    # Xsplh.draw_Contours(l)
-    # Xsplh.add_plot(l, XstarF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # # Xsplh.add_plot(l,XstarConLTB,col='k',lab=r'$LTB1$',wid=1.5)
-    # # Xsplh.add_plot(l,XstarLTB,col='m',lab=r'$LTB2$',wid=1.5)
-    # # Xsplh.show_lab(4)
-    #
+
+    # Plot sigmasqi reconstruction
+    sigmasqiplh.draw_Contours(l)
+    sigmasqiplh.add_plot(l, sigmasqiF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    sigmasqiplh.add_plot(l, sigmasqiLT,col='m',lab=r'$LTB$',wid=1.5)
+    sigmasqiplh.show_lab(2)
+
+    # Plot Xstar reconstruction
+    sigmasqfplh.draw_Contours(l)
+    sigmasqfplh.add_plot(l, sigmasqfF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    sigmasqfplh.add_plot(l, sigmasqfLT,col='m',lab=r'$LTB$',wid=1.5)
+    sigmasqfplh.show_lab(2)
+
     # # Plot Xstar reconstruction
     # Hperpsplh.draw_Contours(l, scale=299.8)
     # Hperpsplh.add_plot(l, HperpF * 299.8, col='k', lab=r'$\Lambda CDM$', wid=1.5)
@@ -421,7 +430,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
 
     figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
     figCP.savefig(fname + 'Figures/CP.png', dpi=250)
-    #figts.savefig('Figures/tslice.png', dpi=250)
+    figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
     # Do contour plots
     print "Doing Om v OL contours"

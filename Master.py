@@ -216,7 +216,7 @@ class GP(object):
         return -0.5*np.dot(Linvy.T, Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None, setLamPrior=True):
+    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None, setLamPrior=True,useInputFuncs=False):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -294,33 +294,38 @@ class SSU(object):
 
         # Now we do the initialisation starting with the background vals
         #print "Setting starting samps"
-        self.Hz = self.GPH.sample(self.Hm)
-        self.rhoz = self.GPrho.sample(self.rhom)
-        while any(self.rhoz < 0.0):
-            self.rhoz = self.GPrho.sample(self.rhom)
-
-        # Set Lambda prior (note if neither dzdw or t0 data is given we use a flat prior)
-        #print "Setting Lambda prior"
-        if 'dzdw' in self.data_lik or 't0' in self.data_lik:
-            if setLamPrior:
-                self.set_Lambda_Prior(self.Hz, self.rhoz)
-            else:
-                if Lam is None:
-                    self.Lamm = 3 * 0.7 * self.Hz[0] ** 2
-                else:
-                    self.Lamm = Lam
-                sigmaLam = 0.0004
-                self.sigmaLam = sigmaLam
-                self.sample_lambda = lambda *args: args[0] + beta*sigmaLam*np.random.randn(1)
+        if useInputFuncs:
+            self.Hz = Hz
+            self.rhoz = rhoz
+            self.Lam = Lam
         else:
-            # print "Got here"
-            self.LambdaMode = 'Flat'
-            self.Lamm = 0.11 # In this case we use a flat prior and the value of Lamm is irrelevant
-            self.sigmaLam = 0.00025
-            self.sample_lambda = lambda *args: 0.025 + 0.175*np.random.random(1)
+            self.Hz = self.GPH.sample(self.Hm)
+            self.rhoz = self.GPrho.sample(self.rhom)
+            while any(self.rhoz < 0.0):
+                self.rhoz = self.GPrho.sample(self.rhom)
 
-        # Draw initial sample of Lam (note abs is here to make sure it is positive)
-        self.Lam = np.abs(self.sample_lambda(self.Lamm))
+            # Set Lambda prior (note if neither dzdw or t0 data is given we use a flat prior)
+            #print "Setting Lambda prior"
+            if 'dzdw' in self.data_lik or 't0' in self.data_lik:
+                if setLamPrior:
+                    self.set_Lambda_Prior(self.Hz, self.rhoz)
+                else:
+                    if Lam is None:
+                        self.Lamm = 3 * 0.7 * self.Hz[0] ** 2
+                    else:
+                        self.Lamm = Lam
+                    sigmaLam = 0.0004
+                    self.sigmaLam = sigmaLam
+                    self.sample_lambda = lambda *args: args[0] + beta*sigmaLam*np.random.randn(1)
+            else:
+                # print "Got here"
+                self.LambdaMode = 'Flat'
+                self.Lamm = 0.11 # In this case we use a flat prior and the value of Lamm is irrelevant
+                self.sigmaLam = 0.00025
+                self.sample_lambda = lambda *args: 0.025 + 0.175*np.random.random(1)
+
+            # Draw initial sample of Lam (note abs is here to make sure it is positive)
+            self.Lam = np.abs(self.sample_lambda(self.Lamm))
 
         #Set up spatial grid
         #print "Setting spatial grid"
