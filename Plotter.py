@@ -169,9 +169,13 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     LCDM = FLRW(Om0, OL0, H0, zmax, Np)
     HzF = LCDM.Hz
     rhozF = LCDM.getrho()
-    sigmasqFz = LCDM.get_sigmasq(2.41e-9, 0.1)*HzF**2
+    sigmasqFz10 = LCDM.get_sigmasq(2.41e-9, 0.1)*HzF**2
+    sigmasqFz20 = LCDM.get_sigmasq(2.41e-9, 0.05) * HzF ** 2
+    sigmasqFz50 = LCDM.get_sigmasq(2.41e-9, 0.02) * HzF ** 2
     v = LCDM.getnuz()
-    sigmasqo = uvs(v/v[-1], sigmasqFz, k =3, s=0.0)
+    sigmasq10o = uvs(v/v[-1], sigmasqFz10, k =3, s=0.0)
+    sigmasq20o = uvs(v/v[-1], sigmasqFz20, k =3, s=0.0)
+    sigmasq50o = uvs(v/v[-1], sigmasqFz50, k =3, s=0.0)
     #sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
 
     # Do integration of FLRW funcs
@@ -191,11 +195,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     SfF, QiF, QfF, AiF, AfF, ZiF, ZfF, SpiF, SpfF, QpiF, QpfF, \
     ZpiF, ZpfF, uiF, ufF, upiF, upfF, uppiF, uppfF, udotiF, udotfF, \
     rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF, sigmasqiF, sigmasqfF = UF.get_funcs()
-    sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
+    sigmasqiF10 = sigmasq10o(np.linspace(0, 1, Nret))
+    sigmasqiF20 = sigmasq20o(np.linspace(0, 1, Nret))
+    sigmasqiF50 = sigmasq50o(np.linspace(0, 1, Nret))
 
     # Do LTB integration
     print "Getting LTB vals"
-    LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
+    #LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
+    LTB_z_funcs = np.load('/home/landman/Algorithm/LTBMCMC/Saved_LTB_Models/ConLTBDat.npz')
     HzLT = LTB_z_funcs['Hz']
     rhozLT = LTB_z_funcs['rhoz']
     zLT = LTB_z_funcs['z']
@@ -284,7 +291,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # The second for CP tests
     figCP, axCP = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True, sharey=True)
     # The third for t slice
-    figsigmasq, axsigmasq = plt.subplots(nrows=1, ncols=2, figsize=(15, 5), sharex=True)
+    figsigmasq, axsigmasq = plt.subplots(nrows=1, ncols=1, figsize=(10, 10), sharex=True)
 
     #Get contours and set figure labels and lims
     print 'PLC0'
@@ -324,12 +331,12 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     axCP[1, 1].set_xlabel(r'$ \frac{v}{v_{max}} $', fontsize=20)
 
     print 'sigmasq'
-    sigmasqiplh = plh(sigmasqi, axsigmasq[0])
-    axsigmasq[0].set_ylabel(r'$  \sigma^2_iD^2_i $', fontsize=20)
+    sigmasqiplh = plh(sigmasqi, axsigmasq)
+    axsigmasq.set_ylabel(r'$  \sigma^2_iD^2_i $', fontsize=20)
     #axsigmasq[0, 0].set_ylim(0, 1.5)
 
-    sigmasqfplh = plh(sigmasqf, axsigmasq[1])
-    axsigmasq[1].set_ylabel(r'$  \sigma^2_fD^2_f $', fontsize=20)
+    #sigmasqfplh = plh(sigmasqf, axsigmasq[1])
+    #axsigmasq[1].set_ylabel(r'$  \sigma^2_fD^2_f $', fontsize=20)
     #axsigmasq[0, 1].set_ylim(0.4, 1.0)
     #
     # rhosplh = plh(rhostar, axts[1, 0])
@@ -407,15 +414,17 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
 
     # Plot sigmasqi reconstruction
     sigmasqiplh.draw_Contours(l)
-    sigmasqiplh.add_plot(l, sigmasqiF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    sigmasqiplh.add_plot(l, sigmasqiLT,col='m',lab=r'$LTB$',wid=1.5)
+    sigmasqiplh.add_plot(l, sigmasqiF10, col='k', lab=r'$\Lambda CDM \ uv-cut=10$', wid=1.5)
+    sigmasqiplh.add_plot(l, sigmasqiF20, col='y', lab=r'$\Lambda CDM \ uv-cut=20$', wid=1.5)
+    sigmasqiplh.add_plot(l, sigmasqiF50, col='c', lab=r'$\Lambda CDM \ uv-cut=50$', wid=1.5)
+    sigmasqiplh.add_plot(l, sigmasqiLT,col='m',lab=r'$t_B = 0 \ LTB$',wid=1.5)
     sigmasqiplh.show_lab(2)
 
-    # Plot Xstar reconstruction
-    sigmasqfplh.draw_Contours(l)
-    sigmasqfplh.add_plot(l, sigmasqfF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    sigmasqfplh.add_plot(l, sigmasqfLT,col='m',lab=r'$LTB$',wid=1.5)
-    sigmasqfplh.show_lab(2)
+    # # Plot Xstar reconstruction
+    # sigmasqfplh.draw_Contours(l)
+    # sigmasqfplh.add_plot(l, sigmasqfF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    # sigmasqfplh.add_plot(l, sigmasqfLT,col='m',lab=r'$LTB$',wid=1.5)
+    # sigmasqfplh.show_lab(2)
 
     # # Plot Xstar reconstruction
     # Hperpsplh.draw_Contours(l, scale=299.8)

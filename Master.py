@@ -19,7 +19,7 @@ import sys
 import numpy as np
 from numpy.linalg import cholesky, solve, inv, slogdet, eigh
 from numpy.random import randn, random, seed
-from scipy.integrate import odeint,quad,cumtrapz
+from scipy.integrate import odeint,quad,cumtrapz, trapz
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
@@ -307,6 +307,7 @@ class SSU(object):
             # Set Lambda prior (note if neither dzdw or t0 data is given we use a flat prior)
             #print "Setting Lambda prior"
             if 'dzdw' in self.data_lik or 't0' in self.data_lik:
+                self.LambdaMode = 'Gaussian'
                 if setLamPrior:
                     self.set_Lambda_Prior(self.Hz, self.rhoz)
                 else:
@@ -394,7 +395,10 @@ class SSU(object):
 
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
-        self.Lamm = Lamgrid[I]
+        if I.size > 1:
+            self.Lamm = Lamgrid[I[0]]
+        else:
+            self.Lamm = Lamgrid[I]
         #Lamtmp = np.sort(Lamgrid[I],axis=0)
         cdf = cumtrapz(LikSamps, Lamgrid, initial=0.0)
         cdf /= cdf.max()
@@ -687,19 +691,24 @@ class SSU(object):
     def get_dzdw(self, u=None, udot=None, up=None, A=None):
         return udot + up*(A - 1.0/u**2.0)/2.0
         
-    def get_Chi2(self, Hz=None, D=None, rhoz=None, u=None, vzo=None, t0=None, NJ=None, udot=None, up=None, A = None):
+    def get_Chi2(self, Hz=None, D=None, rhoz=None, u=None, vzo=None, t0=None, NJ=None, udot=None, up=None, A=None):
         """
         The inputs H, D and u are functions of v. However vzo is the spline v(z) so we can interpolate directly
         """
         # Compute observables from CIVP soln
-        current_F = self.get_PLC0_observables(vzo=vzo, D=D[:,0], A=A[:,0], Hz=Hz, u=u[:,0], udot=udot[:,0], up=up[:,0], rhoz=rhoz)
+        current_F = self.get_PLC0_observables(vzo=vzo, D=D[:, 0], A=A[:, 0], Hz=Hz, u=u[:, 0], udot=udot[:, 0], up=up[:, 0], rhoz=rhoz, t0=t0)
         chi2 = 0.0
         for s in self.my_F_data.keys(): # TODO: we might bail here if self.data is not set correctly
-            chi2 += sum((self.my_F_data[s] - current_F[s])**2/(self.my_sF_data[s]**2))
-
+            if s == "t0": # Do one sided Chisq for t0
+                if current_F[s] <= self.my_F_data[s]:
+                    chi2 += (self.my_F_data[s] - current_F[s]) ** 2 / self.my_sF_data[s] ** 2
+                else:
+                    pass
+            else:
+                chi2 += sum((self.my_F_data[s] - current_F[s])**2/(self.my_sF_data[s]**2))
         return chi2
 
-    def get_PLC0_observables(self, vzo=None, D=None, A=None, Hz=None, u=None, udot=None, up=None, rhoz=None):
+    def get_PLC0_observables(self, vzo=None, D=None, A=None, Hz=None, u=None, udot=None, up=None, rhoz=None, t0=None):
         """
         Here we compute observables on the PLC0
 
@@ -726,6 +735,8 @@ class SSU(object):
             obs_dict["H"] = uvs(self.z, Hz, k=3, s=0.0)(self.my_z_data["H"])
         if "rho" in self.data_lik:
             obs_dict["rho"] = uvs(self.z, rhoz, k=3, s=0.0)(self.my_z_data["rho"])
+        if 't0' in self.data_lik:
+            obs_dict["t0"] = t0
         # Add observables here
         return obs_dict
 
@@ -1004,8 +1015,8 @@ if __name__ == "__main__":
     sigmaLam = 0.05
     Nret = 300
     data_prior = "[H,rho]"
-    data_lik = "[D,H,rho]"
-    fname = "/home/landman/Projects/CP_LCDM_DHrho/"
+    data_lik = "[D,H,t0]"
+    fname = "/home/landman/Projects/CP_LCDM_DHt0/"
 
     print "Getting LCDM vals"
     # Get FLRW funcs for comparison
@@ -1018,22 +1029,48 @@ if __name__ == "__main__":
     Lam = 3 * OL0 * H0 ** 2
     z = LCDM.z
 
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15, setLamPrior=False) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
     logLik = U.logLik
     Hz = U.Hz
     rhoz = U.rhoz
     Lam = U.Lam
 
-    accrate = np.zeros(2)
+    # set grid of length scales
+    ngrid = 500
+    l = np.linspace(0.01,5,ngrid)
+    logp = np.zeros(ngrid)
+    XX = U.GPrho.XX
+    y = U.GPrho.ydat
+    n = U.GPrho.N
+    sigmaf = U.Xrho[0]
+    for i in xrange(ngrid):
+        theta = np.array([sigmaf,l[i]])
+        logp[i], _ = U.GPrho.logp_and_gradlogp(theta, XX, y, n)
 
-    # Do the burnin period
-    Nburn = 2000
-    Hsamps = np.zeros([Np,Nburn])
-    rhosamps = np.zeros([Np, Nburn])
-    Lamsamps = np.zeros([Nburn])
-    Hpsamps = np.zeros([Np,Nburn])
-    rhopsamps = np.zeros([Np, Nburn])
-    Lampsamps = np.zeros([Nburn])
+    lik = np.exp(-(logp - logp.min()))
+    normfact = trapz(lik,l)
+    lik /= normfact
+    EDF = cumtrapz(lik,l,initial=0)
+    I = np.argwhere(EDF < 0.16)
+    print l[I[-1]]
+    I = np.argwhere(EDF < 0.025)
+    print l[I[-1]]
+    plt.figure('rholik')
+    plt.plot(l, EDF)
+    plt.xlabel(r'$ l / [Gpc]$')
+    plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
+    plt.show()
+
+    # accrate = np.zeros(2)
+    #
+    # # Do the burnin period
+    # Nburn = 100
+    # Hsamps = np.zeros([Np,Nburn])
+    # rhosamps = np.zeros([Np, Nburn])
+    # Lamsamps = np.zeros([Nburn])
+    # Hpsamps = np.zeros([Np,Nburn])
+    # rhopsamps = np.zeros([Np, Nburn])
+    # Lampsamps = np.zeros([Nburn])
 
     # print "Sampling prior"
     # for i in range(Nburn):
@@ -1042,35 +1079,35 @@ if __name__ == "__main__":
     #     rhopsamps[:,i] = rhoz
     #     Lampsamps[i] = Lam
 
-    print "Sampling"
-    for i in range(Nburn):
-        print "logLik = ", logLik
-        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
-        U.track_max_lik(logLik, Hz, rhoz, Lam)
-        Hsamps[:,i] = Hz
-        rhosamps[:,i] = rhoz
-        Lamsamps[i] = Lam
-        accrate += np.array([a, 1])
-
-    print "Accrate =", accrate[0]/accrate[1]
-
-    print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
-
-    plt.figure('Hp')
-    plt.plot(z,Hpsamps,'b',alpha=0.2)
-    plt.figure('rhop')
-    plt.plot(z,rhopsamps,'b',alpha=0.2)
-    plt.figure('Lamp')
-    plt.hist(Lampsamps)
-
-    plt.figure('H')
-    plt.plot(z,Hsamps,'b',alpha=0.2)
-    plt.figure('rho')
-    plt.plot(z,rhosamps,'b',alpha=0.2)
-    plt.figure('Lam')
-    plt.hist(Lamsamps)
-
-    plt.show()
+    # print "Sampling"
+    # for i in range(Nburn):
+    #     print "logLik = ", logLik
+    #     Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+    #     U.track_max_lik(logLik, Hz, rhoz, Lam)
+    #     Hsamps[:,i] = Hz
+    #     rhosamps[:,i] = rhoz
+    #     Lamsamps[i] = Lam
+    #     accrate += np.array([a, 1])
+    #
+    # print "Accrate =", accrate[0]/accrate[1]
+    #
+    # print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
+    #
+    # plt.figure('Hp')
+    # plt.plot(z,Hpsamps,'b',alpha=0.2)
+    # plt.figure('rhop')
+    # plt.plot(z,rhopsamps,'b',alpha=0.2)
+    # plt.figure('Lamp')
+    # plt.hist(Lampsamps)
+    #
+    # plt.figure('H')
+    # plt.plot(z,Hsamps,'b',alpha=0.2)
+    # plt.figure('rho')
+    # plt.plot(z,rhosamps,'b',alpha=0.2)
+    # plt.figure('Lam')
+    # plt.hist(Lamsamps)
+    #
+    # plt.show()
     # l = np.linspace(0,1,Nret)
     # T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, \
     # Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, Dzsamps, dzdwzsamps = U.get_funcs()
