@@ -298,10 +298,11 @@ subroutine correct(rho,rhod,u,ud,delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i)
 	
 end subroutine
 
-subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err)
+subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI,NJ,i
+        integer, intent(out) :: Flag
 	real*8, intent(in) :: delv,delw,err
 	real*8, dimension(NJ), intent(in) :: v, A
 	real*8, dimension(NI), intent(inout) :: vmax
@@ -312,6 +313,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err)
 
 	maxit = 10000
 	tol = err
+        Flag = 0
 	
 	!Initial guess
 	vp = vmax(i-1) - 0.5*A(vmaxi(i-1))*delw
@@ -325,10 +327,10 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err)
 		jmax = floor(vp/delv + 1.D0)
 		if (jmax < 2) then
 			jmax = 2
-			write(*,*) 'Warning jmax < 2'
+                        Flag = 1
 		elseif (jmax > NJ) then
 			jmax = NJ
-			write(*,*) 'Warning jmax > NJ'
+			Flag = 1
 		endif
 		Ap = A(jmax-1) + (vp-v(jmax-1))*(A(jmax) - A(jmax-1))/delv
 		vp = vmax(i-1) - 0.5D0*Ap*delw
@@ -336,6 +338,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err)
 	end do
 	if (counter >= maxit) then
 		write(*,*) 'Warning PNC cut-off did not converge abs(vp-vprev) = ', abs(vp-vprev)
+                Flag = 1
 	endif
 	vmax(i) = vp
 	vmaxi(i) = jmax

@@ -265,8 +265,8 @@ subroutine get_sigmasq(sigmasq,u,up,udot,D,S,Q,A,Z,vmaxi,i,NI,NJ)
 
         njf = vmaxi(i)
 
-        sigmasq(:,i) = (  u**2.D0*( A**2.D0*S**2.D0 + D**2*Z**2 + 4.D0*Q**2.D0 + 4.D0*A*Q*S - 4.D0*D*Q*Z - 2.D0*A*D*S*Z ) + &
-        u*( 4.D0*udot*(D**2*Z - 2.D0*D*Q - A*D*S) + 2.D0*up*(-A**2.D0*D*S - 2.D0*A*D*Q + A*D**2.D0*Z) ) + &
+        sigmasq(:,i) = (  u**2.D0*( A**2.D0*S**2.D0 + D**2.D0*Z**2.D0 + 4.D0*Q**2.D0 + 4.D0*A*Q*S - 4.D0*D*Q*Z - 2.D0*A*D*S*Z ) + &
+        u*( 4.D0*udot*(D**2.D0*Z - 2.D0*D*Q - A*D*S) + 2.D0*up*(-A**2.D0*D*S - 2.D0*A*D*Q + A*D**2.D0*Z) ) + &
         ( -2.D0*A*S**2.D0 - 4.D0*Q*S + 4.D0*udot**2.D0*D**2.D0 + &
         up**2.D0*A**2.D0*D**2.D0 + 2.D0*D*S*Z + 4.D0*up*udot*A*D**2.D0 ) + &
         ( 2.D0*up*D**2.D0*Z + 4.D0*udot*D*S - 4.D0*up*D*Q  )/u + &

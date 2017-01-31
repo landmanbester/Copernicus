@@ -270,6 +270,10 @@ class SSU(object):
         self.XH = self.GPH.THETA
         #print "Hz theta = ", self.XH
         self.Hm = self.GPH.fmean
+
+        # Set max Lambda
+        self.LambdaMax = 3*(self.Hm[0] + 2*np.sqrt(self.GPH.fcov[0, 0]))**2
+        #print "Max value of Lambda =", self.LambdaMax
         # plt.figure('H')
         # plt.plot(self.z,self.Hm)
         # plt.errorbar(self.my_z_prior["H"],self.my_F_prior["H"],self.my_sF_prior["H"],fmt='xr')
@@ -323,7 +327,7 @@ class SSU(object):
                 self.LambdaMode = 'Flat'
                 self.Lamm = 0.11 # In this case we use a flat prior and the value of Lamm is irrelevant
                 self.sigmaLam = 0.00025
-                self.sample_lambda = lambda *args: 0.025 + 0.175*np.random.random(1)
+                self.sample_lambda = lambda *args: self.LambdaMax*np.random.random(1)
 
             # Draw initial sample of Lam (note abs is here to make sure it is positive)
             self.Lam = np.abs(self.sample_lambda(self.Lamm))
@@ -346,7 +350,9 @@ class SSU(object):
 
         #Do the first CIVP0 integration
         #print "Integrating"
-        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
+        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
+        if F:
+            print "There is a problem with the starting samples, Lambda =", self.Lam
         
         # Get the likelihood of the first sample Hz,D,rho,u,vzo,t0,NJ,udot,up
         #print "Getting likelihood"
@@ -366,7 +372,7 @@ class SSU(object):
     def set_Lambda_Prior(self,Hz,rhoz):
         # Create Lambda grid
         Ngrid = 25
-        Lamgrid = np.linspace(0, 0.225, Ngrid)
+        Lamgrid = np.linspace(0, self.LambdaMax, Ngrid)
         LikSamps = np.zeros(Ngrid)
         #print "Setting Lambda prior"
         for i in xrange(Ngrid):
@@ -375,13 +381,15 @@ class SSU(object):
             if NI < 5:
                 print "Passing"
                 pass
-            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = \
+            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
                 self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
+            if F == 1:
+                print "Shit! If we get here. Lambda = ", Lamgrid[i]
             LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
             #print i, Lamgrid[i], LikSamps[i]
 
         # Normalise for numerical stability
-        LikSamps /= LikSamps.min()
+        LikSamps -= LikSamps.min()
 
         # convert loglik to lik
         LikSamps = np.exp(-LikSamps)
@@ -391,7 +399,7 @@ class SSU(object):
         plt.plot(Lamgrid,LikSamps)
         plt.xlabel(r'$\Lambda$', fontsize=18)
         plt.ylabel(r'Lik', fontsize= 18)
-        plt.savefig(self.fname + 'Figures/LTB_lik.png', dpi=200)
+        plt.savefig(self.fname + 'Figures/Lambda_lik.png', dpi=200)
 
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
@@ -410,7 +418,7 @@ class SSU(object):
         Lamd = Lamgrid[Id]
         Iu = np.argwhere(cdf <= 0.84)[-1]  # upper 1sig
         Lamu = Lamgrid[Iu]
-        sigmaLam = 0.012*np.abs(Lamu - Lamd)
+        sigmaLam = 0.1*np.abs(Lamu - Lamd)
         self.sigmaLam = sigmaLam
         self.sample_lambda = lambda *args: args[0] + sigmaLam * np.random.randn(1)
         #print self.Lamm, self.sigmaLam
@@ -439,36 +447,39 @@ class SSU(object):
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
         #print Lam, Lam0
         if F == 1:
-            print "Negative sample"
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
             # Set up spatial grid
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lam)
             if F == 1:
-                print "t0 < tmin"
+                #print "t0 < tmin"
                 return Hz0, rhoz0, Lam0, logLik0, 0, 0
             else:
                 # Set temporal grid
                 w, delw = self.age_grid(NI, NJ, delv, t0)
                 # Do integration on initial PLC
-                D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq = self.integrate(u, rho, Lam, v, delv, w, delw)
-                # Get likelihood
-                logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
-                # print "logLik proposed = ", logLik
-                logr = logLik - logLik0
-                accprob = np.exp(-logr/2.0)
-                # Accept reject step
-                tmp = random(1)
-                if tmp > accprob:
-                    #Reject sample
+                D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(u, rho, Lam, v, delv, w, delw)
+                if F == 1:
+                    print "Just checking for sanity here. Lambda = ", Lam, rhoz[0], Hz[0], Ok0
                     return Hz0, rhoz0, Lam0, logLik0, 0, 0
                 else:
-                    #Accept sample
-                    Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:, 0], A=A[:,0], u=u[:, 0], udot=udot[:, 0], up=up[:, 0])
-                    self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
-                                    rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, sigmasq=sigmasq,
-                                    T2=T2, vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
-                    return Hz, rhoz, Lam, logLik, F, 1  # If F returns one we can't use solution inside PLC
+                    # Get likelihood
+                    logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
+                    # print "logLik proposed = ", logLik
+                    logr = logLik - logLik0
+                    accprob = np.exp(-logr/2.0)
+                    # Accept reject step
+                    tmp = random(1)
+                    if tmp > accprob:
+                        #Reject sample
+                        return Hz0, rhoz0, Lam0, logLik0, 0, 0
+                    else:
+                        #Accept sample
+                        Dz, dzdwz = self.get_Dz_and_dzdwz(vzo=vzo, D=D[:, 0], A=A[:,0], u=u[:, 0], udot=udot[:, 0], up=up[:, 0])
+                        self.accept(Dz=Dz, dzdwz=dzdwz, D=D, S=S, Q=Q, A=A, Z=Z, rho=rho, u=u, up=up, upp=upp, udot=udot,
+                                        rhodot=rhodot, rhop=rhop, Sp=Sp, Qp=Qp, Zp=Zp, LLTBCon=LLTBCon, T1=T1, sigmasq=sigmasq,
+                                        T2=T2, vmaxi=vmaxi, v=v, w0=w[:, 0], NJ=NJ, NI=NI)
+                        return Hz, rhoz, Lam, logLik, F, 1  # If F returns one we can't use solution inside PLC
 
     def load_Dat(self):
         """
@@ -497,7 +508,10 @@ class SSU(object):
         #Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
-            #print "Negative samples",(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
+            #print "Negative samples" #,(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
+            return Hzi, rhozi,Lami, 1
+        elif Lam > self.LambdaMax:
+            #print "Lam too large"
             return Hzi, rhozi,Lami, 1
         else:
             return Hz, rhoz, Lam, 0
@@ -588,35 +602,36 @@ class SSU(object):
 
         #Get t0
         t0 = self.get_age(Om0,Ok0,OL0,Hz[0])
-        if t0 < self.tmin:
+        if t0 < self.tfind:
             F = 1
+            return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, F
         else:
             F = 0
-        #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
+            #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
 
-        #Set affine parameter vals        
-        dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to bve the most accurate way to do the numerical integration
-        vzo = dvo.antiderivative()
-        vz = vzo(self.z)
-        vz[0] = 0.0
+            #Set affine parameter vals
+            dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to bve the most accurate way to do the numerical integration
+            vzo = dvo.antiderivative()
+            vz = vzo(self.z)
+            vz[0] = 0.0
 
-        #Compute grid sizes that gives num error od err
-        NJ = int(np.ceil(vz[-1]/np.sqrt(self.err) + 1))
-        NI = int(np.ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
+            #Compute grid sizes that gives num error od err
+            NJ = int(np.ceil(vz[-1]/np.sqrt(self.err) + 1))
+            NI = int(np.ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
 
-        #Get functions on regular grid
-        v = np.linspace(0,vz[-1],NJ)
-        delv = (v[-1] - v[0])/(NJ-1)
-        if delv > np.sqrt(self.err): #A sanity check
-            print 'delv > sqrt(err)'
-        Ho = uvs(vz,Hz,s=0.0,k=3)
-        H = Ho(v)
-        rhoo = uvs(vz,rhoz,s=0.0,k=3)
-        rho = rhoo(v)
-        uo = uvs(vz,self.uz,s=0.0,k=3)
-        u = uo(v)
-        u[0] = 1.0
-        return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F
+            #Get functions on regular grid
+            v = np.linspace(0,vz[-1],NJ)
+            delv = (v[-1] - v[0])/(NJ-1)
+            if delv > np.sqrt(self.err): #A sanity check
+                print 'delv > sqrt(err)'
+            Ho = uvs(vz,Hz,s=0.0,k=3)
+            H = Ho(v)
+            rhoo = uvs(vz,rhoz,s=0.0,k=3)
+            rho = rhoo(v)
+            uo = uvs(vz,self.uz,s=0.0,k=3)
+            u = uo(v)
+            u[0] = 1.0
+            return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F
         
     def age_grid(self, NI, NJ, delv, t0):
         w0 = np.linspace(t0, self.tmin, NI)
@@ -635,9 +650,11 @@ class SSU(object):
         TODO: write the Fortran code to compute t(v) and r(v) and also find a current time slice t = tmin
         """
         NI, NJ = w.shape
-        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
-        #self.vmaxi = vmaxi
-        return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq
+        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq,F = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
+        if F:
+            return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq, 1
+        else:
+            return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq, 0
 
     # def get_tslice(self):
     #     #Here we get the constant time slice closest to t
@@ -1029,45 +1046,46 @@ if __name__ == "__main__":
     Lam = 3 * OL0 * H0 ** 2
     z = LCDM.z
 
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15, setLamPrior=False) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
+    print "Instantiating universe object"
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15, setLamPrior=True) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
     logLik = U.logLik
     Hz = U.Hz
     rhoz = U.rhoz
     Lam = U.Lam
 
-    # set grid of length scales
-    ngrid = 500
-    l = np.linspace(0.01,5,ngrid)
-    logp = np.zeros(ngrid)
-    XX = U.GPrho.XX
-    y = U.GPrho.ydat
-    n = U.GPrho.N
-    sigmaf = U.Xrho[0]
-    for i in xrange(ngrid):
-        theta = np.array([sigmaf,l[i]])
-        logp[i], _ = U.GPrho.logp_and_gradlogp(theta, XX, y, n)
-
-    lik = np.exp(-(logp - logp.min()))
-    normfact = trapz(lik,l)
-    lik /= normfact
-    EDF = cumtrapz(lik,l,initial=0)
-    I = np.argwhere(EDF < 0.16)
-    print l[I[-1]]
-    I = np.argwhere(EDF < 0.025)
-    print l[I[-1]]
-    plt.figure('rholik')
-    plt.plot(l, EDF)
-    plt.xlabel(r'$ l / [Gpc]$')
-    plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
-    plt.show()
-
-    # accrate = np.zeros(2)
+    # # set grid of length scales
+    # ngrid = 500
+    # l = np.linspace(0.01,5,ngrid)
+    # logp = np.zeros(ngrid)
+    # XX = U.GPrho.XX
+    # y = U.GPrho.ydat
+    # n = U.GPrho.N
+    # sigmaf = U.Xrho[0]
+    # for i in xrange(ngrid):
+    #     theta = np.array([sigmaf,l[i]])
+    #     logp[i], _ = U.GPrho.logp_and_gradlogp(theta, XX, y, n)
     #
-    # # Do the burnin period
-    # Nburn = 100
-    # Hsamps = np.zeros([Np,Nburn])
-    # rhosamps = np.zeros([Np, Nburn])
-    # Lamsamps = np.zeros([Nburn])
+    # lik = np.exp(-(logp - logp.min()))
+    # normfact = trapz(lik,l)
+    # lik /= normfact
+    # EDF = cumtrapz(lik,l,initial=0)
+    # I = np.argwhere(EDF < 0.16)
+    # print l[I[-1]]
+    # I = np.argwhere(EDF < 0.025)
+    # print l[I[-1]]
+    # plt.figure('rholik')
+    # plt.plot(l, EDF)
+    # plt.xlabel(r'$ l / [Gpc]$')
+    # plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
+    # plt.show()
+
+    accrate = np.zeros(2)
+    #
+    # Do the burnin period
+    Nburn = 500
+    Hsamps = np.zeros([Np,Nburn])
+    rhosamps = np.zeros([Np, Nburn])
+    Lamsamps = np.zeros([Nburn])
     # Hpsamps = np.zeros([Np,Nburn])
     # rhopsamps = np.zeros([Np, Nburn])
     # Lampsamps = np.zeros([Nburn])
@@ -1079,17 +1097,17 @@ if __name__ == "__main__":
     #     rhopsamps[:,i] = rhoz
     #     Lampsamps[i] = Lam
 
-    # print "Sampling"
-    # for i in range(Nburn):
-    #     print "logLik = ", logLik
-    #     Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
-    #     U.track_max_lik(logLik, Hz, rhoz, Lam)
-    #     Hsamps[:,i] = Hz
-    #     rhosamps[:,i] = rhoz
-    #     Lamsamps[i] = Lam
-    #     accrate += np.array([a, 1])
+    print "Sampling"
+    for i in range(Nburn):
+        print "logLik = ", logLik
+        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+        U.track_max_lik(logLik, Hz, rhoz, Lam)
+        Hsamps[:,i] = Hz
+        rhosamps[:,i] = rhoz
+        Lamsamps[i] = Lam
+        accrate += np.array([a, 1])
     #
-    # print "Accrate =", accrate[0]/accrate[1]
+    print "Accrate =", accrate[0]/accrate[1]
     #
     # print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
     #

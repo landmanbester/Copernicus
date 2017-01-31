@@ -22,9 +22,11 @@ import mpmath as mp
 import matplotlib.pyplot as plt
 from genFLRW import FLRW
 from mpmath import elliprj
+from Copernicus.Parset import MyOptParse
         
 class LTB(object):
-    def __init__(self,OmI,OmO,HI,HO,delr,r0,rmax,zmax,tmin,NJ,Lambda = 0.0,mode="LTB"):
+    def __init__(self,OmI,OmO,HI,HO,delr,r0,rmax,zmax,tmin,NJ,mode="LTB", fname=None):
+        self.fname = fname
         #Set permanent pars
         self.mode=mode
         self.tmin = tmin
@@ -61,7 +63,7 @@ class LTB(object):
         # Perform the optimisation
         opt_dict = {}
         opt_dict["epsilon"] = 1e-5
-        X = opt.fmin_slsqp(self.lik_as_func_of_params, X0, bounds=bnds, acc=1e-4, epsilon=1e-8)
+        #X = opt.fmin_slsqp(self.lik_as_func_of_params, X0, bounds=bnds, acc=1e-4, epsilon=1e-8)
 
         # # Get optimised value
         # X = Xp.x
@@ -72,7 +74,7 @@ class LTB(object):
         #     print Xp
 
         # Save the z funcs
-        #X = X0
+        X = X0
         Om = self.Omf(self.r, X[0], X[1], X[4], X[5])
         dOm = self.dOmf(self.r, X[0], X[1], X[4], X[5])
         print "Getting HT0"
@@ -95,29 +97,33 @@ class LTB(object):
         # A, Ap, Ad, Adp = self.get_A_from_params(eta, etadp, etap, etad, self.r, X[0], X[1], X[2], X[3], X[4], X[5])
         # Hperp, Hpar = self.get_H_from_params(eta, etadp, etap, etad, self.r, X[0], X[1], X[2], X[3], X[4], X[5])
         print "Getting z funcs"
-        Hz, Dz, rhoz, rz, tz = self.get_z_funcs(X[0], X[1], X[2], X[3], X[4], X[5], etao, etadpo, etapo, etado, tr[0])
+        Hz, Dz, rhoz, rz, tz, sigmasqDsqz = self.get_z_funcs(X[0], X[1], X[2], X[3], X[4], X[5], etao, etadpo, etapo, etado, tr[0],
+                                                ComputeShear=True)
 
-        savez('/home/landman/Projects/CP_Dir/Processed_Data/LTB_z_funcs.npz', z=self.z, Hz=Hz, Dz=Dz, rhoz=rhoz)
+        savez(fname + 'Processed_Data/LTB_z_funcs.npz', z=self.z, Hz=Hz, Dz=Dz, rhoz=rhoz, sigmasqDsqz=sigmasqDsqz,
+              params=X)
 
 
         plt.figure('Dz')
         plt.plot(self.z,Dz,'k')
         plt.errorbar(self.zDdat, self.Dzdat, self.sDzdat, fmt='xr')
-        plt.savefig('/home/landman/Projects/CP_Dir/Figures/LTB_Dz.png',dpi=250)
+        plt.savefig(fname + 'Figures/LTB_Dz.png',dpi=250)
         plt.figure('Hz')
         plt.plot(self.z,Hz,'k')
         plt.errorbar(self.zHdat, self.Hzdat, self.sHzdat, fmt='xr')
-        plt.savefig('/home/landman/Projects/CP_Dir/Figures/LTB_Hz.png',dpi=250)
+        plt.savefig(fname + 'Figures/LTB_Hz.png',dpi=250)
         plt.figure('rhoz')
         plt.plot(self.z,rhoz,'k')
-        plt.savefig('/home/landman/Projects/CP_Dir/Figures/LTB_rhoz.png',dpi=250)
+        plt.savefig(fname + 'Figures/LTB_rhoz.png',dpi=250)
         plt.figure('rz')
         plt.plot(self.z,rz,'k')
-        plt.savefig('/home/landman/Projects/CP_Dir/Figures/LTB_rz.png',dpi=250)
+        plt.savefig(fname + 'Figures/LTB_rz.png',dpi=250)
         plt.figure('tz')
         plt.plot(self.z,tz,'k')
-        plt.savefig('/home/landman/Projects/CP_Dir/Figures/LTB_tz.png',dpi=250)
-
+        plt.savefig(fname + 'Figures/LTB_tz.png',dpi=250)
+        plt.figure('sigmasqz')
+        plt.plot(self.z, sigmasqDsqz, 'k')
+        plt.savefig(fname + 'Figures/LTB_sigmasqDsq.png', dpi=250)
 
     def set_Symbolics(self):
         t,r,OmO,OmI,HO,HI,r0,delr,etap,etad,etadp = sm.symbols('t,r,Omega_O,Omega_I,HO,HI,r_0,delta_r,eta_p,eta_d,etadp')
@@ -238,10 +244,10 @@ class LTB(object):
         Hpar = self.Hparf(eta,etadp,etap,etad,r,OmI,OmO,HI,HO,r0,delr)
         return Hperp, Hpar
 
-    def get_z_funcs(self,OmI,OmO,HI,HO,r0,delr,etao,etadpo,etapo,etado,t0):
+    def get_z_funcs(self, OmI, OmO, HI, HO, r0, delr, etao, etadpo, etapo, etado, t0, ComputeShear=False):
         #Set ICs
         y0 = [t0,0.0]
-        y,outargs = odeint(self.LTBode_MCMC,y0,self.z,args=(OmI,OmO,HI,HO,r0,delr,etao,etadpo,etapo,etado),full_output=True,rtol=1e-5,atol=1e-5)
+        y,outargs = odeint(self.LTBode,y0,self.z,args=(OmI,OmO,HI,HO,r0,delr,etao,etadpo,etapo,etado),full_output=True,rtol=1e-5,atol=1e-5)
         tz = y[:,0]
         rz = y[:,1]
         etaz = zeros(self.NJ)
@@ -257,7 +263,12 @@ class LTB(object):
         Dz = self.Af(etaz,rz,OmI,OmO,HI,HO,r0,delr)
         rhoz = self.rhof(etaz,etapz,rz,OmI,OmO,HI,HO,r0,delr)
         rhoz[0] = 3*OmI*HI**2/(8*pi)
-        return Hz, Dz, rhoz, rz, tz
+        if ComputeShear:
+            Az, Apz, Adz, Adpz = self.get_A_from_params(etaz, etadpz, etapz, etadz, rz, OmI, OmO, HI, HO, r0, delr)
+            sigmasqDsq = (Apz*Adz - Adpz*Az)/(3*Apz**2)
+            return Hz, Dz, rhoz, rz, tz, sigmasqDsq
+        else:
+            return Hz, Dz, rhoz, rz, tz
 
     def LTBode(self,y,z,OmI,OmO,HI,HO,r0,delr,etao,etadpo,etapo,etado):
         eta = squeeze(etao(y[0],y[1]))
@@ -351,16 +362,21 @@ class LTB(object):
 
 
 if __name__ == "__main__":
-   # Set params
-   OmO = 7.21983806e-01
-   OmI = 4.47595647e-03
-   HI = 2.34416934e-01
-   HO = 1.77978280e-01
-   r0 = 9.99999994e-06
-   delr = 2.07029825e+00
-   rmax = 10.0
-   zmax = 2.0
-   NJ = 250
-   tmin = 0.05
+    # Get input args
+    GD = MyOptParse.readargs()
 
-   M = LTB(OmI,OmO,HI,HO,delr,r0,rmax,zmax,tmin,NJ)
+    fname = GD["fname"]
+    zmax = GD["zmax"]
+    NJ = GD['np']
+
+    # Set LTB params
+    OmO = 7.21983806e-01
+    OmI = 4.47595647e-03
+    HI = 2.34416934e-01
+    HO = 1.77978280e-01
+    r0 = 9.99999994e-06
+    delr = 2.07029825e+00
+    rmax = 10.0
+    tmin = 0.05
+
+    M = LTB(OmI, OmO, HI, HO, delr, r0, rmax, zmax, tmin, NJ, mode='ConLTB', fname=fname)

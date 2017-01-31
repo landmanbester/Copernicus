@@ -22,7 +22,7 @@ end program
 !---------------------------------------------------------------
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
-        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ) !These are all outputs except NI and NJ which are optional
+        ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ,Flag2) !These are all outputs except NI and NJ which are optional
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
@@ -31,10 +31,11 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	real*8, dimension(NJ), intent(in) :: v,ui,rhoi
 	real*8, dimension(NI), intent(out) :: vmax
 	integer, dimension(NI), intent(out) :: vmaxi
+        integer, intent(out) :: Flag2
 	real*8, dimension(NJ,NI), intent(out) :: D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,X,dXdr,T1,T2,sigmasq
         real*8, dimension(NJ,NI), intent(out) :: t,r,drdv,drdvp,dSdvp,dQdvp,dZdvp,LLTBCon,Dww,Aw
 	!Local variables
-	integer :: i, jmax, k
+	integer :: i, jmax, k, Flag
 	real*8 :: dfdr5 !For the derivative function
 	real*8, dimension(NJ,NI) :: dtdw, dwdt, dtdv, dvdt !For partial derivs involving t 
 	real*8, dimension(NJ,NI) :: drdw, dwdr, dvdr, drdvd !For partial derivs involving r 
@@ -117,7 +118,11 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 		call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 		
 		!Get the predicted characteristic cut off
-		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err)
+		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
+                if (Flag==1) then
+                    Flag2 = 1
+                    exit
+                endif
 		jmax = vmaxi(i)
 
                 !Do iterative step (5 was chosen at random, most of the time there is not much improvement beyond 5 iterations)
@@ -155,8 +160,8 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 !!$		call geotr(t,r,u(:,i),up(:,i),X(:,i),dXdr(:,i),delv,w(i),NI,NJ,i,jmax)
 
 	end do
-
-        !Get the LLTB consistency relation
-        call get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,dZdvp,u,rho,Lam,delw,NI,NJ,vmaxi)
-	
+        if (Flag2 /= 1) then
+            !Get the LLTB consistency relation
+            call get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,dZdvp,u,rho,Lam,delw,NI,NJ,vmaxi)
+	endif
 end subroutine
