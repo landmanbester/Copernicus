@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 
 import numpy as np
-import os
-import argparse
-import ConfigParser
 import concurrent.futures as cf
 from Copernicus.sampler import sampler
 from Copernicus import MCMC_Tools as MCT
-import matplotlib.pyplot as plt
-import Plotter
 from genFLRW import FLRW
 from Copernicus.Parset import MyOptParse
 

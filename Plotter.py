@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-import argparse
-import ConfigParser
 import numpy as np
 from scipy.interpolate import UnivariateSpline as uvs
-from scipy.stats import gaussian_kde as kde
 import matplotlib as mpl
 mpl.use('Agg')
 mpl.rcParams.update({'font.size': 14, 'font.family': 'serif'})

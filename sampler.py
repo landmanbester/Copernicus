@@ -8,7 +8,6 @@ The 2nd Driver routine
 
 """
 
-import sys
 import traceback
 import time
 import numpy as np

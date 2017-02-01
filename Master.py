@@ -14,19 +14,18 @@ locating are not considered.
 
 """
 
-import os
-import sys
 import numpy as np
-from numpy.linalg import cholesky, solve, inv, slogdet, eigh
+from numpy.linalg import cholesky, eigh
 from numpy.random import randn, random, seed
-from scipy.integrate import odeint,quad,cumtrapz, trapz
+from scipy.integrate import quad,cumtrapz
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
 from Copernicus.fortran_mods import CIVP
 from genFLRW import FLRW
+import warnings
+warnings.simplefilter('error', UserWarning)
 
 global kappa
 kappa = 8.0*np.pi
@@ -556,7 +555,12 @@ class SSU(object):
         Here we return the current age of the Universe. quad seems to give the most reliable estimates
         TODO: figure out why the elliptic functions sometimes gives NaN
         """
-        return quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0))[0]
+        try:
+            t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0))[0]
+            return t0
+        except UserWarning:
+            return 0.0
+
 
     # def get_C_sol(self, Om0, Ok0, OL0, H0):
     #     """
