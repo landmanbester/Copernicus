@@ -178,8 +178,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # plt.plot(zp,rhozLT,'b')
     # plt.plot(zp,rhozF,'g')
     # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTBvLCDM_rhoz.png', dpi=200)
-    fnameLT = '/home/landman/Projects/CP_LTB/'
-    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fnameLT, Hz=HzLT, rhoz=rhozLT, Lam=0.0, useInputFuncs=True)
+    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzLT, rhoz=rhozLT, Lam=0.0, useInputFuncs=True)
 
     # Get quantities of interrest
     print "Getting quantities of interest"
