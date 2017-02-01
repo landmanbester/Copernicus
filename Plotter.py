@@ -163,7 +163,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # Do LTB integration
     print "Getting LTB vals"
     #LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
-    LTB_z_funcs = np.load('/home/landman/Algorithm/LTBMCMC/Saved_LTB_Models/ConLTBDat.npz')
+    LTB_z_funcs = np.load(fname + 'Processed_Data/ConLTBDat.npz')
     print LTB_z_funcs.keys()
     HzLT = LTB_z_funcs['Hz']
     rhozLT = LTB_z_funcs['rhoz']
