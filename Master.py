@@ -370,7 +370,7 @@ class SSU(object):
 
     def set_Lambda_Prior(self,Hz,rhoz):
         # Create Lambda grid
-        Ngrid = 25
+        Ngrid = 50
         Lamgrid = np.linspace(0, self.LambdaMax, Ngrid)
         LikSamps = np.zeros(Ngrid)
         #print "Setting Lambda prior"
@@ -393,12 +393,12 @@ class SSU(object):
         # convert loglik to lik
         LikSamps = np.exp(-LikSamps)
 
-        # Plot
-        plt.figure('LamLik')
-        plt.plot(Lamgrid,LikSamps)
-        plt.xlabel(r'$\Lambda$', fontsize=18)
-        plt.ylabel(r'Lik', fontsize= 18)
-        plt.savefig(self.fname + 'Figures/Lambda_lik.png', dpi=200)
+        # # Plot
+        # plt.figure('LamLik')
+        # plt.plot(Lamgrid,LikSamps)
+        # plt.xlabel(r'$\Lambda$', fontsize=18)
+        # plt.ylabel(r'Lik', fontsize= 18)
+        # plt.savefig(self.fname + 'Figures/Lambda_lik.png', dpi=200)
 
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
