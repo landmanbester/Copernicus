@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import sys
 import numpy as np
 import concurrent.futures as cf
 from Copernicus.sampler import sampler
@@ -8,65 +8,8 @@ from genFLRW import FLRW
 from Copernicus.Parset import MyOptParse
 
 
-def load_samps(NSamplers,fname):
-    """
-    Method to load samples after MCMC
-    :param NSamplers: the numbers of walkers i.e. MCMC chains
-    :param fname: the path where thje results were written out to
-    :return:
-    """
-    #Load first samples
-    fpath = fname+"Samps0.npz"
-    holder = np.load(fpath) #/home/landman/Documents/Research/Algo_Pap/Simulated_LCDM_prior/ProcessedData/Samps1s.npz')
-    # Dsamps = np.asarray(holder['Dsamps'])
-    # Dpsamps = np.asarray(holder['Dpsamps'])
-    Hsamps = np.asarray(holder['Hsamps'])
-    rhosamps = np.asarray(holder['rhosamps'])
-    Lamsamps = np.asarray(holder['Lamsamps'])
-#    rhopsamps = np.asarray(holder['rhopsamps'])
-#    zfmax = np.asarray(holder['zfmax'])
-    T2i = np.asarray(holder['T2i'])
-    T2f = np.asarray(holder['T2f'])
-    T1i = np.asarray(holder['T1i'])
-    T1f = np.asarray(holder['T1f'])
-    LLTBConsi = np.asarray(holder['LLTBConsi'])
-    LLTBConsf = np.asarray(holder['LLTBConsf'])
-#    t0 = np.asarray(holder['t0'])
-#    rhostar = np.asarray(holder['rhostar'])
-#    Dstar = np.asarray(holder['Dstar'])
-#    Xstar = np.asarray(holder['Xstar'])
-#    rmax= np.asarray(holder['rmax'])
-#    vmax= np.asarray(holder['vmax'])
-
-    #Load the rest of the data
-    for i in xrange(1,NSamplers):
-        dirpath = fname + "Samps" + str(i) + '.npz'
-        holder = np.load(dirpath)
-        # Dsamps = np.append(Dsamps,holder['Dsamps'],axis=1)
-        # Dpsamps = np.append(Dpsamps,holder['Dpsamps'],axis=1)
-        Hsamps = np.append(Hsamps,holder['Hsamps'],axis=1)
-        rhosamps = np.append(rhosamps,holder['rhosamps'],axis=1)
-#        rhopsamps = np.append(rhopsamps,holder['rhopsamps'],axis=1)
-#        zfmax = np.append(zfmax,holder['zfmax'])
-        T2i = np.append(T2i,holder['T2i'],axis=1)
-        T2f = np.append(T2f,holder['T2f'],axis=1)
-        T1i = np.append(T1i,holder['T1i'],axis=1)
-        T1f = np.append(T1f,holder['T1f'],axis=1)
-        LLTBConsi = np.append(LLTBConsi, holder['LLTBConsi'])
-        LLTBConsf = np.append(LLTBConsf, holder['LLTBConsf'])
-        Lamsamps = np.append(Lamsamps, holder['Lamsamps'])
-        # t0 = np.append(t0,holder['t0'])
-        # rhostar = np.append(rhostar,holder['rhostar'],axis=1)
-        # Dstar = np.append(Dstar,holder['Dstar'],axis=1)
-        # Xstar = np.append(Xstar,holder['Xstar'],axis=1)
-        # rmax = np.append(rmax,holder['rmax'])
-        # vmax = np.append(vmax,holder['vmax'])
-
-    #return Dsamps,Dpsamps,Hsamps,rhosamps,rhopsamps,zfmax,Ki,Kf,sheari,shearf,t0,rhostar,Dstar,Xstar,rmax,vmax
-    return Hsamps, rhosamps, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Lamsamps
-
-
 if __name__ == "__main__":
+    #sys.settrace(sampler)
     # Get input args
     GD = MyOptParse.readargs()
 

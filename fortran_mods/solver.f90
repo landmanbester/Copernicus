@@ -23,6 +23,7 @@ end program
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
         ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ,Flag2) !These are all outputs except NI and NJ which are optional
+!f2py threadsafe
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ

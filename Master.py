@@ -15,6 +15,8 @@ locating are not considered.
 """
 
 import numpy as np
+from numpy import asfortranarray as asf
+from numpy import ascontiguousarray as asc
 from numpy.linalg import cholesky, eigh
 from numpy.random import randn, random, seed
 from scipy.integrate import quad,cumtrapz
@@ -26,6 +28,7 @@ from Copernicus.fortran_mods import CIVP
 from genFLRW import FLRW
 import warnings
 warnings.simplefilter('error', UserWarning)
+warnings.simplefilter('error', RuntimeWarning)
 
 global kappa
 kappa = 8.0*np.pi
@@ -82,6 +85,8 @@ class GP(object):
         self.fcov = self.Kpp - np.dot(self.LinvKp.T, self.LinvKp)
         self.W, self.V = eigh(self.fcov)
         #print any(self.W < 0.0)
+        I = np.argwhere(self.W < 0.0)
+        self.W[I] = 0.0
         self.srtW = np.diag(np.nan_to_num(np.sqrt(np.nan_to_num(self.W))))
 
 
@@ -349,10 +354,11 @@ class SSU(object):
 
         #Do the first CIVP0 integration
         #print "Integrating"
-        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
+        D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
+            self.integrate(ui, rhoi, self.Lam, v, delv, w, delw)
         if F:
             print "There is a problem with the starting samples, Lambda =", self.Lam
-        
+
         # Get the likelihood of the first sample Hz,D,rho,u,vzo,t0,NJ,udot,up
         #print "Getting likelihood"
         self.logLik = self.get_Chi2(Hz=self.Hz, D=D, rhoz=self.rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
@@ -560,6 +566,8 @@ class SSU(object):
             return t0
         except UserWarning:
             return 0.0
+        except RuntimeWarning:
+            return 0.0
 
 
     # def get_C_sol(self, Om0, Ok0, OL0, H0):
@@ -647,18 +655,21 @@ class SSU(object):
         w = np.tile(w0, (NJ, 1)).T
         return w, delw
 
-    def integrate(self,u,rho,Lam,v,delv,w,delw):
+    def integrate(self, u, rho, Lam, v, delv, w, delw):
         """
         This is the routine that calls the compiled Fortran module to do the integration. We only return what we need
         from here but the Fortran code should return everything that could possibly be of interest.
         TODO: write the Fortran code to compute t(v) and r(v) and also find a current time slice t = tmin
         """
         NI, NJ = w.shape
-        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq,F = CIVP.solve(v,delv,w,delw,u,rho,Lam,self.err,NI,NJ)
+        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq,F = \
+            CIVP.solve(asf(v), delv, asf(w), delw, asf(u), asf(rho), Lam, self.err, NI, NJ)
         if F:
-            return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq, 1
+            return asc(D),asc(S),asc(Q),asc(A),asc(Z),asc(rho),asc(u),asc(up),asc(upp),asc(ud),asc(rhod),asc(rhop),\
+                   asc(Sp),asc(Qp),asc(Zp),asc(LLTBCon),asc(T1),asc(T2),asc(vmaxi),asc(sigmasq), 1
         else:
-            return D,S,Q,A,Z,rho,u,up,upp,ud,rhod,rhop,Sp,Qp,Zp,LLTBCon,T1,T2,vmaxi,sigmasq, 0
+            return asc(D), asc(S), asc(Q), asc(A), asc(Z), asc(rho), asc(u), asc(up), asc(upp), asc(ud), asc(rhod), asc(rhop), \
+                   asc(Sp), asc(Qp), asc(Zp), asc(LLTBCon), asc(T1), asc(T2), asc(vmaxi), asc(sigmasq), 0
 
     # def get_tslice(self):
     #     #Here we get the constant time slice closest to t
@@ -1083,35 +1094,35 @@ if __name__ == "__main__":
     # plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
     # plt.show()
 
-    accrate = np.zeros(2)
+    # accrate = np.zeros(2)
+    # #
+    # # Do the burnin period
+    # Nburn = 500
+    # Hsamps = np.zeros([Np,Nburn])
+    # rhosamps = np.zeros([Np, Nburn])
+    # Lamsamps = np.zeros([Nburn])
+    # # Hpsamps = np.zeros([Np,Nburn])
+    # # rhopsamps = np.zeros([Np, Nburn])
+    # # Lampsamps = np.zeros([Nburn])
     #
-    # Do the burnin period
-    Nburn = 500
-    Hsamps = np.zeros([Np,Nburn])
-    rhosamps = np.zeros([Np, Nburn])
-    Lamsamps = np.zeros([Nburn])
-    # Hpsamps = np.zeros([Np,Nburn])
-    # rhopsamps = np.zeros([Np, Nburn])
-    # Lampsamps = np.zeros([Nburn])
-
-    # print "Sampling prior"
+    # # print "Sampling prior"
+    # # for i in range(Nburn):
+    # #     Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
+    # #     Hpsamps[:,i] = Hz
+    # #     rhopsamps[:,i] = rhoz
+    # #     Lampsamps[i] = Lam
+    #
+    # print "Sampling"
     # for i in range(Nburn):
-    #     Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
-    #     Hpsamps[:,i] = Hz
-    #     rhopsamps[:,i] = rhoz
-    #     Lampsamps[i] = Lam
-
-    print "Sampling"
-    for i in range(Nburn):
-        print "logLik = ", logLik
-        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
-        U.track_max_lik(logLik, Hz, rhoz, Lam)
-        Hsamps[:,i] = Hz
-        rhosamps[:,i] = rhoz
-        Lamsamps[i] = Lam
-        accrate += np.array([a, 1])
-    #
-    print "Accrate =", accrate[0]/accrate[1]
+    #     print "logLik = ", logLik
+    #     Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+    #     U.track_max_lik(logLik, Hz, rhoz, Lam)
+    #     Hsamps[:,i] = Hz
+    #     rhosamps[:,i] = rhoz
+    #     Lamsamps[i] = Lam
+    #     accrate += np.array([a, 1])
+    # #
+    # print "Accrate =", accrate[0]/accrate[1]
     #
     # print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
     #
