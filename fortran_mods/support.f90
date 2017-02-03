@@ -337,7 +337,6 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 		counter = counter + 1
 	end do
 	if (counter >= maxit) then
-		write(*,*) 'Warning PNC cut-off did not converge abs(vp-vprev) = ', abs(vp-vprev)
                 Flag = 1
 	endif
 	vmax(i) = vp

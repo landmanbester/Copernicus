@@ -465,7 +465,6 @@ class SSU(object):
                 # Do integration on initial PLC
                 D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(u, rho, Lam, v, delv, w, delw)
                 if F == 1:
-                    print "Just checking for sanity here. Lambda = ", Lam, rhoz[0], Hz[0], Ok0
                     return Hz0, rhoz0, Lam0, logLik0, 0, 0
                 else:
                     # Get likelihood
