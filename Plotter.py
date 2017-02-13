@@ -114,7 +114,7 @@ class plh(object):
         labels.append(r'$FLRW \ uv-cut=200Mpc$')
         p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=alp)
         handles.append(p2)
-        labels.append(r'$Upper 2-\sigma$')
+        labels.append(r'$Upper \ 2-\sigma$')
         #        [p1, p2], [r'$1-\sigma$',r'$2-\sigma$']
         self.ax.legend(handles, labels, loc=2)
         return
@@ -294,7 +294,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     print 'sigmasq'
     sigmasqiplh = plh(sigmasqi, axsigmasq)
     axsigmasq.set_ylabel(r'$  \sigma^2_iD^2_i $', fontsize=20)
-    axsigmasq.set_xlabel(r'$ \frac{z}{z_{max}}', fontsize=20)
+    axsigmasq.set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
     #axsigmasq[0, 0].set_ylim(0, 1.5)
 
     #sigmasqfplh = plh(sigmasqf, axsigmasq[1])
