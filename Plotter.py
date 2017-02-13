@@ -107,14 +107,14 @@ class plh(object):
         self.ax.fill_between(x, F_cut * scale, np.zeros(x.size)+1e-16, facecolor='red', edgecolor='red', alpha=alp,
                              label=r'$FLRW \ uv-cut=100Mpc$', lw=0.0)
         self.ax.plot(x, self.contours[:, 0] * scale, 'blue', label=r'$Median$', alpha=1.0)
-        self.ax.plot(x, F_LTB, 'm', label=r'$t_B = 0 \ LTB$', lw=1.5)
+        self.ax.plot(x, F_LTB, 'm', label=r'$LTB \ (t_B = 0)$', lw=1.5)
         handles, labels = self.ax.get_legend_handles_labels()
         p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=alp)
         handles.append(p1)
-        labels.append(r'$FLRW \ uv-cut=100Mpc$')
+        labels.append(r'$FLRW \ uv-cut=200Mpc$')
         p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=alp)
         handles.append(p2)
-        labels.append(r'$2-\sigma$')
+        labels.append(r'$Upper 2-\sigma$')
         #        [p1, p2], [r'$1-\sigma$',r'$2-\sigma$']
         self.ax.legend(handles, labels, loc=2)
         return
@@ -131,7 +131,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # sigmasqFz10 = LCDM.get_sigmasq(2.41e-9, 0.1)*HzF**2
     # sigmasqFz20 = LCDM.get_sigmasq(2.41e-9, 0.05) * HzF ** 2
     # sigmasqFz50 = LCDM.get_sigmasq(2.41e-9, 0.02) * HzF ** 2
-    sigmasqFz100 = LCDM.get_sigmasq(2.41e-9, 0.004) * HzF ** 2
+    sigmasqFz100 = LCDM.get_sigmasq(2.41e-9, 0.005) * HzF ** 2
     v = LCDM.getnuz()
     # sigmasq10o = uvs(v/v[-1], sigmasqFz10, k =3, s=0.0)
     # sigmasq20o = uvs(v/v[-1], sigmasqFz20, k =3, s=0.0)
