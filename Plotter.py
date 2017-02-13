@@ -131,7 +131,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     # sigmasqFz10 = LCDM.get_sigmasq(2.41e-9, 0.1)*HzF**2
     # sigmasqFz20 = LCDM.get_sigmasq(2.41e-9, 0.05) * HzF ** 2
     # sigmasqFz50 = LCDM.get_sigmasq(2.41e-9, 0.02) * HzF ** 2
-    sigmasqFz100 = LCDM.get_sigmasq(2.41e-9, 0.01) * HzF ** 2
+    sigmasqFz100 = LCDM.get_sigmasq(2.41e-9, 0.004) * HzF ** 2
     v = LCDM.getnuz()
     # sigmasq10o = uvs(v/v[-1], sigmasqFz10, k =3, s=0.0)
     # sigmasq20o = uvs(v/v[-1], sigmasqFz20, k =3, s=0.0)
