@@ -294,6 +294,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     print 'sigmasq'
     sigmasqiplh = plh(sigmasqi, axsigmasq)
     axsigmasq.set_ylabel(r'$  \sigma^2_iD^2_i $', fontsize=20)
+    axsigmasq.set_xlabel(r'$ \frac{z}{z_{max}}', fontsize=20)
     #axsigmasq[0, 0].set_ylim(0, 1.5)
 
     #sigmasqfplh = plh(sigmasqf, axsigmasq[1])
