@@ -23,6 +23,7 @@ end program
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
         ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ,Flag2) !These are all outputs except NI and NJ which are optional
+!f2py threadsafe
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
@@ -160,8 +161,8 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 !!$		call geotr(t,r,u(:,i),up(:,i),X(:,i),dXdr(:,i),delv,w(i),NI,NJ,i,jmax)
 
 	end do
-        if (Flag2 /= 1) then
-            !Get the LLTB consistency relation
-            call get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,dZdvp,u,rho,Lam,delw,NI,NJ,vmaxi)
-	endif
+!!$        if (Flag2 /= 1) then
+!!$            !Get the LLTB consistency relation
+!!$            call get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,dZdvp,u,rho,Lam,delw,NI,NJ,vmaxi)
+!!$	endif
 end subroutine
