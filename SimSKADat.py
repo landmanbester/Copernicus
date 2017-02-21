@@ -7,7 +7,7 @@ Created on Thu Nov 12 10:25:06 2015
 Simulate SKA and reddrift data
 
 """
-from numpy import linspace, array, zeros, ones, loadtxt,append, column_stack,argsort, savetxt
+from numpy import linspace, array, zeros, ones, loadtxt,append, column_stack,argsort, savetxt, abs
 from genFLRW import FLRW
 from CIVPSimp import SSU
 from scipy.interpolate import UnivariateSpline as uvs
@@ -25,24 +25,21 @@ if __name__ == "__main__":
     zF = LCDM.z
     rhozF = LCDM.getrho()
     nuzF = LCDM.getnuz()
+    dzdwzF = LCDM.getdzdw()
 
 
     #Do integration of FLRW funcs
     zp = linspace(0,zmax,np)
-    tmin = 3.0
-    err = 1e-5
+
     LamF = 3*0.7*0.2335**2
-    U = SSU(zmax,tmin,np,err,nret)
-    U.doCIVP(HzF,rhozF,LamF)
-    DF,muF,dzdwF,T1iF,T1fF,T2iF,T2fF,LLTBConsiF,LLTBConsfF,rhostarF,DstarF,XstarF,HperpF,rmaxF,OmF,OLF,t0F = U.get_funcs()
+
     
     #Now the three functions we need are D, H and dzdw so create splines for these
     Do = uvs(zp,DzF,k=3,s=0.0)
     Ho = uvs(zp,HzF,k=3,s=0.0)
-    dzdwo = uvs(zp,dzdwF,k=3,s=0.0)
-    dzdwzF = dzdwo(zp)
+    dzdwo = uvs(zp,dzdwzF,k=3,s=0.0)
     
-    #Set redshift points
+    #Set redshift points for Dz and Hz
     nDat = 12
     zDat = zeros(nDat)
     delz = 0.037
@@ -59,11 +56,23 @@ if __name__ == "__main__":
     zDat[9] = zDat0 + 36.5*delz
     zDat[10] = zDat0 + 45.8*delz
     zDat[11] = zDat0 + 56.0*delz
-    
+
+    # Set redshift points for dzdw
+    zDatdzdw = zeros(4)
+    zDatdzdw[0] = 1.0
+    zDatdzdw[1] = 1.4
+    zDatdzdw[2] = 1.85
+    zDatdzdw[3] = 2.3
+
     #Get func values at these points
     D = Do(zDat)
     H = Ho(zDat)
-    dzdw = dzdwo(zDat)
+    dzdw = dzdwo(zDatdzdw)
+    errdzdw = zeros(4)
+    errdzdw[0] = dzdw[0] * 0.4
+    errdzdw[1] = dzdw[1] * 0.65
+    errdzdw[2] = dzdw[2] * 1.75
+    errdzdw[3] = abs(dzdw[3]) * 2.2
     
     #Set error at these points
     delz = zmax - zDat0
@@ -74,12 +83,11 @@ if __name__ == "__main__":
     errHf = 0.02
     errH0 = 0.01    
     mH = (errHf - errH0)/delz*H
-    errH = errH0 + mH*(zDat - zDat0)    
-    errdzdw = 0.01*ones(nDat)    
+    errH = errH0 + mH*(zDat - zDat0)
 
     #Load the data sets to append these to
-    zD0, Dz0, sDz0 = loadtxt('RawData/Unionrz.txt',unpack=True)
-    zH0, Hz0, sHz0 = loadtxt('RawData/CChz.txt',unpack=True)
+    zD0, Dz0, sDz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/Unionrz.txt',unpack=True)
+    zH0, Hz0, sHz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/CChz.txt',unpack=True)
     
     #Append the data
     zD = append(zD0,zDat)
@@ -95,7 +103,7 @@ if __name__ == "__main__":
     Hz = Hz[I]
     sHz = sHz[I]
     saveH = column_stack((zH,Hz,sHz))
-    Hf = open('RawData/SimSKAH.txt','w')
+    Hf = open('/home/landman/Projects/Data/CP_data/SimSKAH.txt','w')
     savetxt(Hf,saveH,fmt='%s')
     Hf.close()
     I = argsort(zD)
@@ -103,11 +111,11 @@ if __name__ == "__main__":
     Dz = Dz[I]
     sDz = sDz[I]
     saveD = column_stack((zD,Dz,sDz))
-    Df = open('RawData/SimSKAD.txt','w')
+    Df = open('/home/landman/Projects/Data/CP_data/SimSKAD.txt','w')
     savetxt(Df,saveD,fmt='%s')
     Df.close()
-    savedzdw = column_stack((zDat,dzdw,errdzdw))
-    dzdwf = open('RawData/Simdzdw.txt','w')
+    savedzdw = column_stack((zDatdzdw,dzdw,errdzdw))
+    dzdwf = open('/home/landman/Projects/Data/CP_data/Simdzdw.txt','w')
     savetxt(dzdwf,savedzdw,fmt='%s')
     dzdwf.close()
 
@@ -115,9 +123,12 @@ if __name__ == "__main__":
     plt.figure('D')
     plt.plot(zp,DzF)
     plt.errorbar(zD,Dz,sDz,fmt='xr')
+    plt.show()
     plt.figure('H')
     plt.plot(zp,HzF)
     plt.errorbar(zH,Hz,sHz,fmt='xr')
+    plt.show()
     plt.figure('dzdw')
     plt.plot(zp,dzdwzF)
-    plt.errorbar(zDat,dzdw,errdzdw,fmt='xr')     
+    plt.errorbar(zDatdzdw,dzdw,errdzdw,fmt='xr')
+    plt.show()

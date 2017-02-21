@@ -842,13 +842,15 @@ class SSU(object):
             T1f = 0.0
             print "Failed at T1f"
         try:
-            sigmasqio = uvs(self.v/self.v[-1], self.sigmasq[:, 0], k=3, s=0.0)
+            vzi = self.u[:,0] - 1.0
+            sigmasqio = uvs(vzi/vzi[-1], self.sigmasq[:, 0], k=3, s=0.0)
             sigmasqi = sigmasqio(l)
         except:
             sigmasqi = 0.0
             print "Failed at sigmasqi"
         try:
-            sigmasqfo = uvs(self.v[0:njf]/self.v[njf-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
+            vzf = self.u[0:njf, umax] - 1.0
+            sigmasqfo = uvs(vzf/vzf[-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
             sigmasqf = sigmasqfo(l)
         except:
             sigmasqf = 0.0

@@ -1,3 +1,3 @@
 
 all:
-	f2py -m CIVP solver.f90 -c
+	f2py -m CIVP solver.f90 -c --noopt --debug

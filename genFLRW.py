@@ -41,8 +41,8 @@ class FLRW(object):
         
     def getDz(self,z):
         K = -self.Ok0*self.Hz[0]**2
-        dDc = uvs(self.z,1/((1+self.z)**2*self.Hz),k=3,s=0.0)
-        Dc = dDc.antiderivative()(z) #comoving distance
+        dDc = uvs(self.z,1.0/self.Hz,k=3,s=0.0)
+        Dc = dDc.antiderivative()(self.z) #comoving distance
         if (K>0.0):
             self.Dz = sin(sqrt(K)*Dc)/sqrt(K)/(1+z)
         elif (K<0.0):
@@ -70,6 +70,9 @@ class FLRW(object):
         dvdzo = uvs(self.z,1/((1+self.z)**2*self.Hz),k=3,s=0.0)
         v = dvdzo.antiderivative()(self.z)
         return v
+
+    def getdzdw(self):
+        return self.H0*(1+self.z) - self.Hz
 
     def get_sigmasq(self,DelRSq,UV_cut):
         """
