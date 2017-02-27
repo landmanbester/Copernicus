@@ -13,7 +13,7 @@ Universes that are not in causal contact with the constant time slice we are
 locating are not considered.
 
 """
-
+import traceback
 import numpy as np
 from numpy import asfortranarray as asf
 from numpy import ascontiguousarray as asc
@@ -822,201 +822,201 @@ class SSU(object):
             T2i = T2io(l)
         except:
             T2i = np.zeros(self.Nret)
-            print "Failed at T2i"
+            print "Failed at T2i", traceback.format_exc()
         try:
             T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.00001)
             T2f = T2fo(l)
         except:
             T2f = np.zeros(self.Nret)
-            print "Failed at T2f"
+            print "Failed at T2f", traceback.format_exc()
         try:
             T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.000001)
             T1i = T1io(l)
         except:
             T1i = np.zeros(self.Nret)
-            print "Failed at T1i"
+            print "Failed at T1i", traceback.format_exc()
         try:
             T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.00001)
             T1f = T1fo(l)
         except:
             T1f = np.zeros(self.Nret)
-            print "Failed at T1f"
+            print "Failed at T1f", traceback.format_exc()
         try:
             vzi = self.u[:,0] - 1.0
             sigmasqio = uvs(vzi/vzi[-1], self.sigmasq[:, 0], k=3, s=0.0)
             sigmasqi = sigmasqio(l)
         except:
             sigmasqi = np.zeros(self.Nret)
-            print "Failed at sigmasqi"
+            print "Failed at sigmasqi", traceback.format_exc()
         try:
             vzf = self.u[0:njf, umax] - 1.0
             sigmasqfo = uvs(vzf/vzf[-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
             sigmasqf = sigmasqfo(l)
         except:
             sigmasqf = np.zeros(self.Nret)
-            print "Failed at sigmasqf"
+            print "Failed at sigmasqf", traceback.format_exc()
         #Get the LLTB consistency relation
         jmaxf = self.vmaxi[-1]
         try:
             LLTBConsi = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,0],k=3,s=0.0)(l)
         except:
             LLTBConsi = np.zeros(self.Nret)
-            print "failed at LLTBConsi. jmaxf = ", jmaxf, " NI = ", self.NI
+            print "failed at LLTBConsi", traceback.format_exc()
         try:
             LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
         except:
             LLTBConsf = np.zeros(self.Nret)
-            print "failed at LLTBConsf. NI = ", self.NI
+            print "failed at LLTBConsf", traceback.format_exc()
         try:
             Di = uvs(self.v/self.v[-1], self.D[:, 0], k=3, s=0.0)(l)
         except:
             Di = np.zeros(self.Nret)
-            print "failed at Di"
+            print "failed at Di", traceback.format_exc()
         try:
             Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Df = np.zeros(self.Nret)
-            print "failed at Df"
+            print "failed at Df", traceback.format_exc()
         try:
             Si = uvs(self.v/self.v[-1], self.S[:, 0], k=3, s=0.0)(l)
         except:
             Si = np.zeros(self.Nret)
-            print "failed at Si"
+            print "failed at Si", traceback.format_exc()
         try:
             Sf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.S[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Sf = np.zeros(self.Nret)
-            print "failed at Sf"
+            print "failed at Sf", traceback.format_exc()
         try:
             Qi = uvs(self.v/self.v[-1], self.Q[:, 0], k=3, s=0.0)(l)
         except:
             Qi = np.zeros(self.Nret)
-            print "failed at Qi"
+            print "failed at Qi", traceback.format_exc()
         try:
             Qf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Q[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Qf = np.zeros(self.Nret)
-            print "failed at Qf"
+            print "failed at Qf", traceback.format_exc()
         try:
             Ai = uvs(self.v/self.v[-1], self.A[:, 0], k=3, s=0.0)(l)
         except:
             Ai = np.zeros(self.Nret)
-            print "failed at Ai"
+            print "failed at Ai", traceback.format_exc()
         try:
             Af = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.A[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Af = np.zeros(self.Nret)
-            print "failed at Af"
+            print "failed at Af", traceback.format_exc()
         try:
             Zi = uvs(self.v/self.v[-1], self.Z[:, 0], k=3, s=0.0)(l)
         except:
             Zi = np.zeros(self.Nret)
-            print "failed at Zi"
+            print "failed at Zi", traceback.format_exc()
         try:
             Zf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Z[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Zf = np.zeros(self.Nret)
-            print "failed at Zf"
+            print "failed at Zf", traceback.format_exc()
         try:
             Spi = uvs(self.v/self.v[-1], self.Sp[:, 0], k=3, s=0.0)(l)
         except:
             Spi = np.zeros(self.Nret)
-            print "failed at Spi"
+            print "failed at Spi", traceback.format_exc()
         try:
             Spf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Sp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Spf = np.zeros(self.Nret)
-            print "failed at Spf"
+            print "failed at Spf", traceback.format_exc()
         try:
             Qpi = uvs(self.v/self.v[-1], self.Qp[:, 0], k=3, s=0.0)(l)
         except:
             Qpi = np.zeros(self.Nret)
-            print "failed at Qpi"
+            print "failed at Qpi", traceback.format_exc()
         try:
             Qpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Qp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Qpf = np.zeros(self.Nret)
-            print "failed at Qpf"
+            print "failed at Qpf", traceback.format_exc()
         try:
             Zpi = uvs(self.v/self.v[-1], self.Zp[:, 0], k=3, s=0.0)(l)
         except:
             Zpi = np.zeros(self.Nret)
-            print "failed at Zpi"
+            print "failed at Zpi", traceback.format_exc()
         try:
             Zpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Zp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             Zpf = np.zeros(self.Nret)
-            print "failed at Zpf"
+            print "failed at Zpf", traceback.format_exc()
         try:
             ui = uvs(self.v/self.v[-1], self.u[:, 0], k=3, s=0.0)(l)
         except:
             ui = np.zeros(self.Nret)
-            print "failed at ui"
+            print "failed at ui", traceback.format_exc()
         try:
             uf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.u[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             uf = np.zeros(self.Nret)
-            print "failed at uf"
+            print "failed at uf", traceback.format_exc()
         try:
             upi = uvs(self.v/self.v[-1], self.up[:, 0], k=3, s=0.0)(l)
         except:
             upi = np.zeros(self.Nret)
-            print "failed at upi"
+            print "failed at upi", traceback.format_exc()
         try:
             upf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.up[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             upf = np.zeros(self.Nret)
-            print "failed at upf"
+            print "failed at upf", traceback.format_exc()
         try:
             uppi = uvs(self.v/self.v[-1], self.upp[:, 0], k=3, s=0.0)(l)
         except:
             uppi = np.zeros(self.Nret)
-            print "failed at uppi"
+            print "failed at uppi", traceback.format_exc()
         try:
             uppf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.upp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             uppf = np.zeros(self.Nret)
-            print "failed at uppf"
+            print "failed at uppf", traceback.format_exc()
         try:
             udoti = uvs(self.v/self.v[-1], self.udot[:, 0], k=3, s=0.0)(l)
         except:
             udoti = np.zeros(self.Nret)
-            print "failed at udoti"
+            print "failed at udoti", traceback.format_exc()
         try:
             udotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.udot[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             udotf = np.zeros(self.Nret)
-            print "failed at udotf"
+            print "failed at udotf", traceback.format_exc()
         try:
             rhoi = uvs(self.v/self.v[-1], self.rho[:, 0], k=3, s=0.0)(l)
         except:
             rhoi = np.zeros(self.Nret)
-            print "failed at rhoi"
+            print "failed at rhoi", traceback.format_exc()
         try:
             rhof = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rho[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             rhof = np.zeros(self.Nret)
-            print "failed at rhof"
+            print "failed at rhof", traceback.format_exc()
         try:
             rhopi = uvs(self.v/self.v[-1], self.rhop[:, 0], k=3, s=0.0)(l)
         except:
             rhopi = np.zeros(self.Nret)
-            print "failed at rhopi"
+            print "failed at rhopi", traceback.format_exc()
         try:
             rhopf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhop[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             rhopf = np.zeros(self.Nret)
-            print "failed at rhopf"
+            print "failed at rhopf", traceback.format_exc()
         try:
             rhodoti = uvs(self.v/self.v[-1], self.rhodot[:, 0], k=3, s=0.0)(l)
         except:
             rhodoti = np.zeros(self.Nret)
-            print "failed at rhodoti"
+            print "failed at rhodoti", traceback.format_exc()
         try:
             rhodotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhodot[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
             rhodotf = np.zeros(self.Nret)
-            print "failed at rhodotf"
+            print "failed at rhodotf", traceback.format_exc()
         # #Get constant t slices
         # if F == 0:
         #     I = range(self.Istar)
