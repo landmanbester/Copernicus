@@ -821,201 +821,201 @@ class SSU(object):
             T2io = uvs(self.v/self.v[-1], self.T2[:, 0], k=3, s=0.000001)
             T2i = T2io(l)
         except:
-            T2i = 0.0
+            T2i = np.zeros(self.Nret)
             print "Failed at T2i"
         try:
             T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.00001)
             T2f = T2fo(l)
         except:
-            T2f = 0.0
+            T2f = np.zeros(self.Nret)
             print "Failed at T2f"
         try:
             T1io = uvs(self.v/self.v[-1], self.T1[:, 0], k=3, s=0.000001)
             T1i = T1io(l)
         except:
-            T1i = 0.0
+            T1i = np.zeros(self.Nret)
             print "Failed at T1i"
         try:
             T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.00001)
             T1f = T1fo(l)
         except:
-            T1f = 0.0
+            T1f = np.zeros(self.Nret)
             print "Failed at T1f"
         try:
             vzi = self.u[:,0] - 1.0
             sigmasqio = uvs(vzi/vzi[-1], self.sigmasq[:, 0], k=3, s=0.0)
             sigmasqi = sigmasqio(l)
         except:
-            sigmasqi = 0.0
+            sigmasqi = np.zeros(self.Nret)
             print "Failed at sigmasqi"
         try:
             vzf = self.u[0:njf, umax] - 1.0
             sigmasqfo = uvs(vzf/vzf[-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
             sigmasqf = sigmasqfo(l)
         except:
-            sigmasqf = 0.0
+            sigmasqf = np.zeros(self.Nret)
             print "Failed at sigmasqf"
         #Get the LLTB consistency relation
         jmaxf = self.vmaxi[-1]
         try:
             LLTBConsi = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,0],k=3,s=0.0)(l)
         except:
-            LLTBConsi = 0.0
+            LLTBConsi = np.zeros(self.Nret)
             print "failed at LLTBConsi. jmaxf = ", jmaxf, " NI = ", self.NI
         try:
             LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
         except:
-            LLTBConsf = 0.0
+            LLTBConsf = np.zeros(self.Nret)
             print "failed at LLTBConsf. NI = ", self.NI
         try:
             Di = uvs(self.v/self.v[-1], self.D[:, 0], k=3, s=0.0)(l)
         except:
-            Di = 0.0
+            Di = np.zeros(self.Nret)
             print "failed at Di"
         try:
             Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Df = 0.0
+            Df = np.zeros(self.Nret)
             print "failed at Df"
         try:
             Si = uvs(self.v/self.v[-1], self.S[:, 0], k=3, s=0.0)(l)
         except:
-            Si = 0.0
+            Si = np.zeros(self.Nret)
             print "failed at Si"
         try:
             Sf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.S[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Sf = 0.0
+            Sf = np.zeros(self.Nret)
             print "failed at Sf"
         try:
             Qi = uvs(self.v/self.v[-1], self.Q[:, 0], k=3, s=0.0)(l)
         except:
-            Qi = 0.0
+            Qi = np.zeros(self.Nret)
             print "failed at Qi"
         try:
             Qf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Q[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Qf = 0.0
+            Qf = np.zeros(self.Nret)
             print "failed at Qf"
         try:
             Ai = uvs(self.v/self.v[-1], self.A[:, 0], k=3, s=0.0)(l)
         except:
-            Ai = 0.0
+            Ai = np.zeros(self.Nret)
             print "failed at Ai"
         try:
             Af = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.A[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Af = 0.0
+            Af = np.zeros(self.Nret)
             print "failed at Af"
         try:
             Zi = uvs(self.v/self.v[-1], self.Z[:, 0], k=3, s=0.0)(l)
         except:
-            Zi = 0.0
+            Zi = np.zeros(self.Nret)
             print "failed at Zi"
         try:
             Zf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Z[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Zf = 0.0
+            Zf = np.zeros(self.Nret)
             print "failed at Zf"
         try:
             Spi = uvs(self.v/self.v[-1], self.Sp[:, 0], k=3, s=0.0)(l)
         except:
-            Spi = 0.0
+            Spi = np.zeros(self.Nret)
             print "failed at Spi"
         try:
             Spf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Sp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Spf = 0.0
+            Spf = np.zeros(self.Nret)
             print "failed at Spf"
         try:
             Qpi = uvs(self.v/self.v[-1], self.Qp[:, 0], k=3, s=0.0)(l)
         except:
-            Qpi = 0.0
+            Qpi = np.zeros(self.Nret)
             print "failed at Qpi"
         try:
             Qpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Qp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Qpf = 0.0
+            Qpf = np.zeros(self.Nret)
             print "failed at Qpf"
         try:
             Zpi = uvs(self.v/self.v[-1], self.Zp[:, 0], k=3, s=0.0)(l)
         except:
-            Zpi = 0.0
+            Zpi = np.zeros(self.Nret)
             print "failed at Zpi"
         try:
             Zpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Zp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            Zpf = 0.0
+            Zpf = np.zeros(self.Nret)
             print "failed at Zpf"
         try:
             ui = uvs(self.v/self.v[-1], self.u[:, 0], k=3, s=0.0)(l)
         except:
-            ui = 0.0
+            ui = np.zeros(self.Nret)
             print "failed at ui"
         try:
             uf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.u[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            uf = 0.0
+            uf = np.zeros(self.Nret)
             print "failed at uf"
         try:
             upi = uvs(self.v/self.v[-1], self.up[:, 0], k=3, s=0.0)(l)
         except:
-            upi = 0.0
+            upi = np.zeros(self.Nret)
             print "failed at upi"
         try:
             upf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.up[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            upf = 0.0
+            upf = np.zeros(self.Nret)
             print "failed at upf"
         try:
             uppi = uvs(self.v/self.v[-1], self.upp[:, 0], k=3, s=0.0)(l)
         except:
-            uppi = 0.0
+            uppi = np.zeros(self.Nret)
             print "failed at uppi"
         try:
             uppf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.upp[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            uppf = 0.0
+            uppf = np.zeros(self.Nret)
             print "failed at uppf"
         try:
             udoti = uvs(self.v/self.v[-1], self.udot[:, 0], k=3, s=0.0)(l)
         except:
-            udoti = 0.0
+            udoti = np.zeros(self.Nret)
             print "failed at udoti"
         try:
             udotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.udot[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            udotf = 0.0
+            udotf = np.zeros(self.Nret)
             print "failed at udotf"
         try:
             rhoi = uvs(self.v/self.v[-1], self.rho[:, 0], k=3, s=0.0)(l)
         except:
-            rhoi = 0.0
+            rhoi = np.zeros(self.Nret)
             print "failed at rhoi"
         try:
             rhof = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rho[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            rhof = 0.0
+            rhof = np.zeros(self.Nret)
             print "failed at rhof"
         try:
             rhopi = uvs(self.v/self.v[-1], self.rhop[:, 0], k=3, s=0.0)(l)
         except:
-            rhopi = 0.0
+            rhopi = np.zeros(self.Nret)
             print "failed at rhopi"
         try:
             rhopf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhop[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            rhopf = 0.0
+            rhopf = np.zeros(self.Nret)
             print "failed at rhopf"
         try:
             rhodoti = uvs(self.v/self.v[-1], self.rhodot[:, 0], k=3, s=0.0)(l)
         except:
-            rhodoti = 0.0
+            rhodoti = np.zeros(self.Nret)
             print "failed at rhodoti"
         try:
             rhodotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhodot[0:jmaxf,-1], k=3, s=0.0)(l)
         except:
-            rhodotf = 0.0
+            rhodotf = np.zeros(self.Nret)
             print "failed at rhodotf"
         # #Get constant t slices
         # if F == 0:
