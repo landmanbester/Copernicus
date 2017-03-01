@@ -451,12 +451,12 @@ class SSU(object):
         # Propose sample
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
         #print Lam, Lam0
-        if F == 1:
+        if F:
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
             # Set up spatial grid
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lam)
-            if F == 1:
+            if F:
                 #print "t0 < tmin"
                 return Hz0, rhoz0, Lam0, logLik0, 0, 0
             else:
@@ -464,7 +464,7 @@ class SSU(object):
                 w, delw = self.age_grid(NI, NJ, delv, t0)
                 # Do integration on initial PLC
                 D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(u, rho, Lam, v, delv, w, delw)
-                if F == 1:
+                if F:
                     return Hz0, rhoz0, Lam0, logLik0, 0, 0
                 else:
                     # Get likelihood
@@ -836,10 +836,10 @@ class SSU(object):
             T1i = np.zeros(self.Nret)
             print "Failed at T1i", traceback.format_exc()
         try:
-            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax],k=3,s=0.00001)
+            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.00001)
             T1f = T1fo(l)
         except:
-            T1f = np.zeros(self.Nret)
+            T1f = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0)
             print "Failed at T1f", traceback.format_exc()
         try:
             vzi = self.u[:,0] - 1.0
@@ -850,9 +850,10 @@ class SSU(object):
             print "Failed at sigmasqi", traceback.format_exc()
         try:
             vzf = self.u[0:njf, umax] - 1.0
-            sigmasqfo = uvs(vzf/vzf[-1],self.sigmasq[0:njf, umax],k=3,s=0.0)
+            sigmasqfo = uvs(vzf/vzf[-1], self.sigmasq[0:njf, umax],k=3,s=0.0)
             sigmasqf = sigmasqfo(l)
         except:
+            print vzf[-1]
             sigmasqf = np.zeros(self.Nret)
             print "Failed at sigmasqf", traceback.format_exc()
         #Get the LLTB consistency relation

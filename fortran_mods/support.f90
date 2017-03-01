@@ -10,26 +10,22 @@ subroutine predict(delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i,rho,u,rhod,ud)
 	!Local variables
 	integer :: j
 	real*8 :: dotu, dotrho
-
+        !Note time derivatives have been evaluated in Evaluate step below
 	do j=1,jmax
 		if (i==2) then
 			if (j==1) then
 				u(j,i) = 1.D0
-                                rho(j,i) = rho(j,i-1) - delw*rhod(j,i-1) !rho(j,i) = rhoow(i)
+                                rho(j,i) = rho(j,i-1) - delw*rhod(j,i-1) 
 			else
-				!call dudw(dotu,A(j),Z(j),u(j,i-1),up(j))
 				u(j,i) = u(j,i-1) - delw*ud(j,i-1)
-                                !call drhodw(dotrho,D(j),S(j),Q(j),A(j),rho(j,i-1),rhop(j),u(j,i-1),up(j),j)
                                 rho(j,i) = rho(j,i-1) - delw*rhod(j,i-1)		
 			endif
 		else
 			if (j==1) then
 				u(j,i) = 1.D0
-                                rho(j,i) = rho(j,i-1) - delw*(3.D0*rhod(j,i-1) - rhod(j,i-2))/2.D0 !rho(j,i)rho(j,i) = rhoow(i)
+                                rho(j,i) = rho(j,i-1) - delw*(3.D0*rhod(j,i-1) - rhod(j,i-2))/2.D0
 			else
-				!call dudw(dotu,A(j),Z(j),u(j,i-1),up(j))
 				u(j,i) = u(j,i-1) - delw*(3.D0*ud(j,i-1) - ud(j,i-2))/2.D0
-                                !call drhodw(dotrho,D(j),S(j),Q(j),A(j),rho(j,i-1),rhop(j),u(j,i-1),up(j),j)
                                 rho(j,i) = rho(j,i-1) - delw*(3.D0*rhod(j,i-1) - rhod(j,i-2))/2.D0			
 			endif	
 		endif
@@ -267,7 +263,6 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
 		rhod(j,i) = dotrho
 
 	end do
-        !Finally we solve for drdv
 end subroutine
 
 subroutine correct(rho,rhod,u,ud,delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i)
@@ -322,7 +317,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 	
 	counter = 0
 	
-	do while(abs(vp - vprev) > tol .and. counter < maxit)
+	do while(abs(vp - vprev) > tol .and. counter < maxit .and. Flag /= 1)
 		vprev = vp
 		jmax = floor(vp/delv + 1.D0)
 		if (jmax < 2) then

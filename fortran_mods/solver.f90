@@ -43,6 +43,8 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	!real*8, dimension(NJ,NI) :: dt, dr
 
 	!init output arrays and set boundary conditions
+        Flag = 0
+        Flag2 = 0
 	vmaxi = 0
 	vmaxi(1) = NJ
 	vmax = 0.D0
@@ -73,9 +75,9 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
         LLTBCon = 0.D0
         Dww = 0.0D0
         Aw = 0.0D0
-        T1 = 0.0
-        T2 = 0.0
-        sigmasq = 0.0 
+        T1 = 0.0D0
+        T2 = 0.0D0
+        sigmasq = 0.0D0 
 
         !To store partial derivs involving t
 	dtdw = 0.D0
@@ -134,9 +136,16 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 		    !Evaluate hypersurface variables with the corrected values
 		    call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 
-                    !Maybe getvmaxi here?
                 end do
                 
+                !Re-evaluate vmaxi with corrected value
+		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
+                if (Flag==1) then
+                    Flag2 = 1
+                    exit
+                endif
+		jmax = vmaxi(i)
+
                 !Final correct
                 call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
 
