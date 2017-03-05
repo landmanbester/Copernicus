@@ -815,8 +815,9 @@ class SSU(object):
         umax = int(self.Istar)
         njf = int(self.vmaxi[umax]) #This is the max value of index on final pnc considered
 
-        if njf == 2:
-            print "Hey man you fucker!!"
+        if (njf <= 2 or njf > self.NJ):
+            njf = self.NJ
+            print "Got njf outside 2-NJ", njf
         
         #All functions will be returned with the domain normalised between 0 and 1
         l = np.linspace(0, 1, self.Nret)
