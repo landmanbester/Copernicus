@@ -28,6 +28,7 @@ if __name__ == "__main__":
     Nret = GD["nret"]
     err = GD["err"]
     beta = GD["beta"]
+    use_meanf = GD["use_meanf"]
 
     futures = []
     Hzlist = []
@@ -92,7 +93,8 @@ if __name__ == "__main__":
     while cont and num_repeats < max_repeats:
         with cf.ThreadPoolExecutor(max_workers=NSamplers) as executor:
             for i in xrange(NSamplers):
-                future = executor.submit(sampler,zmax,Np,Nret,Nsamp,Nburn,tstar,data_prior,data_lik,DoPLCF,DoTransform,err,i,fname,beta,HzF,rhozF,Lam)
+                future = executor.submit(sampler, zmax, Np, Nret, Nsamp, Nburn, tstar, data_prior, data_lik, DoPLCF,
+                                         DoTransform, err, i, fname, beta, HzF, rhozF, Lam, use_meanf)
                 futures.append(future)
             k = 0
             for f in cf.as_completed(futures):
@@ -153,7 +155,11 @@ if __name__ == "__main__":
 
         test_GR = np.array([Htest,rhotest,T1itest, T1ftest, T2itest, T2ftest])
 
-        cont = any(test_GR > 1.15)
+        try:
+            cont = any(test_GR > 1.15)
+        except:
+            cont = True
+            print "Something went wrong in GR test"
 
         if cont and num_repeats < max_repeats:
             print "Gelman-Rubin indicates non-convergence"
@@ -171,45 +177,3 @@ if __name__ == "__main__":
 
     #print Hsamps.shape
     print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest
-
-    # plt.figure('H')
-    # for i in xrange(NSamplers):
-    #     plt.plot(Hsampslist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "H.png",dpi=250)
-    #
-    # plt.figure('rho')
-    # for i in xrange(NSamplers):
-    #     plt.plot(rhosampslist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "rho.png", dpi=250)
-    #
-    # plt.figure('T1i')
-    # for i in xrange(NSamplers):
-    #     plt.plot(T1ilist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "T1i.png", dpi=250)
-    #
-    # plt.figure('T1f')
-    # for i in xrange(NSamplers):
-    #     plt.plot(T1flist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "T1f.png", dpi=250)
-    #
-    # plt.figure('T2i')
-    # for i in xrange(NSamplers):
-    #     plt.plot(T2ilist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "T2i.png", dpi=250)
-    #
-    # plt.figure('T2f')
-    # for i in xrange(NSamplers):
-    #     plt.plot(T2flist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "T2f.png", dpi=250)
-    #
-    # plt.figure('LLTBi')
-    # for i in xrange(NSamplers):
-    #     plt.plot(LLTBConsilist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "LLTBi.png", dpi=250)
-    #
-    # plt.figure('LLTBf')
-    # for i in xrange(NSamplers):
-    #     plt.plot(LLTBConsflist[i],'b',alpha=0.1)
-    # plt.savefig(fname + "LLTBf.png", dpi=250)
-
-    #print NSamplers, Nsamp, Nburn, tstar, DoPLCF, DoTransform, fname, data_prior, data_lik, zmax, Np, Nret, err

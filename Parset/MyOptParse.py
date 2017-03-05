@@ -24,6 +24,7 @@ def readargs():
         "nret" : 100,
         "err" : 1e-5,
         "beta" : 0.01,
+        "use_meanf" : True,
         }
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
@@ -54,6 +55,7 @@ def readargs():
     parser.add_argument("--nret", type=int, help="The number of points at which to return quantities of interest")
     parser.add_argument("--err", type=float, help="Target error of the numerical integration scheme")
     parser.add_argument("--beta", type=float, help="Parameter to control acceptance rate of the MCMC")
+    parser.add_argument("--use_meanf", type=bool, help="Whether mean functions should be used for GPR")
     args = parser.parse_args(remaining_argv)
 
 

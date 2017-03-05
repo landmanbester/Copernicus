@@ -10,6 +10,11 @@ subroutine predict(delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i,rho,u,rhod,ud)
 	!Local variables
 	integer :: j
 	real*8 :: dotu, dotrho
+        
+        if (jmax > NJ) then
+            write(*,*) "Warning! Got jmax > NJ in predict", jmax
+        endif
+
         !Note time derivatives have been evaluated in Evaluate step below
 	do j=1,jmax
 		if (i==2) then
@@ -52,6 +57,10 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
         !Set tolerance for PC step (for some reason the code is extremely sensitive to errors in Q,A and Z)
         tol = 1.0E-9
         maxit = 100000 !Maximum number of iterations
+
+        if (jmax > NJ) then
+            write(*,*) "Warning! Got jmax > NJ in evaluate", jmax
+        endif
 
 	!Init local arrays
 	pD = 0.D0
@@ -277,6 +286,10 @@ subroutine correct(rho,rhod,u,ud,delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i)
 	!Local parameters
 	integer :: j
 	real*8 :: dotu, dotrho, pD
+
+        if (jmax > NJ) then
+            write(*,*) "Warning! Got jmax > NJ in correct", jmax
+        endif
 	
 	do j=1,jmax
 		if (j==1) then
@@ -350,6 +363,10 @@ subroutine calcdrdv(drdv,drdvp,drdvd,D,S,A,Z,u,up,delv,delw,NI,NJ,i,jmax)
 	integer :: k
 	!real*8, dimension(NJ) :: drdvd1, drdvd2
 	!real*8, dimension(NJ) ::, drdvp
+
+        if (jmax > NJ) then
+            write(*,*) "Warning! Got jmax > NJ in calcdrdv", jmax
+        endif
 
 	if (i == 2) then
 		!Predict drdv on next time step

@@ -128,6 +128,11 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
                 endif
 		jmax = vmaxi(i)
 
+                if (jmax > NJ) then
+                    jmax = NJ
+                    write(*,*) "Warning! Got jmax > NJ in first estimate in main. Setting jmax = NJ"
+                endif
+
                 !Do iterative step (5 was chosen at random, most of the time there is not much improvement beyond 5 iterations)
                 do k=1,5 
 		    !Correct fluid variables
@@ -145,6 +150,11 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
                     exit
                 endif
 		jmax = vmaxi(i)
+
+                if (jmax > NJ) then
+                    jmax = NJ
+                    write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Setting jmax = NJ"
+                endif
 
                 !Final correct
                 call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)

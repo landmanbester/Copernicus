@@ -144,7 +144,7 @@ def plot2Ddist(variables,axeslist=None,maxvalues=None,histbinslist=[100, 100],
         frac_label_contours(x, y, contours)
     return fig1
     
-def plot2Ddist2(x,y,ax1,contourNGrid=200,contourFractions=[0.68, 0.95],mode1='x',mode2='y'):
+def plot2Ddist2(x,y,ax1,contourNGrid=200,contourFractions=[0.68, 0.95],mode1='x',mode2='y',colour='blue'):
     """
     Plot contours of 2D distribution 
     """
@@ -182,8 +182,8 @@ def plot2Ddist2(x,y,ax1,contourNGrid=200,contourFractions=[0.68, 0.95],mode1='x'
         z2 = zeros([l2,1])
         v21app = hstack((z2,v20app))
         v2 = append(v2,v21app,axis=0)
-    ax1.fill(v1[:,0],v1[:,1],'b',alpha=0.5)
-    ax1.fill(v2[:,0],v2[:,1],'b',alpha=0.5)   
+    ax1.fill(v1[:,0],v1[:,1],colour,alpha=0.5)
+    #ax1.fill(v2[:,0],v2[:,1],colour,alpha=0.5)
     #Label the contours        
     #frac_label_contours(x, y, contours)
    #ax1.fill()

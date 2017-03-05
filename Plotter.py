@@ -13,17 +13,15 @@ from matplotlib.patches import Rectangle
 from Copernicus.Parset import MyOptParse
 
 class plh(object):
-    def __init__(self, samps, ax, ind=[]):
+    def __init__(self, samps, ax):
         self.ax = ax
         self.samps = samps
         # Check for nans
         if np.isnan(samps).any():
             I = np.unique(np.linspace(np.isnan(samps))[:, 1])
             self.samps = np.delete(samps, I, axis=1)
-        # Delete preselected indices
-        for i in ind:
-            self.samps = np.delete(self.samps, i, axis=1)
-        # self.set_Nodes(Ngrid,0.1)
+            print "Found some NaN's, deleting them. This should never happen!"
+        # get contours
         self.contours = self.get_Conf()
 
     def get_Conf(self):
@@ -65,11 +63,13 @@ class plh(object):
         self.ax.set_ylabel(ylab, fontsize=yfnt)
         return
 
-    def show_lab(self, x):
+    def show_lab(self, x, only_2sig=False):
         handles, labels = self.ax.get_legend_handles_labels()
-        p1 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.8)
-        handles.append(p1)
-        labels.append(r'$1-\sigma$')
+        if not only_2sig:
+            p1 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.8)
+            handles.append(p1)
+            labels.append(r'$1-\sigma$')
+
         p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
         handles.append(p2)
         labels.append(r'$2-\sigma$')
@@ -77,7 +77,7 @@ class plh(object):
         self.ax.legend(handles, labels, loc=x)
         return
 
-    def draw_Contours(self, x, scale=1, smooth=0.0, alp=0.5, mode='Normal'):
+    def draw_Contours(self, x, scale=1, smooth=0.0, alp=0.5, mode='Normal', only_2sig=False, colour='blue', draw_median=True):
         if (smooth != 0.0):
             Fm = uvs(x, self.contours[:, 0], k=3, s=smooth)(x)
             Flow1 = uvs(x, self.contours[:, 1], k=3, s=smooth)(x)
@@ -90,14 +90,16 @@ class plh(object):
             Flow2 = self.contours[:, 3]
             Fhigh1 = self.contours[:, 2]
             Fhigh2 = self.contours[:, 4]
-        self.ax.fill_between(x, Fhigh2 * scale, Flow2 * scale, facecolor='blue', edgecolor='blue', alpha=alp,
+        self.ax.fill_between(x, Fhigh2 * scale, Flow2 * scale, facecolor=colour, edgecolor=colour, alpha=alp,
                              label=r'$2-\sigma$')
-        self.ax.fill_between(x, Fhigh1 * scale, Flow1 * scale, facecolor='blue', edgecolor='blue', alpha=alp,
-                             label=r'$1-\sigma$')
-        if mode == 'Cheat':
-            xc = np.linspace(x[0], x[-2], x.size)
-            Fm = uvs(x, Fm, k=3, s=smooth)(xc)
-        self.ax.plot(x, Fm * scale, 'blue', label=r'$Median$', alpha=1.0)
+        if not only_2sig:
+            self.ax.fill_between(x, Fhigh1 * scale, Flow1 * scale, facecolor=colour, edgecolor=colour, alpha=alp, label=r'$1-\sigma$')
+
+        if draw_median:
+            if mode == 'Cheat':
+                xc = np.linspace(x[0], x[-2], x.size)
+                Fm = uvs(x, Fm, k=3, s=smooth)(xc)
+            self.ax.plot(x, Fm * scale, colour, label=r'$Median$', alpha=1.0)
         return
 
     def draw_Upper(self, x, F_cut, F_LTB, scale=1, alp=0.5):
@@ -105,18 +107,18 @@ class plh(object):
         self.ax.fill_between(x, Fhigh2 * scale, F_cut * scale, facecolor='blue', edgecolor='blue', alpha=alp,
                              label=r'$2-\sigma$', lw=0.0)
         self.ax.fill_between(x, F_cut * scale, np.zeros(x.size)+1e-16, facecolor='red', edgecolor='red', alpha=alp,
-                             label=r'$FLRW \ uv-cut=100Mpc$', lw=0.0)
-        self.ax.plot(x, self.contours[:, 0] * scale, 'blue', label=r'$Median$', alpha=1.0)
-        self.ax.plot(x, F_LTB, 'm', label=r'$LTB \ (t_B = 0)$', lw=1.5)
-        handles, labels = self.ax.get_legend_handles_labels()
-        p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=alp)
-        handles.append(p1)
-        labels.append(r'$FLRW \ uv-cut=200Mpc$')
-        p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=alp)
-        handles.append(p2)
-        labels.append(r'$Upper \ 2-\sigma$')
-        #        [p1, p2], [r'$1-\sigma$',r'$2-\sigma$']
-        self.ax.legend(handles, labels, loc=2)
+                             label=r'$FLRW \ uv-cut=200Mpc$', lw=0.0)
+        #self.ax.plot(x, self.contours[:, 0] * scale, 'blue', label=r'$Median$', alpha=1.0)
+        #self.ax.plot(x, F_LTB, 'm', label=r'$LTB \ (t_B = 0)$', lw=1.5)
+        # handles, labels = self.ax.get_legend_handles_labels()
+        # p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=alp)
+        # handles.append(p1)
+        # labels.append(r'$FLRW \ uv-cut=200Mpc$')
+        # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=alp)
+        # handles.append(p2)
+        # labels.append(r'$Upper \ 2-\sigma$')
+        # #        [p1, p2], [r'$1-\sigma$',r'$2-\sigma$']
+        # self.ax.legend(handles, labels, loc=2)
         return
 
 def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
@@ -187,7 +189,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
     rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT, sigmasqiLT, sigmasqfLT = ULT.get_funcs()
 
-    # # read in data
+    # read in data
     zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
     zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
     zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)

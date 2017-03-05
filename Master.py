@@ -220,7 +220,8 @@ class GP(object):
         return -0.5*np.dot(Linvy.T, Linvy) - 0.5*sdet - 0.5*self.Nlog2pi
 
 class SSU(object):
-    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz = None, rhoz = None, Lam = None, beta = None, setLamPrior=True,useInputFuncs=False):
+    def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=None, rhoz=None,
+                 Lam=None, beta=None, setLamPrior=True, useInputFuncs=False):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -269,8 +270,11 @@ class SSU(object):
         if Hz is None:
             self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta)
         else:
-            Hzo = uvs(self.z,Hz,k=3,s=0.0)
-            self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta, prior_mean=Hzo)
+            y = Hz[0] + self.z * (Hz[-1] - Hz[0]) / self.z[-1]
+            Hzo = uvs(self.z, y, k=3, s=0.0)
+            #Hzo = uvs(self.z, Hz, k=3, s=0.0)
+            self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta,
+                          prior_mean=Hzo)
         self.XH = self.GPH.THETA
         #print "Hz theta = ", self.XH
         self.Hm = self.GPH.fmean
@@ -285,9 +289,10 @@ class SSU(object):
 
         #print "Fitting rho GP"
         if rhoz is None:
-            self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z,Xrho, self.beta)
+            self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z, Xrho, self.beta)
         else:
-            rhozo = uvs(self.z, rhoz, k=3, s=0.0)
+            y = rhoz[0] + self.z * (rhoz[-1] - rhoz[0]) / self.z[-1]
+            rhozo = uvs(self.z, y, k=3, s=0.0)
             self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z, Xrho,
                             self.beta, prior_mean=rhozo)
         self.Xrho = self.GPrho.THETA
@@ -1040,12 +1045,12 @@ class SSU(object):
         
 if __name__ == "__main__":
     #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
-    zmax = 2.0
+    zmax = 2.5
     tmin = 3.25
     Np = 500
     err = 1e-5
     XH = np.array([0.6, 3.5])
-    Xrho = np.array([0.1,1.5])
+    Xrho = np.array([0.1, 1.5])
     sigmaLam = 0.05
     Nret = 300
     data_prior = "[H,rho]"
@@ -1064,7 +1069,8 @@ if __name__ == "__main__":
     z = LCDM.z
 
     print "Instantiating universe object"
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15, setLamPrior=True) #, Hz=HzF, rhoz=rhozF, Lam=Lam, beta=0.1)
+    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=0.15, setLamPrior=True,
+            Hz=HzF, rhoz=rhozF, Lam=Lam)
     logLik = U.logLik
     Hz = U.Hz
     rhoz = U.rhoz

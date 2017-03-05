@@ -24,7 +24,7 @@ def sampler(*args, **kwargs):
         raise StandardError("Error occurred. Original traceback "
                             "is\n%s\n" % traceback_str)
 
-def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam):
+def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam,use_meanf):
     #Set sparams
     Xrho = np.array([0.8, 3.5])
     XH = np.array([0.6, 3.5])
@@ -36,7 +36,11 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     zp = np.linspace(0.0, zmax, Np)
 
     #Instantiate universe object
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=beta) #, Hz=Hz, rhoz=rhoz, Lam=Lam, beta=beta)
+    if use_meanf:
+        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname,
+                beta=beta, Hz=Hz, rhoz=rhoz, Lam=Lam)
+    else:
+        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, beta=beta)
 
     #Get starting sample
     Hz = U.Hz
