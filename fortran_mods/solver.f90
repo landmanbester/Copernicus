@@ -152,8 +152,9 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 		jmax = vmaxi(i)
 
                 if (jmax > NJ) then
-                    jmax = NJ
-                    write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Setting jmax = NJ"
+                    Flag2 = 1
+                    write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
+                    exit
                 endif
 
                 !Final correct
