@@ -77,8 +77,8 @@ subroutine drhodw(dotrho,D,S,Q,A,rho,rhop,u,up,j)
 	real*8, intent(in) :: D, S, Q, A, rho, rhop, u, up
 	real*8, intent(out) :: dotrho
 
-	real*8, parameter :: PI = 3.141592653589793
-	real*8 :: kappa = 8.D0*PI
+	!real*8, parameter :: PI = 3.141592653589793
+	!real*8 :: kappa = 8.D0*PI
 
 	if (j <2) then
 		dotrho = -3.D0*rho*up

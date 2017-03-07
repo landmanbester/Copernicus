@@ -9,7 +9,6 @@ subroutine predict(delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i,rho,u,rhod,ud)
 	real*8, dimension(NJ,NI), intent(inout) :: rho,u
 	!Local variables
 	integer :: j
-	real*8 :: dotu, dotrho
         
         if (jmax > NJ) then
             write(*,*) "Warning! Got jmax > NJ in predict", jmax
@@ -180,31 +179,31 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
 			!Evaluate derivatives with improved prdecited values
 			call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
 			call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j) !dZdv(dZ2,D(j,i),S(j,i),pQ,pA,rho(j,i),u(j,i),Lam,j)
-                        errQ = 1.0D0
-                        errA = 1.0D0
-                        errZ = 1.0D0
-                        k = 1
-			do while (abs(errQ) > tol .and. abs(errA) > tol .and. abs(errZ) > tol .and. k < maxit)
-                                !Save current values
-                                pQs = pQ
-                                pAs = pA
-                                pZs = pZ
-                                !Correct
-				pQ = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
-				pA = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)
-				pZ = Z(j-1,i) + 0.5D0*delv*(dZ1 + dZ2)			
-				call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
-				call dAdv(dA2,pZ)
-				call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j)
-                                !Compute err
-                                errQ = pQs - pQ
-                                errA = pAs - pA
-                                errZ = pZs - pZ	
-                                k = k+1
-			end do
-                        if (k >= maxit) then
-                            write(*,*) "Exceeded max iterations"
-                        endif
+!!$                        errQ = 1.0D0
+!!$                        errA = 1.0D0
+!!$                        errZ = 1.0D0
+!!$                        k = 1
+!!$			do while (abs(errQ) > tol .and. abs(errA) > tol .and. abs(errZ) > tol .and. k < maxit)
+!!$                                !Save current values
+!!$                                pQs = pQ
+!!$                                pAs = pA
+!!$                                pZs = pZ
+!!$                                !Correct
+!!$				pQ = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
+!!$				pA = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)
+!!$				pZ = Z(j-1,i) + 0.5D0*delv*(dZ1 + dZ2)			
+!!$				call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
+!!$				call dAdv(dA2,pZ)
+!!$				call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j)
+!!$                                !Compute err
+!!$                                errQ = pQs - pQ
+!!$                                errA = pAs - pA
+!!$                                errZ = pZs - pZ	
+!!$                                k = k+1
+!!$			end do
+!!$                        if (k >= maxit) then
+!!$                            write(*,*) "Exceeded max iterations"
+!!$                        endif
 			!Correct with trapezoidal rule
 			Q(j,i) = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
 			A(j,i) = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)
@@ -245,7 +244,7 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
 			pQ = Q(j-1,i) + delv*(55.0D0*dQ1 - 59.0D0*dQdvp(j-2,i) + 37.0D0*dQdvp(j-3,i) - 9.0D0*dQdvp(j-4,i))/24.D0
 			pA = A(j-1,i) + delv*(55.0D0*dA1 - 59.0D0*Z(j-2,i) + 37.0D0*Z(j-3,i) - 9.0D0*Z(j-4,i))/24.D0
 			pZ = Z(j-1,i) + delv*(55.0D0*dZ1 - 59.0D0*dZdvp(j-2,i) + 37.0D0*dZdvp(j-3,i) - 9.0D0*dZdvp(j-4,i))/24.D0
-			!Evaluate derivatives with prdecited values (use values of D and S computed in previous loop)
+			!Evaluate derivatives with predicted values (use values of D and S computed in previous loop)
 			call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
 			call dAdv(dA2,pZ)
 			call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j)
@@ -285,7 +284,7 @@ subroutine correct(rho,rhod,u,ud,delw,D,S,Q,A,Z,rhop,up,NI,NJ,jmax,i)
 	real*8, dimension(NJ,NI), intent(inout) :: rho,u
 	!Local parameters
 	integer :: j
-	real*8 :: dotu, dotrho, pD
+	real*8 :: dotu, dotrho
 
         if (jmax > NJ) then
             write(*,*) "Warning! Got jmax > NJ in correct", jmax
@@ -316,7 +315,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 	real*8, dimension(NI), intent(inout) :: vmax
 	integer, dimension(NI), intent(inout) :: vmaxi
 	!Loacl parameters
-	integer :: j, counter, maxit, jmax
+	integer :: counter, maxit, jmax
 	real*8 :: vp, vprev, tol, Ap
 
 	maxit = 10000
@@ -329,6 +328,10 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 	vprev = 0.D0
 	
 	counter = 0
+
+        if (A(2) == 0) then
+            write(*,*) "Something is going wrong in getvmaxi"
+        endif
 	
 	do while(abs(vp - vprev) > tol .and. counter < maxit .and. Flag /= 1)
 		vprev = vp
@@ -360,7 +363,7 @@ subroutine calcdrdv(drdv,drdvp,drdvd,D,S,A,Z,u,up,delv,delw,NI,NJ,i,jmax)
 	real*8, dimension(NJ), intent(in) :: D,S,A,Z,u,up !Pass these on current time step 
 	real*8, dimension(NJ,NI), intent(inout) :: drdv, drdvp, drdvd !These must have been evaluated on the previous time step
 	!Local params
-	integer :: k
+	!integer :: k in case we want to repeat correct evaluate step
 	!real*8, dimension(NJ) :: drdvd1, drdvd2
 	!real*8, dimension(NJ) ::, drdvp
 
