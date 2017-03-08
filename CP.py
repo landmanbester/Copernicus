@@ -29,6 +29,12 @@ if __name__ == "__main__":
     err = GD["err"]
     beta = GD["beta"]
     use_meanf = GD["use_meanf"]
+    samps_out_name = GD["samps_out_name"]
+
+    # Print out parset settings
+    keyslist = GD.keys()
+    for it in keyslist:
+        print it, GD[it]
 
     futures = []
     Hzlist = []
@@ -37,43 +43,46 @@ if __name__ == "__main__":
     dzdwzlist = []
     Lamlist = []
     T1ilist = []
-    T1flist = []
     T2ilist = []
-    T2flist = []
     sigmasqilist = []
-    sigmasqflist = []
     LLTBConsilist = []
-    LLTBConsflist = []
     Dilist = []
-    Dflist = []
     Silist = []
-    Sflist = []
     Qilist = []
-    Qflist = []
     Ailist = []
-    Aflist = []
     Zilist = []
-    Zflist = []
     Spilist = []
-    Spflist = []
     Qpilist = []
-    Qpflist = []
     Zpilist = []
-    Zpflist = []
     uilist = []
-    uflist = []
     upilist = []
-    upflist = []
     uppilist = []
-    uppflist = []
     udotilist = []
-    udotflist = []
     rhoilist = []
-    rhoflist = []
     rhopilist = []
-    rhopflist = []
     rhodotilist = []
-    rhodotflist = []
+
+
+    if DoPLCF:
+        T1flist = []
+        T2flist = []
+        sigmasqflist = []
+        LLTBConsflist = []
+        Dflist = []
+        Sflist = []
+        Qflist = []
+        Aflist = []
+        Zflist = []
+        Spflist = []
+        Qpflist = []
+        Zpflist = []
+        uflist = []
+        upflist = []
+        uppflist = []
+        udotflist = []
+        rhoflist = []
+        rhopflist = []
+        rhodotflist = []
 
     # Get FLRW funcs for comparison
     Om0 = 0.3
@@ -91,16 +100,20 @@ if __name__ == "__main__":
     num_repeats = 0
     max_repeats = 1
     while cont and num_repeats < max_repeats:
-        with cf.ThreadPoolExecutor(max_workers=NSamplers) as executor:
+        with cf.ProcessPoolExecutor(max_workers=NSamplers) as executor:
             for i in xrange(NSamplers):
                 future = executor.submit(sampler, zmax, Np, Nret, Nsamp, Nburn, tstar, data_prior, data_lik, DoPLCF,
                                          DoTransform, err, i, fname, beta, HzF, rhozF, Lam, use_meanf)
                 futures.append(future)
             k = 0
             for f in cf.as_completed(futures):
-                Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
-                Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-                rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf = f.result()
+                if DoPLCF:
+                    Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
+                    Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
+                    rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf = f.result()
+                else:
+                    Hz, rhoz, Lam, T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, \
+                    rhopi, rhodoti, Dz, dzdwz, sigmasqi = f.result()
 
                 Dzlist.append(Dz)
                 Hzlist.append(Hz)
@@ -108,52 +121,61 @@ if __name__ == "__main__":
                 dzdwzlist.append(dzdwz)
                 Lamlist.append(Lam)
                 T1ilist.append(T1i)
-                T1flist.append(T1f)
                 T2ilist.append(T2i)
-                T2flist.append(T2f)
                 sigmasqilist.append(sigmasqi)
-                sigmasqflist.append(sigmasqf)
                 LLTBConsilist.append(LLTBConsi)
-                LLTBConsflist.append(LLTBConsf)
                 Dilist.append(Di)
-                Dflist.append(Df)
                 Silist.append(Si)
-                Sflist.append(Sf)
                 Qilist.append(Qi)
-                Qflist.append(Qf)
                 Ailist.append(Ai)
-                Aflist.append(Af)
                 Zilist.append(Zi)
-                Zflist.append(Zf)
                 Spilist.append(Spi)
-                Spflist.append(Spf)
                 Qpilist.append(Qpi)
-                Qpflist.append(Qpf)
                 Zpilist.append(Zpi)
-                Zpflist.append(Zpf)
                 uilist.append(ui)
-                uflist.append(uf)
                 upilist.append(upi)
-                upflist.append(upf)
                 uppilist.append(uppi)
-                uppflist.append(uppf)
                 udotilist.append(udoti)
-                udotflist.append(udotf)
                 rhoilist.append(rhoi)
-                rhoflist.append(rhof)
                 rhopilist.append(rhopi)
-                rhopflist.append(rhopf)
                 rhodotilist.append(rhodoti)
-                rhodotflist.append(rhodotf)
+
+                if DoPLCF:
+                    T1flist.append(T1f)
+                    T2flist.append(T2f)
+                    sigmasqflist.append(sigmasqf)
+                    LLTBConsflist.append(LLTBConsf)
+                    Dflist.append(Df)
+                    Sflist.append(Sf)
+                    Qflist.append(Qf)
+                    Aflist.append(Af)
+                    Zflist.append(Zf)
+                    Spflist.append(Spf)
+                    Qpflist.append(Qpf)
+                    Zpflist.append(Zpf)
+                    uflist.append(uf)
+                    upflist.append(upf)
+                    uppflist.append(uppf)
+                    udotflist.append(udotf)
+                    rhoflist.append(rhof)
+                    rhopflist.append(rhopf)
+                    rhodotflist.append(rhodotf)
 
         Htest = MCT.MCMC_diagnostics(NSamplers, Hzlist).get_GRC().max()
         rhotest = MCT.MCMC_diagnostics(NSamplers, rhozlist).get_GRC().max()
         T1itest = MCT.MCMC_diagnostics(NSamplers, T1ilist).get_GRC().max()
-        T1ftest = MCT.MCMC_diagnostics(NSamplers, T1flist).get_GRC().max()
-        T2itest = MCT.MCMC_diagnostics(NSamplers, T2ilist).get_GRC().max()
-        T2ftest = MCT.MCMC_diagnostics(NSamplers, T2flist).get_GRC().max()
 
-        test_GR = np.array([Htest,rhotest,T1itest, T1ftest, T2itest, T2ftest])
+        T2itest = MCT.MCMC_diagnostics(NSamplers, T2ilist).get_GRC().max()
+
+
+        if DoPLCF:
+            T1ftest = MCT.MCMC_diagnostics(NSamplers, T1flist).get_GRC().max()
+            T2ftest = MCT.MCMC_diagnostics(NSamplers, T2flist).get_GRC().max()
+
+        if DoPLCF:
+            test_GR = np.array([Htest,rhotest,T1itest, T1ftest, T2itest, T2ftest])
+        else:
+            test_GR = np.array([Htest, rhotest, T1itest, T2itest])
 
         try:
             cont = any(test_GR > 1.15)
@@ -166,14 +188,21 @@ if __name__ == "__main__":
             Nsamp *= 2
             num_repeats += 1
 
-    #Save the data
-    np.savez(fname + "Processed_Data/" + "Samps.npz", Hz=Hzlist, rhoz=rhozlist, Lam=Lamlist, T1i=T1ilist, T1f=T1flist, T2i=T2ilist,
-             T2f=T2flist, LLTBConsi=LLTBConsilist, LLTBConsf=LLTBConsflist, Di=Dilist, Df=Dflist, Si=Silist, Sf=Sflist,
-             Qi=Qilist, Qf=Qflist, Ai=Ailist, Af=Aflist, Zi=Zilist, Zf=Zflist, Spi=Spilist, Spf=Spflist, Qpi=Qpilist,
-             Qpf=Qpflist, Zpi=Zpilist, Zpf=Zpflist, ui=uilist, uf=uflist, upi=upilist, upf=upflist, uppi=uppilist,
-             uppf=uppflist, udoti=udotilist, udotf=udotflist, rhoi=rhoilist, rhof=rhoflist, rhopi=rhopilist,
-             rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist,
-             sigmasqi=sigmasqilist, sigmasqf=sigmasqflist)
+    # Save the data
+    if DoPLCF:
+        np.savez(fname + "Processed_Data/" + samps_out_name + ".npz", Hz=Hzlist, rhoz=rhozlist, Lam=Lamlist, T1i=T1ilist, T1f=T1flist, T2i=T2ilist,
+                 T2f=T2flist, LLTBConsi=LLTBConsilist, LLTBConsf=LLTBConsflist, Di=Dilist, Df=Dflist, Si=Silist, Sf=Sflist,
+                 Qi=Qilist, Qf=Qflist, Ai=Ailist, Af=Aflist, Zi=Zilist, Zf=Zflist, Spi=Spilist, Spf=Spflist, Qpi=Qpilist,
+                 Qpf=Qpflist, Zpi=Zpilist, Zpf=Zpflist, ui=uilist, uf=uflist, upi=upilist, upf=upflist, uppi=uppilist,
+                 uppf=uppflist, udoti=udotilist, udotf=udotflist, rhoi=rhoilist, rhof=rhoflist, rhopi=rhopilist,
+                 rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist,
+                 sigmasqi=sigmasqilist, sigmasqf=sigmasqflist)
+    else:
+        np.savez(fname + "Processed_Data/" + samps_out_name + ".npz", Hz=Hzlist, rhoz=rhozlist, Lam=Lamlist,
+                 T1i=T1ilist, T2i=T2ilist, LLTBConsi=LLTBConsilist, Di=Dilist, Si=Silist, Qi=Qilist, Ai=Ailist,
+                 Zi=Zilist, Spi=Spilist, Qpi=Qpilist, Zpi=Zpilist, ui=uilist, upi=upilist, uppi=uppilist,
+                 udoti=udotilist, rhoi=rhoilist, rhopi=rhopilist, rhodoti=rhodotilist, NSamplers=NSamplers, Dz=Dzlist,
+                 dzdwz=dzdwzlist, sigmasqi=sigmasqilist)
 
     #print Hsamps.shape
-    print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest
+    #print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest

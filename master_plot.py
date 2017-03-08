@@ -13,7 +13,7 @@ from matplotlib.patches import Rectangle
 from Copernicus.Parset import MyOptParse
 from Plotter import plh
 
-def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
+def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF):
     print "Getting LCDM vals"
     # Get FLRW funcs for comparison
     Om0 = 0.3
@@ -36,13 +36,18 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
 
     # Do LCDM integration
-    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzF, rhoz=rhozF, Lam=LamF, useInputFuncs=True)
+    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=HzF, rhoz=rhozF, Lam=LamF, useInputFuncs=True)
 
     # Get quantities of interrest
-    T1iF, T1fF, T2iF, T2fF, LLTBConsiF, LLTBConsfF, DiF, DfF, SiF, \
-    SfF, QiF, QfF, AiF, AfF, ZiF, ZfF, SpiF, SpfF, QpiF, QpfF, \
-    ZpiF, ZpfF, uiF, ufF, upiF, upfF, uppiF, uppfF, udotiF, udotfF, \
-    rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF, sigmasqiF, sigmasqfF = UF.get_funcs()
+    if DoPLCF:
+        T1iF, T1fF, T2iF, T2fF, LLTBConsiF, LLTBConsfF, DiF, DfF, SiF, \
+        SfF, QiF, QfF, AiF, AfF, ZiF, ZfF, SpiF, SpfF, QpiF, QpfF, \
+        ZpiF, ZpfF, uiF, ufF, upiF, upfF, uppiF, uppfF, udotiF, udotfF, \
+        rhoiF, rhofF, rhopiF, rhopfF, rhodotiF, rhodotfF, DzF, dzdwzF, sigmasqiF, sigmasqfF = UF.get_funcs()
+    else:
+        T1iF, T2iF, LLTBConsiF, DiF, SiF, QiF, AiF, ZiF, SpiF, QpiF, ZpiF, uiF, upiF, uppiF, udotiF, rhoiF, rhopiF, \
+        rhodotiF, DzF, dzdwzF, sigmasqiF, = UF.get_funcs()
+
     sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
 
     # Do LTB integration
@@ -56,13 +61,17 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     rhozLT = uvs(zLT, rhozLT, k=3, s=0.0)(zp)
 
     # Do LTBCon integration
-    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, Hz=HzLT, rhoz=rhozLT, Lam=0.0, useInputFuncs=True)
+    ULT = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=HzLT, rhoz=rhozLT, Lam=0.0, useInputFuncs=True)
 
     # Get quantities of interrest
-    T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \
-    SfLT, QiLT, QfLT, AiLT, AfLT, ZiLT, ZfLT, SpiLT, SpfLT, QpiLT, QpfLT, \
-    ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
-    rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT, sigmasqiLT, sigmasqfLT = ULT.get_funcs()
+    if DoPLCF:
+        T1iLT, T1fLT, T2iLT, T2fLT, LLTBConsiLT, LLTBConsfLT, DiLT, DfLT, SiLT, \
+        SfLT, QiLT, QfLT, AiLT, AfLT, ZiLT, ZfLT, SpiLT, SpfLT, QpiLT, QpfLT, \
+        ZpiLT, ZpfLT, uiLT, ufLT, upiLT, upfLT, uppiLT, uppfLT, udotiLT, udotfLT, \
+        rhoiLT, rhofLT, rhopiLT, rhopfLT, rhodotiLT, rhodotfLT, DzLT, dzdwzLT, sigmasqiLT, sigmasqfLT = ULT.get_funcs()
+    else:
+        T1iLT, T2iLT, LLTBConsiLT, DiLT, SiLT, QiLT, AiLT, ZiLT, SpiLT, QpiLT, ZpiLT, uiLT, upiLT, uppiLT, udotiLT, \
+        rhoiLT, rhopiLT, rhodotiLT, DzLT, dzdwzLT, sigmasqiLT, = ULT.get_funcs()
 
     # Load the data we want to plot
     files = ["DHt0/", "Ddzdw/", "DHdzdw/"]
@@ -72,7 +81,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     dzdwdict = {}
     Lamdict = {}
     sigmasqidict = {}
-    sigmasqfdict = {}
+    #sigmasqfdict = {}
     Om0dict = {}
     OL0dict = {}
     colourdict = {}
@@ -81,19 +90,19 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     colourdict[files[2]] = "red"
     labelsdict = {}
     labelsdict[files[0]] = r'$\mathcal{D}$'
-    labelsdict[files[1]] = r'$\mathcal{D} \ + \ D \ + \ \frac{dz}{dw}  $'
-    labelsdict[files[2]] = r'$\mathcal{D} \ + \ D \ + \ \frac{dz}{dw} \ + \ H_\parallel  $'
+    labelsdict[files[1]] = r'$\mathcal{D} \ + \ D \ + \ \dot{z} $'
+    labelsdict[files[2]] = r'$\mathcal{D} \ + \ D \ + \ \dot{z} \ + \ H_\parallel  $'
 
     # Load first samples
     for s in files:
-        with np.load("/home/landman/Projects/CP_LCDM_" + s + 'Processed_Data/Samps.npz') as holder:
+        with np.load("/home/landman/Projects/CP_LCDM_" + s + 'Processed_Data/samps0.npz') as holder:
             Dzlist = holder['Dz']
             Hzlist = holder['Hz']
             rhozlist = holder['rhoz']
             dzdwzlist = holder['dzdwz']
             Lamlist = holder['Lam']
             sigmasqilist = holder['sigmasqi']
-            sigmasqflist = holder['sigmasqf']
+            #sigmasqflist = holder['sigmasqf']
             NSamplers = holder['NSamplers']
 
             # Load the rest of the data
@@ -105,7 +114,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
                     dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
                     Lamsamps = np.append(Lamsamps, Lamlist[i])
                     sigmasqisamps = np.append(sigmasqisamps, sigmasqilist[i], axis=1)
-                    sigmasqfsamps = np.append(sigmasqfsamps, sigmasqflist[i], axis=1)
+                    #sigmasqfsamps = np.append(sigmasqfsamps, sigmasqflist[i], axis=1)
                 else:
                     Dzsamps = Dzlist[0]
                     Hzsamps = Hzlist[0]
@@ -113,7 +122,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
                     dzdwzsamps = dzdwzlist[0]
                     Lamsamps = Lamlist[0]
                     sigmasqisamps = sigmasqilist[0]
-                    sigmasqfsamps = sigmasqflist[0]
+                    #sigmasqfsamps = sigmasqflist[0]
 
             Om0samps = 8 * np.pi * rhozsamps[0, :] / (3 * Hzsamps[0, :] ** 2)
             OL0samps = Lamsamps / (3 * Hzsamps[0, :] ** 2)
@@ -124,11 +133,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
             dzdwdict[s] = dzdwzsamps
             Lamdict[s] = Lamsamps
             sigmasqidict[s] = sigmasqisamps
-            sigmasqfdict[s] = sigmasqfsamps
+            #sigmasqfdict[s] = sigmasqfsamps
             Om0dict[s] = Om0samps
             OL0dict[s] = OL0samps
 
-            del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, sigmasqfsamps, Om0samps, OL0samps
+            del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, Om0samps, OL0samps #sigmasqfsamps,
 
     # read in data
     zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
@@ -225,18 +234,18 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     axsigmasq[0].set_ylim(1e-13, 0.1)
 
 
-    sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
-    sigmasqfplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
-    sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB \ (t_B = 0)$')
-    sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
-    sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='y', lab=labelsdict[files[2]])
-
-    axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
-    axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
-    axsigmasq[1].set_yscale('log')
-    axsigmasq[1].set_ylim(1e-13, 0.1)
+    # sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
+    # sigmasqfplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
+    # sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB \ (t_B = 0)$')
+    # sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
+    # sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
+    # sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
+    # sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='y', lab=labelsdict[files[2]])
+    #
+    # axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
+    # axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
+    # axsigmasq[1].set_yscale('log')
+    # axsigmasq[1].set_ylim(1e-13, 0.1)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
     p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
@@ -251,8 +260,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp):
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
     print "OL vs Om"
+    i = 0
     for s in files:
         pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
+        print colourdict[s], files[i]
+        i += 1
         # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
         # handles.append(p2)
         # labels.append(r'$2-\sigma$')
@@ -298,4 +310,4 @@ if __name__=="__main__":
     err = GD["err"]
 
     # Do the plots
-    Plot_Data(zmax,Np,Nret,tstar,err,data_prior,data_lik,fname,Nsamp)
+    Plot_Data(zmax,Np,Nret,tstar,err,data_prior,data_lik,fname,Nsamp,DoPLCF)

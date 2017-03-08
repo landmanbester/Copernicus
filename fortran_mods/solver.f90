@@ -23,7 +23,7 @@ end program
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
         ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ,Flag2) !These are all outputs except NI and NJ which are optional
-!f2py threadsafe
+
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
@@ -113,75 +113,78 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	!Get X and dXdr
 	call getXandXr(X,dXdr,dwdr(:,1),dvdr(:,1),drdv(:,1),drdvp(:,1),drdvd(:,1),u(:,1),up(:,1),ud(:,1),NI,NJ,1,jmax)
 
-	!Solve for remaining domain
-	do i=2,NI
-		!Predict fluid variables on next PLC
-		call predict(delw,D(:,i-1),S(:,i-1),Q(:,i-1),A(:,i-1),Z(:,i-1),rhop(:,i-1),up(:,i-1),NI,NJ,jmax,i,rho,u,rhod,ud)
-		!Evaluate hypersurface variables with the predicted values
-		call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
-		
-		!Get the predicted characteristic cut off
-		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
-                if (Flag==1) then
-                    Flag2 = 1
-                    exit
-                endif
-		jmax = vmaxi(i)
+        if (NI > 1) then
 
-                if (jmax > NJ) then
-                    Flag2 = 1
-                    write(*,*) "Warning! Got jmax > NJ in first estimate in main. Rejecting this sample"
-                    exit
-                endif
+           !Solve for remaining domain
+           do i=2,NI
+              !Predict fluid variables on next PLC
+              call predict(delw,D(:,i-1),S(:,i-1),Q(:,i-1),A(:,i-1),Z(:,i-1),rhop(:,i-1),up(:,i-1),NI,NJ,jmax,i,rho,u,rhod,ud)
+              !Evaluate hypersurface variables with the predicted values
+              call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 
-                !Do iterative step (5 was chosen at random, most of the time there is not much improvement beyond 5 iterations)
-                do k=1,5 
-		    !Correct fluid variables
-		    call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
-			
-		    !Evaluate hypersurface variables with the corrected values
-		    call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
+              !Get the predicted characteristic cut off
+              call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
+              if (Flag==1) then
+                 Flag2 = 1
+                 exit
+              endif
+              jmax = vmaxi(i)
 
-                end do
-                
-                !Re-evaluate vmaxi with corrected value
-		call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
-                if (Flag==1) then
-                    Flag2 = 1
-                    exit
-                endif
-		jmax = vmaxi(i)
+              if (jmax > NJ) then
+                 Flag2 = 1
+                 write(*,*) "Warning! Got jmax > NJ in first estimate in main. Rejecting this sample"
+                 exit
+              endif
 
-                if (jmax > NJ) then
-                    Flag2 = 1
-                    write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
-                    exit
-                endif
+              !Do iterative step (5 was chosen at random, most of the time there is not much improvement beyond 5 iterations)
+              do k=1,5 
+                 !Correct fluid variables
+                 call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
 
-                !Final correct
-                call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
+                 !Evaluate hypersurface variables with the corrected values
+                 call evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dSdvp,dQdvp,dZdvp)
 
-                !Do Tests of CP
-                call shear_test(T1,u(:,i),up(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),vmaxi,i,NI,NJ)
-                call curve_test(T2,D(:,i),S(:,i),dSdvp(:,i),u(:,i),up(:,i),upp(:,i),vmaxi,i,NI,NJ)
-                call get_sigmasq(sigmasq,u(:,i),up(:,i),ud(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),vmaxi,i,NI,NJ)
+              end do
 
-		!Get partial derivs involving t
-		call transt(dtdw,dwdt,dtdv,dvdt,A(:,i),u(:,i),NI,NJ,i,jmax)
-		
-		!Solve for  drdv
-		call calcdrdv(drdv,drdvp,drdvd,D(:,i),S(:,i),A(:,i),Z(:,i),u(:,i),up(:,i),delv,delw,NI,NJ,i,jmax)
-		
-		!Get the remaining coord transform
-		call transr(drdw,dwdr,drdv,dvdr,A(:,i),u(:,i),NI,NJ,i,jmax)
-		
-		!Get X and dXdr
-		call getXandXr(X,dXdr,dwdr(:,i),dvdr(:,i),drdv(:,i),drdvp(:,i),drdvd(:,i),u(:,i),up(:,i),ud(:,i),NI,NJ,i,jmax)
+              !Re-evaluate vmaxi with corrected value
+              call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
+              if (Flag==1) then
+                 Flag2 = 1
+                 exit
+              endif
+              jmax = vmaxi(i)
+
+              if (jmax > NJ) then
+                 Flag2 = 1
+                 write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
+                 exit
+              endif
+
+              !Final correct
+              call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
+
+              !Do Tests of CP
+              call shear_test(T1,u(:,i),up(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),vmaxi,i,NI,NJ)
+              call curve_test(T2,D(:,i),S(:,i),dSdvp(:,i),u(:,i),up(:,i),upp(:,i),vmaxi,i,NI,NJ)
+              call get_sigmasq(sigmasq,u(:,i),up(:,i),ud(:,i),D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),vmaxi,i,NI,NJ)
+
+              !Get partial derivs involving t
+              call transt(dtdw,dwdt,dtdv,dvdt,A(:,i),u(:,i),NI,NJ,i,jmax)
+
+              !Solve for  drdv
+              call calcdrdv(drdv,drdvp,drdvd,D(:,i),S(:,i),A(:,i),Z(:,i),u(:,i),up(:,i),delv,delw,NI,NJ,i,jmax)
+
+              !Get the remaining coord transform
+              call transr(drdw,dwdr,drdv,dvdr,A(:,i),u(:,i),NI,NJ,i,jmax)
+
+              !Get X and dXdr
+              call getXandXr(X,dXdr,dwdr(:,i),dvdr(:,i),drdv(:,i),drdvp(:,i),drdvd(:,i),u(:,i),up(:,i),ud(:,i),NI,NJ,i,jmax)
 !!$		write(*,*) "Got this far", i
 !!$		!Solve geodesic equations
 !!$		call geotr(t,r,u(:,i),up(:,i),X(:,i),dXdr(:,i),delv,w(i),NI,NJ,i,jmax)
 
-	end do
+           end do
+        endif
 !!$        if (Flag2 /= 1) then
 !!$            !Get the LLTB consistency relation
 !!$            call get_LLTBCon(LLTBCon,Dww,Aw,D,S,Q,A,Z,dZdvp,u,rho,Lam,delw,NI,NJ,vmaxi)

@@ -14,8 +14,8 @@ def readargs():
         "nsamples" : 10000,
         "nburnin"  : 2500,
         "tstar"    : 3.25,
-        "doplcf"   : True,
-        "dotransform" : True,
+        "doplcf"   : 0,
+        "dotransform" : 0,
         "fname" : "/home/bester/Projects/CP_Dir/",
         "data_prior" : ["H","rho"],
         "data_lik" : ["D","H","dzdw"],
@@ -24,7 +24,8 @@ def readargs():
         "nret" : 100,
         "err" : 1e-5,
         "beta" : 0.01,
-        "use_meanf" : True,
+        "use_meanf" : 1,
+        "samps_out_name" : "samps",
         }
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
@@ -45,8 +46,8 @@ def readargs():
     parser.add_argument("--nsamples", type=int, help="The number of samples each sampler should draw")
     parser.add_argument("--nburnin", type=int, help="The number of samples in the burnin period")
     parser.add_argument("--tstar", type=float, help="The time up to which to integrate to [in Gpc for now]")
-    parser.add_argument("--doplcf", type=bool, help="Whether to compute the interior of the PLC or not")
-    parser.add_argument("--dotransform", type=bool, help="Whether to perform the coordinate transformation or not")
+    parser.add_argument("--doplcf", type=int, help="Whether to compute the interior of the PLC or not")
+    parser.add_argument("--dotransform", type=int, help="Whether to perform the coordinate transformation or not")
     parser.add_argument("--fname", type=str, help="Where to save the results")
     parser.add_argument("--data_prior", type=str, help="The data sets to use to set priors")
     parser.add_argument("--data_lik", type=str, help="The data sets to use for inference")
@@ -55,7 +56,8 @@ def readargs():
     parser.add_argument("--nret", type=int, help="The number of points at which to return quantities of interest")
     parser.add_argument("--err", type=float, help="Target error of the numerical integration scheme")
     parser.add_argument("--beta", type=float, help="Parameter to control acceptance rate of the MCMC")
-    parser.add_argument("--use_meanf", type=bool, help="Whether mean functions should be used for GPR")
+    parser.add_argument("--use_meanf", type=int, help="Whether mean functions should be used for GPR")
+    parser.add_argument("--samps_out_name", type=str, help="What to name the output samps")
     args = parser.parse_args(remaining_argv)
 
 
