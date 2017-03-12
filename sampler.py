@@ -54,6 +54,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     rhozsamps = np.zeros([Np,Nsamp])
     dzdwzsamps = np.zeros([Np, Nsamp])
     Lamsamps = np.zeros(Nsamp)
+    t0samps = np.zeros(Nsamp)
     # musamps = np.zeros([Np,Nsamp])
     Di = np.zeros([Nret,Nsamp])
     Si = np.zeros([Nret,Nsamp])
@@ -97,7 +98,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
         LLTBConsf = np.zeros([Nret, Nsamp])
 
 
-
+    I = []
     # rhostar = np.zeros([Nret,Nsamp])
     # Dstar = np.zeros([Nret,Nsamp])
     # Xstar = np.zeros([Nret,Nsamp])
@@ -145,26 +146,46 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
         rhozsamps[:,i] = rhoz
         Lamsamps[i] = Lam
 
-        if DoPLCF:
-            T1i[:, i], T1f[:, i], T2i[:, i], T2f[:, i], LLTBConsi[:, i], LLTBConsf[:, i], Di[:, i], Df[:, i], Si[:, i], \
-            Sf[:, i], Qi[:, i], Qf[:, i], Ai[:, i], Af[:, i], Zi[:, i], Zf[:, i], Spi[:, i], Spf[:, i], Qpi[:, i], Qpf[:, i], \
-            Zpi[:, i], Zpf[:, i], ui[:, i], uf[:, i], upi[:, i], upf[:, i], uppi[:, i], uppf[:, i], udoti[:, i], udotf[:, i], \
-            rhoi[:, i], rhof[:, i], rhopi[:, i], rhopf[:, i], rhodoti[:, i], rhodotf[:, i], Dzsamps[:,i], dzdwzsamps[:,i], \
-            sigmasqi[:, i], sigmasqf[:, i] = U.get_funcs()
-        else:
-            T1i[:, i], T2i[:, i], LLTBConsi[:, i], Di[:, i], Si[:, i], Qi[:, i], Ai[:, i], Zi[:, i], Spi[:, i], \
-            Qpi[:, i], Zpi[:, i], ui[:, i], upi[:, i], uppi[:, i], udoti[:, i], rhoi[:, i], rhopi[:, i], rhodoti[:, i], \
-            Dzsamps[:, i], dzdwzsamps[:, i], sigmasqi[:, i] = U.get_funcs()
-        # print i
-        # if F == 1:
-        #     print "Flag raised"
+        T1i[:, i], T2i[:, i], LLTBConsi[:, i], Di[:, i], Si[:, i], Qi[:, i], Ai[:, i], Zi[:, i], Spi[:, i], \
+        Qpi[:, i], Zpi[:, i], ui[:, i], upi[:, i], uppi[:, i], udoti[:, i], rhoi[:, i], rhopi[:, i], rhodoti[:, i], \
+        Dzsamps[:, i], dzdwzsamps[:, i], sigmasqi[:, i], t0samps[i] = U.get_funcsi()
 
-    print 'It took sampler' + str(j), (time.time() - t1) / 60.0, 'min to draw ', Nsamp, ' samples with an acceptance rate of ', accrate[0]/accrate[1]
+
+        if t0samps[i] > U.tfind:
+            T1f[:, i], T2f[:, i], LLTBConsf[:, i], Df[:, i], Sf[:, i], Qf[:, i], Af[:, i], Zf[:, i], Spf[:, i], \
+            Qpf[:, i], Zpf[:, i], uf[:, i], upf[:, i], uppf[:, i], udotf[:, i], rhof[:, i], rhopf[:, i], rhodotf[:, i],\
+            sigmasqf[:, i] = U.get_funcsf()
+        else:
+            I.append(i)
+    # Delete the empty columns in PLCF quantities that result when t0 < tfind
+    np.delete(T1f, I, axis=1)
+    np.delete(T2f, I, axis=1)
+    np.delete(LLTBConsf, I, axis=1)
+    np.delete(Df, I, axis=1)
+    np.delete(Sf, I, axis=1)
+    np.delete(Qf, I, axis=1)
+    np.delete(Af, I, axis=1)
+    np.delete(Zf, I, axis=1)
+    np.delete(Spf, I, axis=1)
+    np.delete(Qpf, I, axis=1)
+    np.delete(Zpf, I, axis=1)
+    np.delete(uf, I, axis=1)
+    np.delete(upf, I, axis=1)
+    np.delete(uppf, I, axis=1)
+    np.delete(udotf, I, axis=1)
+    np.delete(rhof, I, axis=1)
+    np.delete(rhopf, I, axis=1)
+    np.delete(rhodotf, I, axis=1)
+    np.delete(sigmasqf, I, axis=1)
+
+    # Report
+    print 'It took sampler' + str(j), (time.time() - t1) / 60.0, 'min to draw ', Nsamp, \
+        ' samples with an acceptance rate of ', accrate[0]/accrate[1]
 
     if DoPLCF:
         return Hzsamps, rhozsamps, Lamsamps, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
                Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-               rhodoti, rhodotf, Dzsamps, dzdwzsamps, sigmasqi, sigmasqf
+               rhodoti, rhodotf, Dzsamps, dzdwzsamps, sigmasqi, sigmasqf, t0samps
     else:
         return Hzsamps, rhozsamps, Lamsamps, T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, \
-               udoti, rhoi, rhopi, rhodoti, Dzsamps, dzdwzsamps, sigmasqi
+               udoti, rhoi, rhopi, rhodoti, Dzsamps, dzdwzsamps, sigmasqi, t0samps

@@ -19,7 +19,7 @@ from numpy import asfortranarray as asf
 from numpy import ascontiguousarray as asc
 from numpy.linalg import cholesky, eigh
 from numpy.random import randn, random, seed
-from scipy.integrate import quad,cumtrapz
+from scipy.integrate import quad, cumtrapz, trapz
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
@@ -181,6 +181,8 @@ class GP(object):
         Returns pCN proposal for MCMC. For normal sample use simp_sample
         """
         f0 = f - self.fmean
+        if self.beta == 1:
+            self.beta -= 0.1
         return self.fmean + np.sqrt(1-self.beta**2)*f0 + self.beta*self.V.dot(self.srtW.dot(randn(self.Np)))
 
     # def simp_sample(self):
@@ -391,10 +393,8 @@ class SSU(object):
         #print "Setting Lambda prior"
         for i in xrange(Ngrid):
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lamgrid[i])
-            w, delw = self.age_grid(NI, NJ, delv, t0)
-            # if NI < 5:
-            #     print "Passing"
-            #     pass
+            NI = 1  # Dont need the PLCF for this
+            w, delw = self.age_grid(NI, NJ, delv, t0, prior=True)
             D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
                 self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
             if F == 1:
@@ -471,7 +471,7 @@ class SSU(object):
             else:
                 # Set temporal grid
                 w, delw = self.age_grid(NI, NJ, delv, t0)
-                # Do integration on initial PLC
+                # Do integration
                 D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = self.integrate(u, rho, Lam, v, delv, w, delw)
                 if F:
                     return Hz0, rhoz0, Lam0, logLik0, 0, 0
@@ -574,10 +574,22 @@ class SSU(object):
             return t0
         except UserWarning:
             print "Got UserWarning"
-            return 0.0
+            a = np.linspace(0,1,500)
+            Ha = self.t0f(a,Om0, Ok0, OL0)
+            t0 = trapz(1/Ha, a)
+            if np.isnan(t0):
+                return 0
+            else:
+                return t0
         except RuntimeWarning:
+            a = np.linspace(0,1,500)
+            Ha = self.t0f(a,Om0, Ok0, OL0)
+            t0 = trapz(1/Ha, a)
             print "Got RuntimeWarning"
-            return 0.0
+            if np.isnan(t0):
+                return 0
+            else:
+                return t0
 
 
     # def get_C_sol(self, Om0, Ok0, OL0, H0):
@@ -640,7 +652,7 @@ class SSU(object):
 
             #Compute grid sizes that gives num error od err
             NJ = int(np.ceil(vz[-1]/np.sqrt(self.err) + 1))
-            if self.DoPLCF:
+            if self.DoPLCF and t0 > self.tfind:
                 NI = int(np.ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
             else:
                 NI = 1
@@ -659,14 +671,14 @@ class SSU(object):
             u[0] = 1.0
             return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F
         
-    def age_grid(self, NI, NJ, delv, t0):
+    def age_grid(self, NI, NJ, delv, t0, prior=False):
         w0 = np.linspace(t0, self.tmin, NI)
-        if self.DoPLCF:
+        if self.DoPLCF and t0 > self.tfind and not prior:
             delw = (w0[0] - w0[-1])/(NI-1)
             if delw/delv > 0.5:
                 print "Warning CFL might be violated."
         else:
-            delw = 1e-3 #This will be irrelevant if not doing PLCF
+            delw = 1e-3 #This is irrelevant if not doing PLCF
         #Set w grid
         w = np.tile(w0, (NJ, 1)).T
         return w, delw
@@ -806,9 +818,9 @@ class SSU(object):
             #print "Max lik tracked"
         return
 
-    def get_funcs(self):
+    def get_funcsi(self):
         """
-        Return quantities of interest
+        Return quantities of interest on the PLC0
         """
         #All functions will be returned with the domain normalised between 0 and 1
         l = np.linspace(0, 1, self.Nret)
@@ -931,150 +943,152 @@ class SSU(object):
             rhodoti = np.zeros(self.Nret)
             print "failed at rhodoti", traceback.format_exc()
 
-        if self.DoPLCF:
-            # Find index of w0 marking value closest to tfind
-            I1 = np.argwhere(self.w0 >= self.tfind)[-1]
-            I2 = np.argwhere(self.w0 < self.tfind)[0]
-            #Choose whichever is closer
-            if ( abs(self.w0[I1]-self.tfind) < abs(self.w0[I2] - self.tfind)):
-                self.Istar = I1
-            else:
-                self.Istar = I2
+        return T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, rhopi, rhodoti, \
+                   self.Dz, self.dzdwz, sigmasqi, self.w0[0]
 
-            #Here we do the shear and curvature tests on two pncs
-            umax = int(self.Istar)
-            njf = int(self.vmaxi[umax]) #This is the max value of index on final pnc considered
-
-            if (njf <= 2 or njf > self.NJ):
-                njf = self.NJ
-                print "Got njf outside 2-NJ", njf
-
-            #Curvetest
-            try:
-                T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0000)
-                T2f = T2fo(l)
-            except:
-                T2f = np.zeros(self.Nret)
-                print "Failed at T2f", traceback.format_exc()
-            try:
-                T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0000)
-                T1f = T1fo(l)
-            except:
-                T1f = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0)
-                print "Failed at T1f", traceback.format_exc()
-            try:
-                vzf = self.u[0:njf, umax] - 1.0
-                sigmasqfo = uvs(vzf/vzf[-1], self.sigmasq[0:njf, umax],k=3,s=0.0)
-                sigmasqf = sigmasqfo(l)
-            except:
-                print vzf[-1]
-                sigmasqf = np.zeros(self.Nret)
-                print "Failed at sigmasqf", traceback.format_exc()
-            #Get the LLTB consistency relation
-            try:
-                LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
-            except:
-                LLTBConsf = np.zeros(self.Nret)
-                print "failed at LLTBConsf", traceback.format_exc()
-            try:
-                Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Df = np.zeros(self.Nret)
-                print "failed at Df", traceback.format_exc()
-            try:
-                Sf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.S[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Sf = np.zeros(self.Nret)
-                print "failed at Sf", traceback.format_exc()
-            try:
-                Qf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Q[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Qf = np.zeros(self.Nret)
-                print "failed at Qf", traceback.format_exc()
-            try:
-                Af = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.A[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Af = np.zeros(self.Nret)
-                print "failed at Af", traceback.format_exc()
-            try:
-                Zf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Z[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Zf = np.zeros(self.Nret)
-                print "failed at Zf", traceback.format_exc()
-            try:
-                Spf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Sp[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Spf = np.zeros(self.Nret)
-                print "failed at Spf", traceback.format_exc()
-            try:
-                Qpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Qp[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Qpf = np.zeros(self.Nret)
-                print "failed at Qpf", traceback.format_exc()
-            try:
-                Zpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Zp[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                Zpf = np.zeros(self.Nret)
-                print "failed at Zpf", traceback.format_exc()
-            try:
-                uf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.u[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                uf = np.zeros(self.Nret)
-                print "failed at uf", traceback.format_exc()
-            try:
-                upf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.up[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                upf = np.zeros(self.Nret)
-                print "failed at upf", traceback.format_exc()
-            try:
-                uppf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.upp[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                uppf = np.zeros(self.Nret)
-                print "failed at uppf", traceback.format_exc()
-            try:
-                udotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.udot[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                udotf = np.zeros(self.Nret)
-                print "failed at udotf", traceback.format_exc()
-            try:
-                rhof = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rho[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                rhof = np.zeros(self.Nret)
-                print "failed at rhof", traceback.format_exc()
-            try:
-                rhopf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhop[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                rhopf = np.zeros(self.Nret)
-                print "failed at rhopf", traceback.format_exc()
-            try:
-                rhodotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhodot[0:jmaxf,-1], k=3, s=0.0)(l)
-            except:
-                rhodotf = np.zeros(self.Nret)
-                print "failed at rhodotf", traceback.format_exc()
-
-            # #Get constant t slices
-            # if F == 0:
-            #     I = range(self.Istar)
-            #     rmax = self.rstar[self.Istar-1]
-            #     r = self.rstar[I]/rmax
-            #     rhostar = np.interp(l,r,self.rhostar[I])
-            #     Dstar = np.interp(l,r,self.Dstar[I])
-            #     Dstar[0] = 0.0
-            #     Xstar = np.interp(l,r,self.Xstar[I])
-            #     Hperpstar = np.interp(l,r,self.Hperpstar[I])
-            # else:
-            #     rmax = self.rstar[0]
-            #     rhostar = np.tile(self.rhostar[0],(self.Nret))
-            #     Dstar = np.tile(self.Dstar[0],(self.Nret))
-            #     Xstar = np.tile(self.Xstar[0],(self.Nret))
-            #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
-            return T1i, T1f,T2i,T2f,LLTBConsi,LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, Zf, Spi, Spf, Qpi, Qpf, Zpi, \
-                   Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, rhodoti, rhodotf, self.Dz, \
-                   self.dzdwz, sigmasqi, sigmasqf
+    def get_funcsf(self):
+        """
+        Returns quantities of interest on the PLCF
+        """
+        # Find index of w0 marking value closest to tfind
+        I1 = np.argwhere(self.w0 >= self.tfind)[-1]
+        I2 = np.argwhere(self.w0 < self.tfind)[0]
+        #Choose whichever is closer
+        if ( abs(self.w0[I1]-self.tfind) < abs(self.w0[I2] - self.tfind)):
+            self.Istar = I1
         else:
-            return T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, rhopi, rhodoti, \
-                   self.Dz, self.dzdwz, sigmasqi
-        
+            self.Istar = I2
+
+        umax = int(self.Istar)
+        njf = int(self.vmaxi[umax]) #This is the max value of the spatial index on the PLC we are finding
+        jmaxf = self.vmaxi[-1] #This is the max value on the final PLCF
+        l = np.linspace(0, 1, self.Nret)
+
+        if (njf <= 2 or njf > self.NJ):
+            njf = self.NJ
+            print "Got njf outside 2-NJ", njf
+
+        #Curvetest
+        try:
+            T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0000)
+            T2f = T2fo(l)
+        except:
+            T2f = np.zeros(self.Nret)
+            print "Failed at T2f", traceback.format_exc()
+        try:
+            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0000)
+            T1f = T1fo(l)
+        except:
+            T1f = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0)
+            print "Failed at T1f", traceback.format_exc()
+        try:
+            vzf = self.u[0:njf, umax] - 1.0
+            sigmasqfo = uvs(vzf/vzf[-1], self.sigmasq[0:njf, umax],k=3,s=0.0)
+            sigmasqf = sigmasqfo(l)
+        except:
+            print vzf[-1]
+            sigmasqf = np.zeros(self.Nret)
+            print "Failed at sigmasqf", traceback.format_exc()
+        #Get the LLTB consistency relation
+        try:
+            LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
+        except:
+            LLTBConsf = np.zeros(self.Nret)
+            print "failed at LLTBConsf", traceback.format_exc()
+        try:
+            Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Df = np.zeros(self.Nret)
+            print "failed at Df", traceback.format_exc()
+        try:
+            Sf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.S[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Sf = np.zeros(self.Nret)
+            print "failed at Sf", traceback.format_exc()
+        try:
+            Qf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Q[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Qf = np.zeros(self.Nret)
+            print "failed at Qf", traceback.format_exc()
+        try:
+            Af = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.A[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Af = np.zeros(self.Nret)
+            print "failed at Af", traceback.format_exc()
+        try:
+            Zf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Z[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Zf = np.zeros(self.Nret)
+            print "failed at Zf", traceback.format_exc()
+        try:
+            Spf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Sp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Spf = np.zeros(self.Nret)
+            print "failed at Spf", traceback.format_exc()
+        try:
+            Qpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Qp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Qpf = np.zeros(self.Nret)
+            print "failed at Qpf", traceback.format_exc()
+        try:
+            Zpf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.Zp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            Zpf = np.zeros(self.Nret)
+            print "failed at Zpf", traceback.format_exc()
+        try:
+            uf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.u[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            uf = np.zeros(self.Nret)
+            print "failed at uf", traceback.format_exc()
+        try:
+            upf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.up[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            upf = np.zeros(self.Nret)
+            print "failed at upf", traceback.format_exc()
+        try:
+            uppf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.upp[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            uppf = np.zeros(self.Nret)
+            print "failed at uppf", traceback.format_exc()
+        try:
+            udotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.udot[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            udotf = np.zeros(self.Nret)
+            print "failed at udotf", traceback.format_exc()
+        try:
+            rhof = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rho[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhof = np.zeros(self.Nret)
+            print "failed at rhof", traceback.format_exc()
+        try:
+            rhopf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhop[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhopf = np.zeros(self.Nret)
+            print "failed at rhopf", traceback.format_exc()
+        try:
+            rhodotf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.rhodot[0:jmaxf,-1], k=3, s=0.0)(l)
+        except:
+            rhodotf = np.zeros(self.Nret)
+            print "failed at rhodotf", traceback.format_exc()
+
+        # #Get constant t slices
+        # if F == 0:
+        #     I = range(self.Istar)
+        #     rmax = self.rstar[self.Istar-1]
+        #     r = self.rstar[I]/rmax
+        #     rhostar = np.interp(l,r,self.rhostar[I])
+        #     Dstar = np.interp(l,r,self.Dstar[I])
+        #     Dstar[0] = 0.0
+        #     Xstar = np.interp(l,r,self.Xstar[I])
+        #     Hperpstar = np.interp(l,r,self.Hperpstar[I])
+        # else:
+        #     rmax = self.rstar[0]
+        #     rhostar = np.tile(self.rhostar[0],(self.Nret))
+        #     Dstar = np.tile(self.Dstar[0],(self.Nret))
+        #     Xstar = np.tile(self.Xstar[0],(self.Nret))
+        #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
+        return T1f, T2f, LLTBConsf, Df, Sf, Qf, Af, Zf, Spf, Qpf, Zpf, uf, upf, uppf, udotf, rhof, rhopf, rhodotf, sigmasqf
+
 if __name__ == "__main__":
     #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
     zmax = 2.5

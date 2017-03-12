@@ -61,6 +61,7 @@ if __name__ == "__main__":
     rhoilist = []
     rhopilist = []
     rhodotilist = []
+    t0list = []
 
 
     if DoPLCF:
@@ -110,10 +111,10 @@ if __name__ == "__main__":
                 if DoPLCF:
                     Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
                     Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-                    rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf = f.result()
+                    rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf, t0 = f.result()
                 else:
                     Hz, rhoz, Lam, T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, \
-                    rhopi, rhodoti, Dz, dzdwz, sigmasqi = f.result()
+                    rhopi, rhodoti, Dz, dzdwz, sigmasqi, t0 = f.result()
 
                 Dzlist.append(Dz)
                 Hzlist.append(Hz)
@@ -139,6 +140,7 @@ if __name__ == "__main__":
                 rhoilist.append(rhoi)
                 rhopilist.append(rhopi)
                 rhodotilist.append(rhodoti)
+                t0list.append(t0)
 
                 if DoPLCF:
                     T1flist.append(T1f)
@@ -163,19 +165,10 @@ if __name__ == "__main__":
 
         Htest = MCT.MCMC_diagnostics(NSamplers, Hzlist).get_GRC().max()
         rhotest = MCT.MCMC_diagnostics(NSamplers, rhozlist).get_GRC().max()
-        T1itest = MCT.MCMC_diagnostics(NSamplers, T1ilist).get_GRC().max()
+        Lamtest = 1.1 #MCT.MCMC_diagnostics(NSamplers, Lamlist).get_GRC()
 
-        T2itest = MCT.MCMC_diagnostics(NSamplers, T2ilist).get_GRC().max()
-
-
-        if DoPLCF:
-            T1ftest = MCT.MCMC_diagnostics(NSamplers, T1flist).get_GRC().max()
-            T2ftest = MCT.MCMC_diagnostics(NSamplers, T2flist).get_GRC().max()
-
-        if DoPLCF:
-            test_GR = np.array([Htest,rhotest,T1itest, T1ftest, T2itest, T2ftest])
-        else:
-            test_GR = np.array([Htest, rhotest, T1itest, T2itest])
+        # Test for convergence
+        test_GR = np.array([Htest,rhotest,Lamtest])
 
         try:
             cont = any(test_GR > 1.15)
@@ -188,6 +181,8 @@ if __name__ == "__main__":
             Nsamp *= 2
             num_repeats += 1
 
+        print "GR(H) = ", Htest, "GR(rho) = ", rhotest, "GR(Lambda) = ", Lamtest
+
     # Save the data
     if DoPLCF:
         np.savez(fname + "Processed_Data/" + samps_out_name + ".npz", Hz=Hzlist, rhoz=rhozlist, Lam=Lamlist, T1i=T1ilist, T1f=T1flist, T2i=T2ilist,
@@ -196,13 +191,10 @@ if __name__ == "__main__":
                  Qpf=Qpflist, Zpi=Zpilist, Zpf=Zpflist, ui=uilist, uf=uflist, upi=upilist, upf=upflist, uppi=uppilist,
                  uppf=uppflist, udoti=udotilist, udotf=udotflist, rhoi=rhoilist, rhof=rhoflist, rhopi=rhopilist,
                  rhopf=rhopflist, rhodoti=rhodotilist, rhodotf=rhodotflist, NSamplers=NSamplers, Dz=Dzlist, dzdwz=dzdwzlist,
-                 sigmasqi=sigmasqilist, sigmasqf=sigmasqflist)
+                 sigmasqi=sigmasqilist, sigmasqf=sigmasqflist, t0list=t0list)
     else:
         np.savez(fname + "Processed_Data/" + samps_out_name + ".npz", Hz=Hzlist, rhoz=rhozlist, Lam=Lamlist,
                  T1i=T1ilist, T2i=T2ilist, LLTBConsi=LLTBConsilist, Di=Dilist, Si=Silist, Qi=Qilist, Ai=Ailist,
                  Zi=Zilist, Spi=Spilist, Qpi=Qpilist, Zpi=Zpilist, ui=uilist, upi=upilist, uppi=uppilist,
                  udoti=udotilist, rhoi=rhoilist, rhopi=rhopilist, rhodoti=rhodotilist, NSamplers=NSamplers, Dz=Dzlist,
-                 dzdwz=dzdwzlist, sigmasqi=sigmasqilist)
-
-    #print Hsamps.shape
-    #print "GR(H) = ", Htest, "GR(rho)", rhotest, "GR(T1i)", T1itest, "GR(T1f)", T1ftest, "GR(T2i)", T2itest, "GR(T2f)", T2ftest
+                 dzdwz=dzdwzlist, sigmasqi=sigmasqilist, t0list=t0list)

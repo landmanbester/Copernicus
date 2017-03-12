@@ -8,22 +8,18 @@ class MCMC_diagnostics(object):
         """
 
         :param Nsamplers:  The number of MCMC chains
-        :param funct_to_test: The function whose GR diagnostic to compute
-        :param fname: the directory in which the results are saved
+        :param sampslist: A list containing samples of each chain
         """
         self.M = Nsamplers
-        # Load the first samples (to get Nsamps etc)
-        #holder = np.load(fname + "Samps0" + '.npz')[func_to_test]
-        #print holder.shape
-        self.D, self.T = sampslist[0].shape
+        try:
+            self.D, self.T = sampslist[0].shape
+        except:
+            self.D = 1
+            self.T = sampslist[0].size
         self.n = self.T #Can be used to discard a fraction of the samples
         self.samps = np.zeros([self.M, self.n, self.D])  # array to store samps (one page for each chain with each column holding samples of a parameter)
-        #self.samps[0] = holder[:, 0:self.n].T
-        #self.X = np.zeros([self.M * self.n, self.D])
         for i in xrange(self.M):
-            #holder = np.load(fname + "Samps" + str(i) + '.npz')[func_to_test]
             self.samps[i] = sampslist[i][:,0:self.n].T #np.asarray(holder[holder.files[0]])  # [self.n:self.T,:])
-            #self.X[i * self.n:(i + 1) * self.n, :] = self.samps[i]
 
     def get_GRC(self):
         W = np.zeros(self.D)
