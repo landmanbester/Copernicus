@@ -152,32 +152,34 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
         Dzsamps[:, i], dzdwzsamps[:, i], sigmasqi[:, i], t0samps[i] = U.get_funcsi()
 
 
-        if t0samps[i] > U.tmin and U.NI > 1:
+        if t0samps[i] > U.tmin and U.NI > 1 and DoPLCF:
             T1f[:, i], T2f[:, i], LLTBConsf[:, i], Df[:, i], Sf[:, i], Qf[:, i], Af[:, i], Zf[:, i], Spf[:, i], \
             Qpf[:, i], Zpf[:, i], uf[:, i], upf[:, i], uppf[:, i], udotf[:, i], rhof[:, i], rhopf[:, i], rhodotf[:, i],\
             sigmasqf[:, i] = U.get_funcsf()
         else:
             I.append(i)
-    # Delete the empty columns in PLCF quantities that result when t0 < tfind
-    np.delete(T1f, I, axis=1)
-    np.delete(T2f, I, axis=1)
-    np.delete(LLTBConsf, I, axis=1)
-    np.delete(Df, I, axis=1)
-    np.delete(Sf, I, axis=1)
-    np.delete(Qf, I, axis=1)
-    np.delete(Af, I, axis=1)
-    np.delete(Zf, I, axis=1)
-    np.delete(Spf, I, axis=1)
-    np.delete(Qpf, I, axis=1)
-    np.delete(Zpf, I, axis=1)
-    np.delete(uf, I, axis=1)
-    np.delete(upf, I, axis=1)
-    np.delete(uppf, I, axis=1)
-    np.delete(udotf, I, axis=1)
-    np.delete(rhof, I, axis=1)
-    np.delete(rhopf, I, axis=1)
-    np.delete(rhodotf, I, axis=1)
-    np.delete(sigmasqf, I, axis=1)
+
+    if DoPLCF:
+        # Delete the empty columns in PLCF quantities that result when t0 < tfind
+        np.delete(T1f, I, axis=1)
+        np.delete(T2f, I, axis=1)
+        np.delete(LLTBConsf, I, axis=1)
+        np.delete(Df, I, axis=1)
+        np.delete(Sf, I, axis=1)
+        np.delete(Qf, I, axis=1)
+        np.delete(Af, I, axis=1)
+        np.delete(Zf, I, axis=1)
+        np.delete(Spf, I, axis=1)
+        np.delete(Qpf, I, axis=1)
+        np.delete(Zpf, I, axis=1)
+        np.delete(uf, I, axis=1)
+        np.delete(upf, I, axis=1)
+        np.delete(uppf, I, axis=1)
+        np.delete(udotf, I, axis=1)
+        np.delete(rhof, I, axis=1)
+        np.delete(rhopf, I, axis=1)
+        np.delete(rhodotf, I, axis=1)
+        np.delete(sigmasqf, I, axis=1)
 
     # Report
     print 'It took sampler' + str(j), (time.time() - t1) / 60.0, 'min to draw ', Nsamp, \

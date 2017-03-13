@@ -571,22 +571,31 @@ class SSU(object):
             return t0
         except UserWarning:
             print "Got UserWarning"
-            a = np.linspace(0,1,500)
-            Ha = self.t0f(a, Om0, Ok0, OL0, H0)
-            t0 = trapz(1/Ha, a)
-            if np.isnan(t0):
+            try:
+                a = np.linspace(0,1,500)
+                Ha = self.t0f(a, Om0, Ok0, OL0, H0)
+                t0 = trapz(1/Ha, a)
+                if np.isnan(t0):
+                    return 0
+                else:
+                    return t0
+            except UserWarning:
                 return 0
-            else:
-                return t0
+            except RuntimeWarning:
+                return 0
         except RuntimeWarning:
-            a = np.linspace(0,1,500)
-            Ha = self.t0f(a, Om0, Ok0, OL0, H0)
-            t0 = trapz(1/Ha, a)
-            print "Got RuntimeWarning"
-            if np.isnan(t0):
+            try:
+                a = np.linspace(0, 1, 500)
+                Ha = self.t0f(a, Om0, Ok0, OL0, H0)
+                t0 = trapz(1 / Ha, a)
+                if np.isnan(t0):
+                    return 0
+                else:
+                    return t0
+            except UserWarning:
                 return 0
-            else:
-                return t0
+            except RuntimeWarning:
+                return 0
 
 
     # def get_C_sol(self, Om0, Ok0, OL0, H0):
