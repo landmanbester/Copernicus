@@ -19,11 +19,13 @@ class MCMC_diagnostics(object):
         self.n = self.T #Can be used to discard a fraction of the samples
         self.samps = np.zeros([self.M, self.n, self.D])  # array to store samps (one page for each chain with each column holding samples of a parameter)
         for i in xrange(self.M):
-            self.samps[i] = sampslist[i][:,0:self.n].T #np.asarray(holder[holder.files[0]])  # [self.n:self.T,:])
+            if self.D > 1:
+                self.samps[i] = sampslist[i][:,0:self.n].T #np.asarray(holder[holder.files[0]])  # [self.n:self.T,:])
+            else:
+                self.samps[i] = sampslist[i][0:self.n].reshape(self.n, 1)
 
     def get_GRC(self):
         W = np.zeros(self.D)
-        B = np.zeros(self.D)
         # Get the means of each parameter in each chain
         meansj = np.zeros([self.M, self.D])
         for i in range(self.M):

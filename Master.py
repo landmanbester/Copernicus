@@ -385,7 +385,14 @@ class SSU(object):
         self.track_max_lik(self.logLik, self.Hz, self.rhoz, self.Lam)
 
 
-    def set_Lambda_Prior(self,Hz,rhoz):
+    def set_DoPLCF(self, val):
+        """
+        Here we set whether to do the PLCF or not. Usefull for doing the burnin really quickly.
+        Input: val = bool
+        """
+        self.DoPLCF = val
+
+    def set_Lambda_Prior(self, Hz, rhoz):
         # Create Lambda grid
         Ngrid = 50
         Lamgrid = np.linspace(0, self.LambdaMax, Ngrid)
@@ -408,13 +415,6 @@ class SSU(object):
         # convert loglik to lik
         LikSamps = np.exp(-LikSamps)
 
-        # # Plot
-        # plt.figure('LamLik')
-        # plt.plot(Lamgrid,LikSamps)
-        # plt.xlabel(r'$\Lambda$', fontsize=18)
-        # plt.ylabel(r'Lik', fontsize= 18)
-        # plt.savefig(self.fname + 'Figures/Lambda_lik.png', dpi=200)
-
         # set mean and variance of prior
         I = np.argwhere(LikSamps == LikSamps.max()).squeeze()
         if I.size > 1:
@@ -424,10 +424,7 @@ class SSU(object):
         #Lamtmp = np.sort(Lamgrid[I],axis=0)
         cdf = cumtrapz(LikSamps, Lamgrid, initial=0.0)
         cdf /= cdf.max()
-        # Plot
-        # plt.figure('CDF')
-        # plt.plot(Lamgrid, cdf)
-        # plt.savefig('/home/landman/Projects/CP_LCDM/Figures/LTB_cdf.png', dpi=200)
+
         Id = np.argwhere(cdf <= 0.16)[-1]  # lower 1sig
         Lamd = Lamgrid[Id]
         Iu = np.argwhere(cdf <= 0.84)[-1]  # upper 1sig
@@ -435,7 +432,7 @@ class SSU(object):
         sigmaLam = 0.1*np.abs(Lamu - Lamd)
         self.sigmaLam = sigmaLam
         self.sample_lambda = lambda *args: args[0] + sigmaLam * np.random.randn(1)
-        #print self.Lamm, self.sigmaLam
+
         return
 
     def reset_beta(self, beta):
@@ -575,7 +572,7 @@ class SSU(object):
         except UserWarning:
             print "Got UserWarning"
             a = np.linspace(0,1,500)
-            Ha = self.t0f(a,Om0, Ok0, OL0)
+            Ha = self.t0f(a, Om0, Ok0, OL0, H0)
             t0 = trapz(1/Ha, a)
             if np.isnan(t0):
                 return 0
@@ -583,7 +580,7 @@ class SSU(object):
                 return t0
         except RuntimeWarning:
             a = np.linspace(0,1,500)
-            Ha = self.t0f(a,Om0, Ok0, OL0)
+            Ha = self.t0f(a, Om0, Ok0, OL0, H0)
             t0 = trapz(1/Ha, a)
             print "Got RuntimeWarning"
             if np.isnan(t0):
@@ -652,7 +649,7 @@ class SSU(object):
 
             #Compute grid sizes that gives num error od err
             NJ = int(np.ceil(vz[-1]/np.sqrt(self.err) + 1))
-            if self.DoPLCF and t0 > self.tfind:
+            if self.DoPLCF and t0 > self.tmin:
                 NI = int(np.ceil(3.0*(NJ - 1)*(t0 - self.tmin)/vz[-1] + 1))
             else:
                 NI = 1
@@ -673,12 +670,12 @@ class SSU(object):
         
     def age_grid(self, NI, NJ, delv, t0, prior=False):
         w0 = np.linspace(t0, self.tmin, NI)
-        if self.DoPLCF and t0 > self.tfind and not prior:
+        if self.DoPLCF and t0 > self.tmin and not prior:
             delw = (w0[0] - w0[-1])/(NI-1)
             if delw/delv > 0.5:
                 print "Warning CFL might be violated."
         else:
-            delw = 1e-3 #This is irrelevant if not doing PLCF
+            delw = 1e-3 #This is irrelevant if not doing PLCF but needs to be passed to CIVP anyway
         #Set w grid
         w = np.tile(w0, (NJ, 1)).T
         return w, delw
@@ -952,9 +949,9 @@ class SSU(object):
         """
         # Find index of w0 marking value closest to tfind
         I1 = np.argwhere(self.w0 >= self.tfind)[-1]
-        I2 = np.argwhere(self.w0 < self.tfind)[0]
+        I2 = np.argwhere(self.w0 <= self.tfind)[0]
         #Choose whichever is closer
-        if ( abs(self.w0[I1]-self.tfind) < abs(self.w0[I2] - self.tfind)):
+        if ( abs(self.w0[I1]-self.tfind) <= abs(self.w0[I2] - self.tfind)):
             self.Istar = I1
         else:
             self.Istar = I2

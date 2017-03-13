@@ -112,6 +112,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     
     #Do the burnin period
     print "Sampler ",j, "started burnin"
+    U.set_DoPLCF(False) # don't need to compute the PLCF during burnin
     t1 = time.time()
     for i in range(Nburn):
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
@@ -122,7 +123,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
 
     # Reset the lambda prior
     U.set_Lambda_Prior(U.Hz, U.rhoz)
-
+    U.set_DoPLCF(DoPLCF)
     interval = Nsamp/10
     accrate = np.zeros(2)
     t1 = time.time()
@@ -151,7 +152,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
         Dzsamps[:, i], dzdwzsamps[:, i], sigmasqi[:, i], t0samps[i] = U.get_funcsi()
 
 
-        if t0samps[i] > U.tfind:
+        if t0samps[i] > U.tmin and U.NI > 1:
             T1f[:, i], T2f[:, i], LLTBConsf[:, i], Df[:, i], Sf[:, i], Qf[:, i], Af[:, i], Zf[:, i], Spf[:, i], \
             Qpf[:, i], Zpf[:, i], uf[:, i], upf[:, i], uppf[:, i], udotf[:, i], rhof[:, i], rhopf[:, i], rhodotf[:, i],\
             sigmasqf[:, i] = U.get_funcsf()

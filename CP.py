@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
         Htest = MCT.MCMC_diagnostics(NSamplers, Hzlist).get_GRC().max()
         rhotest = MCT.MCMC_diagnostics(NSamplers, rhozlist).get_GRC().max()
-        Lamtest = 1.1 #MCT.MCMC_diagnostics(NSamplers, Lamlist).get_GRC()
+        Lamtest = MCT.MCMC_diagnostics(NSamplers, Lamlist).get_GRC()
 
         # Test for convergence
         test_GR = np.array([Htest,rhotest,Lamtest])
