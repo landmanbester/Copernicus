@@ -257,7 +257,7 @@ class SSU(object):
 
         # Set minimum time to integrate to
         self.tmin = tmin
-        self.tfind = tmin + 0.1 # This is defines the constant time slice we are looking for
+        #self.tfind = tmin + 0.1 # This is defines the constant time slice we are looking for
 
         # Set number of spatial grid points at which to return quantities of interest
         self.Nret = Nret
@@ -402,11 +402,11 @@ class SSU(object):
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lamgrid[i])
             NI = 1  # Dont need the PLCF for this
             w, delw = self.age_grid(NI, NJ, delv, t0, prior=True)
-            D, S, Q, A, Z, rho, u, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
+            D, S, Q, A, Z, rhoi, ui, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
                 self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
             if F == 1:
                 print "Shit! If we get here. Lambda = ", Lamgrid[i]
-            LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
+            LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=ui, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
             #print i, Lamgrid[i], LikSamps[i]
 
         # Normalise for numerical stability
@@ -630,7 +630,7 @@ class SSU(object):
             #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
 
             #Set affine parameter vals
-            dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to bve the most accurate way to do the numerical integration
+            dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to be the most accurate way to do the numerical integration
             vzo = dvo.antiderivative()
             vz = vzo(self.z)
             vz[0] = 0.0
@@ -675,9 +675,9 @@ class SSU(object):
         TODO: write the Fortran code to compute t(v) and r(v) and also find a current time slice t = tmin
         """
         NI, NJ = w.shape
-        D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq,F = \
-            CIVP.solve(asf(v), delv, asf(w), delw, asf(u), asf(rho), Lam, self.err, NI, NJ)
-        return asc(D),asc(S),asc(Q),asc(A),asc(Z),asc(rho),asc(u),asc(up),asc(upp),asc(ud),asc(rhod),asc(rhop),\
+        D,S,Q,A,Z,rhoint,rhod,rhop,uint,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,Sp,Qp,Zp,LLTBCon,Dww,Aw,T1,T2,sigmasq,F = \
+            CIVP.solve(asf(v.copy()), delv, asf(w.copy()), delw, asf(u.copy()), asf(rho.copy()), Lam, self.err, NI, NJ)
+        return asc(D),asc(S),asc(Q),asc(A),asc(Z),asc(rhoint),asc(uint),asc(up),asc(upp),asc(ud),asc(rhod),asc(rhop),\
                    asc(Sp),asc(Qp),asc(Zp),asc(LLTBCon),asc(T1),asc(T2),asc(vmaxi),asc(sigmasq), F
 
     # def get_tslice(self):
@@ -935,40 +935,40 @@ class SSU(object):
         """
         Returns quantities of interest on the PLCF
         """
-        # Find index of w0 marking value closest to tfind
-        I1 = np.argwhere(self.w0 >= self.tfind)[-1]
-        I2 = np.argwhere(self.w0 <= self.tfind)[0]
-        #Choose whichever is closer
-        if ( abs(self.w0[I1]-self.tfind) <= abs(self.w0[I2] - self.tfind)):
-            self.Istar = I1
-        else:
-            self.Istar = I2
+        # # Find index of w0 marking value closest to tfind
+        # I1 = np.argwhere(self.w0 >= self.tfind)[-1]
+        # I2 = np.argwhere(self.w0 <= self.tfind)[0]
+        # #Choose whichever is closer
+        # if ( abs(self.w0[I1]-self.tfind) <= abs(self.w0[I2] - self.tfind)):
+        #     self.Istar = I1
+        # else:
+        #     self.Istar = I2
 
-        umax = int(self.Istar)
-        njf = int(self.vmaxi[umax]) #This is the max value of the spatial index on the PLC we are finding
-        jmaxf = self.vmaxi[-1] #This is the max value on the final PLCF
+        umax = self.NI - 1 #int(self.Istar) #the -1 is here because fortran indexing starts at 1
+        #njf = int(self.vmaxi[umax]) #This is the max value of the spatial index on the PLC we are finding
+        jmaxf = self.vmaxi[-1] - 1#This is the max value on the final PLCF
         l = np.linspace(0, 1, self.Nret)
 
-        if (njf <= 2 or njf > self.NJ):
-            njf = self.NJ
-            print "Got njf outside 2-NJ", njf
+        if (jmaxf <= 2 or jmaxf > self.NJ):
+            print "Got jmaxf outside 2-NJ", jmaxf
+            jmaxf = self.NJ
 
         #Curvetest
         try:
-            T2fo = uvs(self.v[0:njf]/self.v[njf-1], self.T2[0:njf, umax], k=3, s=0.0000)
+            T2fo = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.T2[0:jmaxf, umax], k=3, s=0.0000)
             T2f = T2fo(l)
         except:
             T2f = np.zeros(self.Nret)
             print "Failed at T2f", traceback.format_exc()
         try:
-            T1fo = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0000)
+            T1fo = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.T1[0:jmaxf, umax], k=3, s=0.0000)
             T1f = T1fo(l)
         except:
-            T1f = uvs(self.v[0:njf]/self.v[njf-1],self.T1[0:njf, umax], k=3, s=0.0)
+            T1f = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.T1[0:jmaxf, umax], k=3, s=0.0)
             print "Failed at T1f", traceback.format_exc()
         try:
-            vzf = self.u[0:njf, umax] - 1.0
-            sigmasqfo = uvs(vzf/vzf[-1], self.sigmasq[0:njf, umax],k=3,s=0.0)
+            vzf = self.u[0:jmaxf, umax] - 1.0
+            sigmasqfo = uvs(vzf/vzf[-1], self.sigmasq[0:jmaxf, umax],k=3,s=0.0)
             sigmasqf = sigmasqfo(l)
         except:
             print vzf[-1]

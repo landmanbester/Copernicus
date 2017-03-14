@@ -23,12 +23,12 @@ end program
 subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 	,D,S,Q,A,Z,rho,rhod,rhop,u,ud,up,upp,vmax,vmaxi,r,t,X,dXdr,drdv,drdvp,dSdvp&
         ,dQdvp,dZdvp,LLTBCon,Dww,Aw,T1,T2,sigmasq,err,NI,NJ,Flag2) !These are all outputs except NI and NJ which are optional
-!f2py threadsafe
+
 	implicit none
 	!Subroutine parameters
 	integer, intent(in) :: NI, NJ
 	real*8, intent(in) :: Lam,delv,delw,err
-        real*8, dimension(NI), intent(in)  :: w
+        real*8, dimension(NI,NJ), intent(in)  :: w
 	real*8, dimension(NJ), intent(in) :: v,ui,rhoi
 	real*8, dimension(NI), intent(out) :: vmax
 	integer, dimension(NI), intent(out) :: vmaxi
@@ -146,19 +146,19 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 
               end do
 
-              !Re-evaluate vmaxi with corrected value
-              call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
-              if (Flag==1) then
-                 Flag2 = 1
-                 exit
-              endif
-              jmax = vmaxi(i)
-
-              if (jmax > NJ) then
-                 Flag2 = 1
-                 write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
-                 exit
-              endif
+!!$              !Re-evaluate vmaxi with corrected value
+!!$              call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
+!!$              if (Flag==1) then
+!!$                 Flag2 = 1
+!!$                 exit
+!!$              endif
+!!$              jmax = vmaxi(i)
+!!$
+!!$              if (jmax > NJ) then
+!!$                 Flag2 = 1
+!!$                 write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
+!!$                 exit
+!!$              endif
 
               !Final correct
               call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
