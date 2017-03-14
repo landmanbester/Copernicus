@@ -323,6 +323,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
         Flag = 0
 	
 	!Initial guess
+        !write(*,*) i, vmax(i-1), vmaxi(i-1), NJ, NI
 	vp = vmax(i-1) - 0.5*A(vmaxi(i-1))*delw
 	
 	vprev = 0.D0

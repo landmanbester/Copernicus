@@ -37,10 +37,10 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
 
     #Instantiate universe object
     if use_meanf:
-        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF,
+        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, False,
                 beta=beta, Hz=Hz, rhoz=rhoz, Lam=Lam)
     else:
-        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, beta=beta)
+        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, False, beta=beta)
 
     #Get starting sample
     Hz = U.Hz
@@ -112,7 +112,7 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     
     #Do the burnin period
     print "Sampler ",j, "started burnin"
-    U.set_DoPLCF(False) # don't need to compute the PLCF during burnin
+    #U.set_DoPLCF(False) # don't need to compute the PLCF during burnin
     t1 = time.time()
     for i in range(Nburn):
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)

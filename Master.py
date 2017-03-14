@@ -300,7 +300,7 @@ class SSU(object):
             y = rhoz[0] + self.z * (rhoz[-1] - rhoz[0]) / self.z[-1]
             rhozo = uvs(self.z, rhoz, k=3, s=0.0)
             self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z, Xrho,
-                            self.beta, prior_mean=rhozo, bnds=((0.1, None), (2.0, 4.0)))
+                            self.beta, prior_mean=rhozo, bnds=((0.2, None), (2.0, 4.0)))
         self.Xrho = self.GPrho.THETA
         #print "rhoz theta =", self.Xrho
         self.rhom = self.GPrho.fmean
