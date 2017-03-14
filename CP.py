@@ -101,7 +101,7 @@ if __name__ == "__main__":
     num_repeats = 0
     max_repeats = 1
     while cont and num_repeats < max_repeats:
-        with cf.ProcessPoolExecutor(max_workers=NSamplers) as executor:
+        with cf.ThreadPoolExecutor(max_workers=NSamplers) as executor:
             for i in xrange(NSamplers):
                 future = executor.submit(sampler, zmax, Np, Nret, Nsamp, Nburn, tstar, data_prior, data_lik, DoPLCF,
                                          DoTransform, err, i, fname, beta, HzF, rhozF, Lam, use_meanf)
