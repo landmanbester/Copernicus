@@ -964,7 +964,7 @@ class SSU(object):
             T1fo = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.T1[0:jmaxf, umax], k=3, s=0.0000)
             T1f = T1fo(l)
         except:
-            T1f = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.T1[0:jmaxf, umax], k=3, s=0.0)
+            T1f = np.zeros(self.Nret)
             print "Failed at T1f", traceback.format_exc()
         try:
             vzf = self.u[0:jmaxf, umax] - 1.0
