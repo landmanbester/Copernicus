@@ -288,6 +288,11 @@ if __name__=="__main__":
     # Get input args
     GD = MyOptParse.readargs()
 
+    # Print out parset settings
+    keyslist = GD.keys()
+    for it in keyslist:
+        print it, GD[it]
+
     #Determine how many samplers to spawn
     NSamplers = GD["nwalkers"]
     Nsamp = GD["nsamples"]
