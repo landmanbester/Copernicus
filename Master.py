@@ -350,6 +350,8 @@ class SSU(object):
         #Set up spatial grid
         #print "Setting spatial grid"
         v, vzo, Hi, rhoi, ui, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(self.Hz, self.rhoz, self.Lam)
+        if F:
+            print "Problem with starting samples"
         self.NI = NI
         self.NJ = NJ
         self.v = v
@@ -400,14 +402,21 @@ class SSU(object):
         #print "Setting Lambda prior"
         for i in xrange(Ngrid):
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lamgrid[i])
-            NI = 1  # Dont need the PLCF for this
-            w, delw = self.age_grid(NI, NJ, delv, t0, prior=True)
-            D, S, Q, A, Z, rhoi, ui, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
-                self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
-            if F == 1:
-                print "Shit! If we get here. Lambda = ", Lamgrid[i]
-            LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=ui, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
-            #print i, Lamgrid[i], LikSamps[i]
+            if not F:
+                NI = 1  # Dont need the PLCF for this
+                w, delw = self.age_grid(NI, NJ, delv, t0, prior=True)
+                D, S, Q, A, Z, rhoi, ui, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
+                    self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
+                if F == 1:
+                    print "Shit! If we get here. Lambda = ", Lamgrid[i]
+                LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=ui, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
+                #print i, Lamgrid[i], LikSamps[i]
+            else:
+                if i>0:
+                    LikSamps[i] = LikSamps[i-1]
+                else:
+                    print "Dangerously setting Lambda prior"
+                    LikSamps[i] = 0.0
 
         # Normalise for numerical stability
         LikSamps -= LikSamps.min()

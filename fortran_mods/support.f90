@@ -337,7 +337,7 @@ subroutine getvmaxi(v,A,vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
 	do while(abs(vp - vprev) > tol .and. counter < maxit .and. Flag /= 1)
 		vprev = vp
 		jmax = floor(vp/delv + 1.D0)
-		if (jmax < 2) then
+		if (jmax < 5) then
 			jmax = 2
                         Flag = 1
 		elseif (jmax > NJ) then
