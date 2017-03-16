@@ -18,9 +18,10 @@ class plh(object):
         self.samps = samps
         # Check for nans
         if np.isnan(samps).any():
-            I = np.unique(np.linspace(np.isnan(samps))[:, 1])
-            self.samps = np.delete(samps, I, axis=1)
-            print "Found some NaN's, deleting them. This should never happen!"
+            I = np.argwhere(np.isnan(samps))
+            Iy = I[:,1]
+            print "Found ", Iy.size, "NaN's. Deleting"
+            np.delete(samps, Iy, axis=1)
         # get contours
         self.contours = self.get_Conf()
 
