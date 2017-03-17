@@ -229,11 +229,11 @@ class FLRW(object):
         HzFf = uvs(zonuf, upfF / ufF ** 2, k=3, s=0.0)(zf)
 
         # Get aot
-        aot, t0 = LCDM.get_aot(Om0, OL0, H0)
+        aot, t0 = self.get_aot(Om0, OL0, H0)
 
         ac = aot(tstar)
 
-        sigmasqf = LCDM.get_sigmasq(2.41e-9, 0.005, ac, HzFf, DzFf, zf)
+        sigmasqf = self.get_sigmasq(DelRSq, UV_cut, ac, HzFf, DzFf, zf)
         sigmasqfo = uvs(zf / zf[-1], sigmasqf, k=3, s=0.0)
 
         l = np.linspace(0, 1, Nret)
