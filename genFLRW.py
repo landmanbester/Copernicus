@@ -190,7 +190,7 @@ class FLRW(object):
         # return rhoow, upow, uppow
 
     def give_shear_for_plotting(self, Om0, OL0, H0, DelRSq, UV_cut, zmax, Np, tstar, Nret, data_prior, data_lik, fname,
-                                DoPLCF):
+                                DoPLCF, err):
         """
         This gives the FLRW shear on the PLC0 and the PLCF
         :param Om0:
@@ -283,7 +283,7 @@ if __name__=="__main__":
     # rhozi = LCDM.rhoz
 
     Dzi, Hzi, rhozi, dzdwzF, sigmasqi, sigmasqf = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np, tstar, Nret, data_prior,
-                                                      data_lik, fname, DoPLCF)
+                                                      data_lik, fname, DoPLCF, err)
 
     # #print aot(t0), t0, aot(3.25)
     #

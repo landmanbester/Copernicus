@@ -25,7 +25,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     UV_cut = 0.005
     DzF, HzF, rhozF, dzdwzF, sigmasqiF, sigmasqfF = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np,
                                                                                tstar, Nret, data_prior,
-                                                                               data_lik, fname, DoPLCF)
+                                                                               data_lik, fname, DoPLCF, err)
 
     # Do integration of FLRW funcs
     zp = np.linspace(0, zmax, Np)
