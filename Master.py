@@ -25,7 +25,6 @@ from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
 from Copernicus.fortran_mods import CIVP
-from genFLRW import FLRW
 import warnings
 warnings.simplefilter('error', UserWarning)
 warnings.simplefilter('error', RuntimeWarning)
@@ -586,38 +585,7 @@ class SSU(object):
             return 0.0
 
 
-    # def get_C_sol(self, Om0, Ok0, OL0, H0):
-    #     """
-    #     Since the Universe is FLRW along the central worldline (viz. C) we have analytic expressions for the input
-    #     functions along C. These can be used as boundary data in the CIVP (not currently implemented)
-    #     """
-    #     #First get current age of universe
-    #     amin = 0.5
-    #     t0 = quad(self.t0f,0,1.0,args=(Om0,Ok0,OL0,H0))[0]
-    #     #Get t(a) when a_0 = 1 (for some reason spline does not return correct result if we use a = np.linspace(1.0,0.2,1000)?)
-    #     a = np.linspace(amin,1.0,5000)
-    #     tmp = self.t0f(a,Om0,Ok0,OL0,H0)
-    #     dto = uvs(a,tmp,k=3,s=0)
-    #     to = dto.antiderivative()
-    #     t = t0 + to(a)
-    #     self.t = t
-    #     #Invert to get a(t)
-    #     aoto = uvs(t,a,k=3,s=0.0)
-    #     aow = aoto(self.w0)
-    #     #Now get rho(t)
-    #     rho0 = Om0*3*H0**2/(kappa)
-    #     rhoow = rho0*aow**(-3.0)
-    #     #Get How (this is up_0)
-    #     How = H0*np.sqrt(Om0*aow**(-3) + Ok0*aow**(-2) + OL0)
-    #     upow = How
-    #     #Now get dHz and hence uppow
-    #     #First dimensionless densities
-    #     Omow = kappa*rhoow/(3*How**2)
-    #     OLow = self.Lam/(3*How**2)
-    #     OKow = 1 - Omow - OLow
-    #     dHzow = How*(3*Omow + 2*OKow)/2 #(because the terms in the np.sqrt adds up to 1)
-    #     uppow = (dHzow + 2*upow)*upow
-    #     return rhoow, upow, uppow
+
         
     def affine_grid(self, Hz, rhoz, Lam):
         """
@@ -1083,142 +1051,142 @@ class SSU(object):
         #     Hperpstar = np.tile(self.Hperpstar[0],(self.Nret))
         return T1f, T2f, LLTBConsf, Df, Sf, Qf, Af, Zf, Spf, Qpf, Zpf, uf, upf, uppf, udotf, rhof, rhopf, rhodotf, sigmasqf
 
-if __name__ == "__main__":
-    #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
-    zmax = 2.5
-    tmin = 3.25
-    Np = 500
-    err = 1e-5
-    XH = np.array([0.6, 3.5])
-    Xrho = np.array([0.1, 1.5])
-    sigmaLam = 0.05
-    Nret = 300
-    data_prior = "[H,rho]"
-    data_lik = "[D,H,t0,dzdw]"
-    fname = "/home/landman/Projects/CP_LCDM_DHt0/"
-    DoPLCF = False
-
-    print "Getting LCDM vals"
-    # Get FLRW funcs for comparison
-    Om0 = 0.3
-    OL0 = 0.7
-    H0 = 0.2335
-    LCDM = FLRW(Om0, OL0, H0, zmax, Np)
-    HzF = LCDM.Hz
-    rhozF = LCDM.getrho()
-    Lam = 3 * OL0 * H0 ** 2
-    z = LCDM.z
-
-    print "Instantiating universe object"
-    U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, beta=0.1, setLamPrior=True,
-            Hz=HzF, rhoz=rhozF, Lam=Lam)
-    logLik = U.logLik
-    Hz = U.Hz
-    rhoz = U.rhoz
-    Lam = U.Lam
-
-    plt.figure()
-    plt.plot(U.z, U.Hm, 'k')
-    plt.plot(U.z, U.Hz, 'b')
-    plt.errorbar(U.my_z_data['H'], U.my_F_data['H'], U.my_sF_data['H'], fmt='xr')
-    plt.show()
-
-
-    plt.figure()
-    plt.plot(U.z, U.rhom, 'k')
-    plt.plot(U.z, U.rhoz, 'b')
-    plt.errorbar(U.my_z_prior['rho'], U.my_F_prior['rho'], U.my_sF_prior['rho'], fmt='xr')
-    plt.show()
-
-    # # set grid of length scales
-    # ngrid = 500
-    # l = np.linspace(0.01,5,ngrid)
-    # logp = np.zeros(ngrid)
-    # XX = U.GPrho.XX
-    # y = U.GPrho.ydat
-    # n = U.GPrho.N
-    # sigmaf = U.Xrho[0]
-    # for i in xrange(ngrid):
-    #     theta = np.array([sigmaf,l[i]])
-    #     logp[i], _ = U.GPrho.logp_and_gradlogp(theta, XX, y, n)
+#if __name__ == "__main__":
+    # #Set sparams zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname
+    # zmax = 2.5
+    # tmin = 3.25
+    # Np = 500
+    # err = 1e-5
+    # XH = np.array([0.6, 3.5])
+    # Xrho = np.array([0.1, 1.5])
+    # sigmaLam = 0.05
+    # Nret = 300
+    # data_prior = "[H,rho]"
+    # data_lik = "[D,H,t0,dzdw]"
+    # fname = "/home/landman/Projects/CP_LCDM_DHt0/"
+    # DoPLCF = False
     #
-    # lik = np.exp(-(logp - logp.min()))
-    # normfact = trapz(lik,l)
-    # lik /= normfact
-    # EDF = cumtrapz(lik,l,initial=0)
-    # I = np.argwhere(EDF < 0.16)
-    # print l[I[-1]]
-    # I = np.argwhere(EDF < 0.025)
-    # print l[I[-1]]
-    # plt.figure('rholik')
-    # plt.plot(l, EDF)
-    # plt.xlabel(r'$ l / [Gpc]$')
-    # plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
+    # print "Getting LCDM vals"
+    # # Get FLRW funcs for comparison
+    # Om0 = 0.3
+    # OL0 = 0.7
+    # H0 = 0.2335
+    # LCDM = FLRW(Om0, OL0, H0, zmax, Np)
+    # HzF = LCDM.Hz
+    # rhozF = LCDM.getrho()
+    # Lam = 3 * OL0 * H0 ** 2
+    # z = LCDM.z
+    #
+    # print "Instantiating universe object"
+    # U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, beta=0.1, setLamPrior=True,
+    #         Hz=HzF, rhoz=rhozF, Lam=Lam)
+    # logLik = U.logLik
+    # Hz = U.Hz
+    # rhoz = U.rhoz
+    # Lam = U.Lam
+    #
+    # plt.figure()
+    # plt.plot(U.z, U.Hm, 'k')
+    # plt.plot(U.z, U.Hz, 'b')
+    # plt.errorbar(U.my_z_data['H'], U.my_F_data['H'], U.my_sF_data['H'], fmt='xr')
     # plt.show()
-
-    accrate = np.zeros(2)
     #
-    # Do the burnin period
-    Nburn = 1000
-    Nsamps = 2000
-    Hsamps = np.zeros([Np,Nsamps])
-    rhosamps = np.zeros([Np, Nsamps])
-    Lamsamps = np.zeros([Nsamps])
-    # Hpsamps = np.zeros([Np,Nburn])
-    # rhopsamps = np.zeros([Np, Nburn])
-    # Lampsamps = np.zeros([Nburn])
-
-    # print "Sampling prior"
+    #
+    # plt.figure()
+    # plt.plot(U.z, U.rhom, 'k')
+    # plt.plot(U.z, U.rhoz, 'b')
+    # plt.errorbar(U.my_z_prior['rho'], U.my_F_prior['rho'], U.my_sF_prior['rho'], fmt='xr')
+    # plt.show()
+    #
+    # # # set grid of length scales
+    # # ngrid = 500
+    # # l = np.linspace(0.01,5,ngrid)
+    # # logp = np.zeros(ngrid)
+    # # XX = U.GPrho.XX
+    # # y = U.GPrho.ydat
+    # # n = U.GPrho.N
+    # # sigmaf = U.Xrho[0]
+    # # for i in xrange(ngrid):
+    # #     theta = np.array([sigmaf,l[i]])
+    # #     logp[i], _ = U.GPrho.logp_and_gradlogp(theta, XX, y, n)
+    # #
+    # # lik = np.exp(-(logp - logp.min()))
+    # # normfact = trapz(lik,l)
+    # # lik /= normfact
+    # # EDF = cumtrapz(lik,l,initial=0)
+    # # I = np.argwhere(EDF < 0.16)
+    # # print l[I[-1]]
+    # # I = np.argwhere(EDF < 0.025)
+    # # print l[I[-1]]
+    # # plt.figure('rholik')
+    # # plt.plot(l, EDF)
+    # # plt.xlabel(r'$ l / [Gpc]$')
+    # # plt.ylabel(r'$ CDF \ of \ GP \ \rho$ ')
+    # # plt.show()
+    #
+    # accrate = np.zeros(2)
+    # #
+    # # Do the burnin period
+    # Nburn = 1000
+    # Nsamps = 2000
+    # Hsamps = np.zeros([Np,Nsamps])
+    # rhosamps = np.zeros([Np, Nsamps])
+    # Lamsamps = np.zeros([Nsamps])
+    # # Hpsamps = np.zeros([Np,Nburn])
+    # # rhopsamps = np.zeros([Np, Nburn])
+    # # Lampsamps = np.zeros([Nburn])
+    #
+    # # print "Sampling prior"
+    # # for i in range(Nburn):
+    # #     Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
+    # #     Hpsamps[:,i] = Hz
+    # #     rhopsamps[:,i] = rhoz
+    # #     Lampsamps[i] = Lam
+    #
+    # print "Burning"
     # for i in range(Nburn):
-    #     Hz, rhoz, Lam, F = U.gen_sample(Hz, rhoz, Lam)
-    #     Hpsamps[:,i] = Hz
-    #     rhopsamps[:,i] = rhoz
-    #     Lampsamps[i] = Lam
-
-    print "Burning"
-    for i in range(Nburn):
-        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
-        U.track_max_lik(logLik, Hz, rhoz, Lam)
-
-    print "Resetting Lambda prior"
-    U.set_Lambda_Prior(U.Hz, U.rhoz)
-    print "sigmaLam = ", U.sigmaLam
-
-    print "Sampling"
-    for i in xrange(Nsamps):
-        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
-        Hsamps[:,i] = Hz
-        rhosamps[:,i] = rhoz
-        Lamsamps[i] = Lam
-        accrate += np.array([a, 1])
-
-    print "Accrate =", accrate[0]/accrate[1]
-
-    print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
-
-    plt.figure()
-    plt.hist(Lamsamps,bins=25)
-    plt.show()
+    #     Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+    #     U.track_max_lik(logLik, Hz, rhoz, Lam)
     #
-    # plt.figure('Hp')
-    # plt.plot(z,Hpsamps,'b',alpha=0.2)
-    # plt.figure('rhop')
-    # plt.plot(z,rhopsamps,'b',alpha=0.2)
-    # plt.figure('Lamp')
-    # plt.hist(Lampsamps)
+    # print "Resetting Lambda prior"
+    # U.set_Lambda_Prior(U.Hz, U.rhoz)
+    # print "sigmaLam = ", U.sigmaLam
     #
-    plt.figure('H')
-    plt.plot(z, Hsamps, 'b', alpha=0.1)
-    plt.plot(U.z, U.Hm, 'k')
-    plt.plot(U.z, U.Hz, 'g')
-    plt.errorbar(U.my_z_data['H'], U.my_F_data['H'], U.my_sF_data['H'], fmt='xr')
-    plt.show()
-    plt.figure('rho')
-    plt.plot(z, rhosamps, 'b', alpha=0.1)
-    plt.plot(U.z, U.rhom, 'k')
-    plt.plot(U.z, U.rhoz, 'g')
-    plt.errorbar(U.my_z_prior['rho'], U.my_F_prior['rho'], U.my_sF_prior['rho'], fmt='xr')
-    plt.show()
+    # print "Sampling"
+    # for i in xrange(Nsamps):
+    #     Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+    #     Hsamps[:,i] = Hz
+    #     rhosamps[:,i] = rhoz
+    #     Lamsamps[i] = Lam
+    #     accrate += np.array([a, 1])
+    #
+    # print "Accrate =", accrate[0]/accrate[1]
+    #
+    # print "MaxLik Lam = ", U.Lamm, "with logLik = ", U.logLik
+    #
+    # plt.figure()
+    # plt.hist(Lamsamps,bins=25)
+    # plt.show()
+    # #
+    # # plt.figure('Hp')
+    # # plt.plot(z,Hpsamps,'b',alpha=0.2)
+    # # plt.figure('rhop')
+    # # plt.plot(z,rhopsamps,'b',alpha=0.2)
+    # # plt.figure('Lamp')
+    # # plt.hist(Lampsamps)
+    # #
+    # plt.figure('H')
+    # plt.plot(z, Hsamps, 'b', alpha=0.1)
+    # plt.plot(U.z, U.Hm, 'k')
+    # plt.plot(U.z, U.Hz, 'g')
+    # plt.errorbar(U.my_z_data['H'], U.my_F_data['H'], U.my_sF_data['H'], fmt='xr')
+    # plt.show()
+    # plt.figure('rho')
+    # plt.plot(z, rhosamps, 'b', alpha=0.1)
+    # plt.plot(U.z, U.rhom, 'k')
+    # plt.plot(U.z, U.rhoz, 'g')
+    # plt.errorbar(U.my_z_prior['rho'], U.my_F_prior['rho'], U.my_sF_prior['rho'], fmt='xr')
+    # plt.show()
     #
     # plt.show()
     # l = np.linspace(0,1,Nret)

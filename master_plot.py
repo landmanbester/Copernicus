@@ -20,32 +20,19 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     OL0 = 0.7
     H0 = 0.2335
     LCDM = FLRW(Om0, OL0, H0, zmax, Np)
-    HzF = LCDM.Hz
-    rhozF = LCDM.getrho()
-    sigmasqFz = LCDM.get_sigmasq(2.41e-9, 0.005) * HzF ** 2
-    z = LCDM.z
-    sigmasqo = uvs(z / z[-1], sigmasqFz, k=3, s=0.0)
+
+    DelRSq = 2.41e-9
+    UV_cut = 0.005
+    DzF, HzF, rhozF, dzdwzF, sigmasqiF, sigmasqfF = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np,
+                                                                               tstar, Nret, data_prior,
+                                                                               data_lik, fname, DoPLCF)
 
     # Do integration of FLRW funcs
     zp = np.linspace(0, zmax, Np)
-    #zp2 = np.linspace(0, zmax, 200)
-    LamF = 3 * 0.7 * 0.2335 ** 2
-    Xrho = np.array([0.5,2.8])
-    XH = np.array([0.6,3.5])
+    Xrho = np.array([0.5, 2.8])
+    XH = np.array([0.6, 3.5])
     #set characteristic variance of Lambda prior (here 60%)
     sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
-
-    # Do LCDM integration
-    UF = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=HzF, rhoz=rhozF, Lam=LamF, useInputFuncs=True)
-
-    T1iF, T2iF, LLTBConsiF, DiF, SiF, QiF, AiF, ZiF, SpiF, QpiF, ZpiF, uiF, upiF, uppiF, udotiF, rhoiF, rhopiF, rhodotiF, \
-    DzF, dzdwzF, sigmasqiF, t0F = UF.get_funcsi()
-
-    if t0F > UF.tmin and UF.NI > 1 and DoPLCF:
-        T1fF, T2fF, LLTBConsfF, DfF, SfF, QfF, AfF, ZfF, SpfF, QpfF, ZpfF, ufF, upfF, uppfF, udotfF, rhofF, rhopfF, \
-        rhodotfF, sigmasqfF = UF.get_funcsf()
-
-    sigmasqiF = sigmasqo(np.linspace(0, 1, Nret))
 
     # Do LTB integration
     print "Getting LTB vals"
@@ -229,7 +216,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
 
     sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
-    sigmasqfplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
+    sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
     sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB \ (t_B = 0)$')
     sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
