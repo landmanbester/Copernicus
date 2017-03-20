@@ -13,12 +13,18 @@ from matplotlib.patches import Rectangle
 from Copernicus.Parset import MyOptParse
 
 class plh(object):
-    def __init__(self, samps, ax):
+    def __init__(self, samps, ax, delzeros=False):
         self.ax = ax
+        # check for all zeros
+        if delzeros:
+            I = np.argwhere(samps[-1, :] == 0)
+            if I.size > 0:
+                print "Found ", I.size, "zeros. Deleting"
+                samps = np.delete(samps, I, axis=1)
         # Check for nans
         if np.isnan(samps).any():
             I = np.argwhere(np.isnan(samps))
-            Iy = I[:,1]
+            Iy = np.unique(I[:,1])
             print "Found ", Iy.size, "NaN's. Deleting"
             samps = np.delete(samps, Iy, axis=1)
         self.samps = samps
