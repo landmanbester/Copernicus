@@ -67,11 +67,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     ULT2 = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=HzLT2, rhoz=rhozLT2, Lam=0.0, useInputFuncs=True)
 
     T1iLT2, T2iLT2, LLTBConsiLT2, DiLT2, SiLT2, QiLT2, AiLT2, ZiLT2, SpiLT2, QpiLT2, ZpiLT2, uiLT2, upiLT2, uppiLT2, udotiLT2, rhoiLT2, rhopiLT2, rhodotiLT2, \
-    DzLT2num, dzdwzLT2, sigmasqiLT2, t0LT2 = ULT.get_funcsi()
+    DzLT2num, dzdwzLT2, sigmasqiLT2, t0LT2 = ULT2.get_funcsi()
 
     if t0LT2 > ULT2.tmin and ULT2.NI > 1 and DoPLCF:
         T1fLT2, T2fLT2, LLTBConsfLT2, DfLT2, SfLT2, QfLT2, AfLT2, ZfLT2, SpfLT2, QpfLT2, ZpfLT2, ufLT2, upfLT2, uppfLT2, udotfLT2, rhofLT2, rhopfLT2, \
-        rhodotfLT2, sigmasqfLT2 = ULT.get_funcsf()
+        rhodotfLT2, sigmasqfLT2 = ULT2.get_funcsf()
 
     # Load the data we want to plot
     files = ["DHt0/", "Ddzdw/", "DHdzdw/"]
@@ -89,9 +89,9 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     colourdict[files[1]] = "green"
     colourdict[files[2]] = "red"
     labelsdict = {}
-    labelsdict[files[0]] = r'$\mathcal{D}$'
-    labelsdict[files[1]] = r'$\mathcal{D} \ + \ D \ + \ \dot{z} $'
-    labelsdict[files[2]] = r'$\mathcal{D} \ + \ D \ + \ \dot{z} \ + \ H_\parallel  $'
+    labelsdict[files[0]] = r'$\mathcal{D}_0$'
+    labelsdict[files[1]] = r'$\mathcal{D}_1$'
+    labelsdict[files[2]] = r'$\mathcal{D}_2$'
 
     # Load first samples
     for s in files:
@@ -153,81 +153,81 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # Om vs OL contours
     figOL, axOL = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
 
-    # Plot PLC0
-    print "PLC0"
-    # First the contours
-    for s in files:
-        Dplh = plh(Dzdict[s], axPLC0[0, 0])
-        Dplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
-        Hplh = plh(Hzdict[s], axPLC0[0, 1])
-        Hplh.draw_Contours(zp, scale=299.8, only_2sig=True, colour=colourdict[s], draw_median=False)
-        rhoplh = plh(rhozdict[s], axPLC0[1, 0])
-        rhoplh.draw_Contours(zp, scale=153.66, only_2sig=True, colour=colourdict[s], draw_median=False)
-        dzdwplh = plh(dzdwdict[s], axPLC0[1, 1])
-        dzdwplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
-
-    # Now add labels and background plots
-    # D
-    axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
-    axPLC0[0, 0].set_ylim(0.0, 2.0)
-    Dplh.add_plot(zp, DzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    Dplh.add_plot(zp, DzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
-    Dplh.add_plot(zp, DzLT2, col='c', lab=r'$LTB$', wid=1.5)
-    Dplh.add_data(zD, Dz, sDz, alp=1.0)
-    #Dplh.show_lab(4, only_2sig=True)
-
-    # H
-    axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
-    axPLC0[0, 1].set_ylim(65, 220.0)
-    Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
-    Hplh.add_plot(zp, HzLT, col='m', scale=299.8, lab=r'$LTB \ t_B=0$', wid=1.5)
-    Hplh.add_plot(zp, HzLT2, col='c', scale=299.8, lab=r'$LTB$', wid=1.5)
-    Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=1.0)
-    #Hplh.show_lab(4)
-
-    # rho
-    axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
-    axPLC0[1, 0].set_xlim(0, zmax)
-    axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
-    axPLC0[1, 0].set_ylim(0, 10.0)
-    rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
-    rhoplh.add_plot(zp, rhozLT, col='m', scale=153.66, lab=r'$LTB \ t_B=0$', wid=1.5)
-    rhoplh.add_plot(zp, rhozLT2, col='c', scale=153.66, lab=r'$LTB$', wid=1.5)
-    #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
-    #rhoplh.show_lab(2)
-
-    # dzdw
-    axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
-    axPLC0[1, 1].set_xlim(0, zmax)
-    axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
-    dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    dzdwplh.add_plot(zp, dzdwzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
-    dzdwplh.add_plot(zp, dzdwzLT2, col='c', lab=r'$LTB$', wid=1.5)
-    dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=1.0)
-    #dzdwplh.show_lab(3)
-
-    handles, labels = axPLC0[0, 0].get_legend_handles_labels()
-    p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
-    handles.append(p1)
-    labels.append(labelsdict[files[0]])
-    p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
-    handles.append(p2)
-    labels.append(labelsdict[files[1]])
-    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
-    handles.append(p3)
-    labels.append(labelsdict[files[2]])
-
-    figPLC0.legend(handles=handles, labels=labels, loc=7)
-
-    figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
+    # # Plot PLC0
+    # print "PLC0"
+    # # First the contours
+    # for s in files:
+    #     Dplh = plh(Dzdict[s], axPLC0[0, 0])
+    #     Dplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
+    #     Hplh = plh(Hzdict[s], axPLC0[0, 1])
+    #     Hplh.draw_Contours(zp, scale=299.8, only_2sig=True, colour=colourdict[s], draw_median=False)
+    #     rhoplh = plh(rhozdict[s], axPLC0[1, 0])
+    #     rhoplh.draw_Contours(zp, scale=153.66, only_2sig=True, colour=colourdict[s], draw_median=False)
+    #     dzdwplh = plh(dzdwdict[s], axPLC0[1, 1])
+    #     dzdwplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
+    #
+    # # Now add labels and background plots
+    # # D
+    # axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
+    # axPLC0[0, 0].set_ylim(0.0, 2.0)
+    # Dplh.add_plot(zp, DzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    # Dplh.add_plot(zp, DzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
+    # Dplh.add_plot(zp, DzLT2, col='c', lab=r'$LTB$', wid=1.5)
+    # Dplh.add_data(zD, Dz, sDz, alp=1.0)
+    # #Dplh.show_lab(4, only_2sig=True)
+    #
+    # # H
+    # axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
+    # axPLC0[0, 1].set_ylim(65, 220.0)
+    # Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
+    # Hplh.add_plot(zp, HzLT, col='m', scale=299.8, lab=r'$LTB \ t_B=0$', wid=1.5)
+    # Hplh.add_plot(zp, HzLT2, col='c', scale=299.8, lab=r'$LTB$', wid=1.5)
+    # Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=1.0)
+    # #Hplh.show_lab(4)
+    #
+    # # rho
+    # axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
+    # axPLC0[1, 0].set_xlim(0, zmax)
+    # axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
+    # axPLC0[1, 0].set_ylim(0, 10.0)
+    # rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
+    # rhoplh.add_plot(zp, rhozLT, col='m', scale=153.66, lab=r'$LTB \ t_B=0$', wid=1.5)
+    # rhoplh.add_plot(zp, rhozLT2, col='c', scale=153.66, lab=r'$LTB$', wid=1.5)
+    # #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
+    # #rhoplh.show_lab(2)
+    #
+    # # dzdw
+    # axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
+    # axPLC0[1, 1].set_xlim(0, zmax)
+    # axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
+    # dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
+    # dzdwplh.add_plot(zp, dzdwzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
+    # dzdwplh.add_plot(zp, dzdwzLT2, col='c', lab=r'$LTB$', wid=1.5)
+    # dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=1.0)
+    # #dzdwplh.show_lab(3)
+    #
+    # handles, labels = axPLC0[0, 0].get_legend_handles_labels()
+    # p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
+    # handles.append(p1)
+    # labels.append(labelsdict[files[0]])
+    # p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
+    # handles.append(p2)
+    # labels.append(labelsdict[files[1]])
+    # p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
+    # handles.append(p3)
+    # labels.append(labelsdict[files[2]])
+    #
+    # figPLC0.legend(handles=handles, labels=labels, loc=7)
+    #
+    # figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
 
     # Plot sigmasq
     print "sigmasqi"
     l = np.linspace(0,1,Nret)
     sigmasqiplh = plh(sigmasqidict[files[0]], axsigmasq[0])
     sigmasqiplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
-    sigmasqiplh.add_plot(l, sigmasqiLT, col='m',lab=r'$LTB \ (t_B = 0)$')
-    sigmasqiplh.add_plot(l, sigmasqiLT2, col='c', lab=r'$LTB$')
+    sigmasqiplh.add_plot(l, sigmasqiLT, col='m',lab=r'$LTB_1$')
+    sigmasqiplh.add_plot(l, sigmasqiLT2, col='c', lab=r'$LTB_2$')
     sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0])
     sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
     sigmasqiplh = plh(sigmasqidict[files[2]], axsigmasq[0])
@@ -236,13 +236,13 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
     axsigmasq[0].set_yscale('log')
-    axsigmasq[0].set_ylim(1e-13, 0.1)
+    axsigmasq[0].set_ylim(1e-13, 0.5)
 
 
     sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
     sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
-    sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB \ (t_B = 0)$')
-    sigmasqfplh.add_plot(l, sigmasqfLT2, col='c', lab=r'$LTB$')
+    sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB_1$')
+    sigmasqfplh.add_plot(l, sigmasqfLT2, col='c', lab=r'$LTB_2$')
     sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
     sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
@@ -251,50 +251,50 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
     axsigmasq[1].set_yscale('log')
-    axsigmasq[1].set_ylim(1e-13, 0.1)
+    axsigmasq[1].set_ylim(1e-13, 0.5)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
     p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
     handles.append(p1)
-    labels.append(r'$FLRW \ uv-cut=200Mpc$')
+    labels.append(r'$FLRW$')
     p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
     handles.append(p2)
-    labels.append(r'$Upper \ 2-\sigma$')
+    labels.append(r'$\mathcal{D}_0$')
 
     figsigmasq.legend(handles=handles, labels=labels, loc=7)
 
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
-    print "OL vs Om"
-    i = 0
-    for s in files:
-        pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
-        print colourdict[s], files[i]
-        i += 1
-        # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
-        # handles.append(p2)
-        # labels.append(r'$2-\sigma$')
-
-    # Do labels and
-    axOL.plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
-    axOL.set_xlabel(r'$\Omega_{m0}$', fontsize=25)
-    axOL.set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
-    axOL.set_xlim(0.0, 1.0)
-    axOL.set_ylim(0.0, 1.5)
-    handles, labels = axOL.get_legend_handles_labels()
-    p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
-    handles.append(p1)
-    labels.append(labelsdict[files[0]])
-    p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
-    handles.append(p2)
-    labels.append(labelsdict[files[1]])
-    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
-    handles.append(p3)
-    labels.append(labelsdict[files[2]])
-
-    figOL.legend(handles=handles, labels=labels, loc=7)
-
-    figOL.savefig(fname + 'Figures/OLvOm.png', dpi=250)
+    # print "OL vs Om"
+    # i = 0
+    # for s in files:
+    #     pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
+    #     print colourdict[s], files[i]
+    #     i += 1
+    #     # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
+    #     # handles.append(p2)
+    #     # labels.append(r'$2-\sigma$')
+    #
+    # # Do labels and
+    # axOL.plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
+    # axOL.set_xlabel(r'$\Omega_{m0}$', fontsize=25)
+    # axOL.set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
+    # axOL.set_xlim(0.0, 1.0)
+    # axOL.set_ylim(0.0, 1.5)
+    # handles, labels = axOL.get_legend_handles_labels()
+    # p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
+    # handles.append(p1)
+    # labels.append(labelsdict[files[0]])
+    # p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
+    # handles.append(p2)
+    # labels.append(labelsdict[files[1]])
+    # p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
+    # handles.append(p3)
+    # labels.append(labelsdict[files[2]])
+    #
+    # figOL.legend(handles=handles, labels=labels, loc=7)
+    #
+    # figOL.savefig(fname + 'Figures/OLvOm.png', dpi=250)
 
 if __name__=="__main__":
     # Get input args
