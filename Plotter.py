@@ -105,9 +105,9 @@ class plh(object):
 
     def draw_Upper(self, x, F_cut, F_LTB, scale=1, alp=0.5):
         Fhigh2 = self.contours[:, 4]
-        self.ax.fill_between(x, Fhigh2 * scale, F_cut * scale, facecolor='blue', edgecolor='blue', alpha=alp,
+        self.ax.fill_between(x, Fhigh2 * scale, F_cut * scale, facecolor='gray', edgecolor='gray', alpha=0.5,
                              label=r'$2-\sigma$', lw=0.0)
-        self.ax.fill_between(x, F_cut * scale, np.zeros(x.size)+1e-16, facecolor='red', edgecolor='red', alpha=alp,
+        self.ax.fill_between(x, F_cut * scale, np.zeros(x.size)+1e-16, facecolor='gray', edgecolor='gray', alpha=0.9,
                              label=r'$FLRW \ uv-cut=200Mpc$', lw=0.0)
         #self.ax.plot(x, self.contours[:, 0] * scale, 'blue', label=r'$Median$', alpha=1.0)
         #self.ax.plot(x, F_LTB, 'm', label=r'$LTB \ (t_B = 0)$', lw=1.5)
