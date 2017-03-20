@@ -54,7 +54,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
         rhodotfLT, sigmasqfLT = ULT.get_funcsf()
 
     # Do LTB integration
-    print "Getting LTBCon vals"
+    print "Getting LTB vals"
     LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
     HzLT2 = LTB_z_funcs['Hz']
     rhozLT2 = LTB_z_funcs['rhoz']
@@ -248,7 +248,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='y', lab=labelsdict[files[2]])
 
-    axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
+    axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
     axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
     axsigmasq[1].set_yscale('log')
     axsigmasq[1].set_ylim(1e-13, 0.5)
@@ -261,7 +261,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     handles.append(p2)
     labels.append(r'$\mathcal{D}_0$')
 
-    figsigmasq.legend(handles=handles, labels=labels, loc=7)
+    figsigmasq.legend(handles=handles, labels=labels, loc=9, bbox_to_anchor=(0.025, 0.0, 1, 1), borderaxespad=0.)
 
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
