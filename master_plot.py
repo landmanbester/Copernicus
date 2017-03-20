@@ -227,14 +227,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     l = np.linspace(0,1,Nret)
     sigmasqiplh = plh(sigmasqidict[files[0]], axsigmasq[0])
     sigmasqiplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
-    sigmasqiplh.add_plot(l, sigmasqiLT, col='w:',lab=r'$LTB_1$')
-    sigmasqiplh.add_plot(l, sigmasqiLT2, col='w-.', lab=r'$LTB_2$')
+    sigmasqiplh.add_plot(l, sigmasqiLT, col='k:',lab=r'$LTB_1$')
+    sigmasqiplh.add_plot(l, sigmasqiLT2, col='k-.', lab=r'$LTB_2$')
     print "sigmasqi1"
     sigmasqiplh = plh(sigmasqidict[files[2]], axsigmasq[0])
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='w-', lab=labelsdict[files[2]])
+    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k-', lab=labelsdict[files[2]])
     print "sigmasqi2"
     sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0])
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='w--', lab=labelsdict[files[1]])
+    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k--', lab=labelsdict[files[1]])
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
@@ -244,14 +244,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     print "sigmasqf0"
     sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
     sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
-    sigmasqfplh.add_plot(l, sigmasqfLT, col='w:', lab=r'$LTB_1$')
-    sigmasqfplh.add_plot(l, sigmasqfLT2, col='w-.', lab=r'$LTB_2$')
+    sigmasqfplh.add_plot(l, sigmasqfLT, col='k:', lab=r'$LTB_1$')
+    sigmasqfplh.add_plot(l, sigmasqfLT2, col='k-.', lab=r'$LTB_2$')
     print "sigmasqf1"
     sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='w--', lab=labelsdict[files[1]])
+    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k--', lab=labelsdict[files[1]])
     print "sigmasqf2"
     sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='w-', lab=labelsdict[files[2]])
+    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k-', lab=labelsdict[files[2]])
 
     axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
     axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
