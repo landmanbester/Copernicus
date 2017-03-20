@@ -94,6 +94,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     labelsdict[files[2]] = r'$\mathcal{D}_2$'
 
     # Load first samples
+    print "Loading samps"
     for s in files:
         with np.load("/home/landman/Projects/CP_LCDM_" + s + 'Processed_Data/' + samps_out_name + '.npz') as holder:
             Dzlist = holder['Dz']
@@ -261,7 +262,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     handles.append(p2)
     labels.append(r'$\mathcal{D}_0$')
 
-    figsigmasq.legend(handles=handles, labels=labels, loc=9, bbox_to_anchor=(0.025, 0.0, 1, 1), borderaxespad=0.)
+    figsigmasq.legend(handles=handles, labels=labels, loc=9, bbox_to_anchor=(0.035, -0.025, 1, 1), borderaxespad=0.)
 
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
