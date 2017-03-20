@@ -223,29 +223,33 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
 
     # Plot sigmasq
-    print "sigmasqi"
+    print "sigmasqi0"
     l = np.linspace(0,1,Nret)
     sigmasqiplh = plh(sigmasqidict[files[0]], axsigmasq[0])
     sigmasqiplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
     sigmasqiplh.add_plot(l, sigmasqiLT, col='m',lab=r'$LTB_1$')
     sigmasqiplh.add_plot(l, sigmasqiLT2, col='c', lab=r'$LTB_2$')
-    sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0])
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
+    print "sigmasqi1"
     sigmasqiplh = plh(sigmasqidict[files[2]], axsigmasq[0])
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='y', lab=labelsdict[files[2]])
+    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k', lab=labelsdict[files[2]])
+    print "sigmasqi2"
+    sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0])
+    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='y', lab=labelsdict[files[1]])
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
     axsigmasq[0].set_yscale('log')
     axsigmasq[0].set_ylim(1e-13, 0.5)
 
-
+    print "sigmasqf0"
     sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
     sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
     sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB_1$')
     sigmasqfplh.add_plot(l, sigmasqfLT2, col='c', lab=r'$LTB_2$')
+    print "sigmasqf1"
     sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
+    print "sigmasqf2"
     sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='y', lab=labelsdict[files[2]])
 
@@ -255,14 +259,14 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].set_ylim(1e-13, 0.5)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
-    p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
-    handles.append(p1)
-    labels.append(r'$FLRW$')
+    # p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
+    # handles.append(p1)
+    # labels.append(r'$FLRW$')
     p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
     handles.append(p2)
     labels.append(r'$\mathcal{D}_0$')
 
-    figsigmasq.legend(handles=handles, labels=labels, loc=9, bbox_to_anchor=(0.035, -0.025, 1, 1), borderaxespad=0.)
+    figsigmasq.legend(handles=handles[::-1], labels=labels[::-1], loc=9, bbox_to_anchor=(0.035, -0.025, 1, 1), borderaxespad=0.)
 
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
