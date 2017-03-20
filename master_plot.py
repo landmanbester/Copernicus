@@ -90,8 +90,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     colourdict[files[2]] = "red"
     labelsdict = {}
     labelsdict[files[0]] = r'$\mathcal{D}_0$'
-    labelsdict[files[1]] = r'$\mathcal{D}_1$'
-    labelsdict[files[2]] = r'$\mathcal{D}_2$'
+    labelsdict[files[1]] = r'$\mathcal{D}/\{H_\parallel\}$'
+    labelsdict[files[2]] = r'$\mathcal{D}$'
 
     # Load first samples
     print "Loading samps"
@@ -262,9 +262,9 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
     # handles.append(p1)
     # labels.append(r'$FLRW$')
-    p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
-    handles.append(p2)
-    labels.append(r'$\mathcal{D}_0$')
+    # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
+    # handles.append(p2)
+    # labels.append(r'$\mathcal{D}_0$')
 
     figsigmasq.legend(handles=handles[::-1], labels=labels[::-1], loc=9, bbox_to_anchor=(0.035, -0.025, 1, 1), borderaxespad=0.)
 

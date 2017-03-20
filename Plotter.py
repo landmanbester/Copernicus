@@ -15,13 +15,13 @@ from Copernicus.Parset import MyOptParse
 class plh(object):
     def __init__(self, samps, ax):
         self.ax = ax
-        self.samps = samps
         # Check for nans
         if np.isnan(samps).any():
             I = np.argwhere(np.isnan(samps))
             Iy = I[:,1]
             print "Found ", Iy.size, "NaN's. Deleting"
-            np.delete(samps, Iy, axis=1)
+            samps = np.delete(samps, Iy, axis=1)
+        self.samps = samps
         # get contours
         self.contours = self.get_Conf()
 
