@@ -259,7 +259,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].set_ylim(1e-13, 0.5)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
-    axsigmasq[0].legend(handles=handles[::-1], labels=labels[::-1], loc=4)
+    axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4)
     # p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
     # handles.append(p1)
     # labels.append(r'$FLRW$')
