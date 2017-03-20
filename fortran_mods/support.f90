@@ -179,31 +179,31 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
 			!Evaluate derivatives with improved prdecited values
 			call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
 			call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j) !dZdv(dZ2,D(j,i),S(j,i),pQ,pA,rho(j,i),u(j,i),Lam,j)
-!!$                        errQ = 1.0D0
-!!$                        errA = 1.0D0
-!!$                        errZ = 1.0D0
-!!$                        k = 1
-!!$			do while (abs(errQ) > tol .and. abs(errA) > tol .and. abs(errZ) > tol .and. k < maxit)
-!!$                                !Save current values
-!!$                                pQs = pQ
-!!$                                pAs = pA
-!!$                                pZs = pZ
-!!$                                !Correct
-!!$				pQ = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
-!!$				pA = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)
-!!$				pZ = Z(j-1,i) + 0.5D0*delv*(dZ1 + dZ2)			
-!!$				call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
-!!$				call dAdv(dA2,pZ)
-!!$				call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j)
-!!$                                !Compute err
-!!$                                errQ = pQs - pQ
-!!$                                errA = pAs - pA
-!!$                                errZ = pZs - pZ	
-!!$                                k = k+1
-!!$			end do
-!!$                        if (k >= maxit) then
-!!$                            write(*,*) "Exceeded max iterations"
-!!$                        endif
+                        errQ = 1.0D0
+                        errA = 1.0D0
+                        errZ = 1.0D0
+                        k = 1
+			do while (abs(errQ) > tol .and. abs(errA) > tol .and. abs(errZ) > tol .and. k < maxit)
+                                !Save current values
+                                pQs = pQ
+                                pAs = pA
+                                pZs = pZ
+                                !Correct
+				pQ = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
+				pA = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)
+				pZ = Z(j-1,i) + 0.5D0*delv*(dZ1 + dZ2)			
+				call dQdv(dQ2,D(j,i),S(j,i),pQ,pA,pZ,rho(j,i),u(j,i),Lam,j)
+				call dAdv(dA2,pZ)
+				call dZdv2(dZ2,D(j,i),S(j,i),dQ2,pA,pZ,rho(j,i),u(j,i),Lam,j)
+                                !Compute err
+                                errQ = pQs - pQ
+                                errA = pAs - pA
+                                errZ = pZs - pZ	
+                                k = k+1
+			end do
+                        if (k >= maxit) then
+                            write(*,*) "Exceeded max iterations"
+                        endif
 			!Correct with trapezoidal rule
 			Q(j,i) = Q(j-1,i) + 0.5D0*delv*(dQ1 + dQ2)
 			A(j,i) = A(j-1,i) + 0.5D0*delv*(dA1 + dA2)

@@ -103,7 +103,7 @@ class FLRW(object):
     def getdzdw(self):
         return self.H0*(1+self.z) - self.Hz
 
-    def get_sigmasq(self, DelRSq, UV_cut, ac, Hz, Dz, z):
+    def get_sigmasq(self, DelRSq, UV_cut, ac, Hz, Dz, z, Om0, OL0):
         """
         Compute the magnitude of sigma^2*D^2/H^2 in perturbed FLRW
         DelRSq  = amplitude of primordial fluctuations
@@ -117,15 +117,15 @@ class FLRW(object):
         uz_rescaled = (1 + z)/ac
 
         # Get normalisation of growth suppression function
-        ginf = 2*(self.Om0**(4.0/7) - self.OL0 + (1+self.Om0/2.0)*(1+self.OL0/70.0))/(5*self.Om0)
+        ginf = 2*(Om0**(4.0/7) - OL0 + (1+Om0/2.0)*(1+OL0/70.0))/(5*Om0)
 
         #Hubble scale
         h = Hz[0]*299.8/100 #the 299.8 is a unit conversion
         kH0 = h/3.0e3
 
         # Normalised densities (remember to check against Julien's result
-        Omz = self.Om0*uz_rescaled**3/(self.OL0 + self.Om0*uz_rescaled**3)
-        OLz = self.OL0/(self.OL0 + self.Om0*uz_rescaled**3)
+        Omz = Om0*uz_rescaled**3/(OL0 + Om0*uz_rescaled**3)
+        OLz = OL0/(OL0 + Om0*uz_rescaled**3)
 
         # Growth suppression function and derived evolution function for the shear
         #g = 5*ginf*self.Om/(2*(self.Om**(4.0/7) - self.OL + (1+self.Om/2)*(1+self.OL/70)))
@@ -141,7 +141,7 @@ class FLRW(object):
 
         # Transfer function
         k = linspace(0,kUV,1000)
-        q = k*kH0/(self.Om0*h**2)
+        q = k*kH0/(Om0*h**2)
         T = np.zeros_like(k)
         T[1::] = np.log(1 + 2.34*q[1::])/(2.34*q[1::]*(1+3.89*q[1::] + (16.1*q[1::])**2 + (5.46*q[1::])**3 + (6.71*q[1::])**4))**0.25
         T[0] = 0.0
@@ -151,9 +151,9 @@ class FLRW(object):
         S = So(kUV)
 
         # Expectation value of sigmasq*D**2/H**2
-        sigmasqDzsqoHzsq = 4*DelRSq*G*S*Dz**2/(uz_rescaled**2*75*self.Om0*ginf**2)
+        sigmasqDzsqo = 4*DelRSq*G*S*Dz**2*Hz**2/(uz_rescaled**2*75*Om0*ginf**2)
 
-        return sigmasqDzsqoHzsq
+        return sigmasqDzsqo
 
     def get_aot(self, Om0, OL0, H0):
         """
@@ -173,21 +173,24 @@ class FLRW(object):
         aoto = uvs(t, a, k=3, s=0.0)
         return aoto, t0
 
-        # aow = aoto(self.w0)
-        # #Now get rho(t)
-        # rho0 = Om0*3*H0**2/(kappa)
-        # rhoow = rho0*aow**(-3.0)
-        # #Get How (this is up_0)
-        # How = H0*np.sqrt(Om0*aow**(-3) + Ok0*aow**(-2) + OL0)
-        # upow = How
-        # #Now get dHz and hence uppow
-        # #First dimensionless densities
-        # Omow = kappa*rhoow/(3*How**2)
-        # OLow = self.Lam/(3*How**2)
-        # OKow = 1 - Omow - OLow
-        # dHzow = How*(3*Omow + 2*OKow)/2 #(because the terms in the np.sqrt adds up to 1)
-        # uppow = (dHzow + 2*upow)*upow
-        # return rhoow, upow, uppow
+    def get_C_Sol(self, aoto, Om0, OL0, t0, tstar, Lam):
+        Ok0 = 1.0 - Om0 - OL0
+        t = np.linspace(t0, tstar, 300)
+        aow = aoto(t)
+        #Now get rho(t)
+        rho0 = Om0*3*H0**2/(8*np.pi)
+        rhoow = rho0*aow**(-3.0)
+        #Get How (this is up_0)
+        How = H0*np.sqrt(Om0*aow**(-3) + Ok0*aow**(-2) + OL0)
+        upow = How
+        #Now get dHz and hence uppow
+        #First dimensionless densities
+        Omow = 8*np.pi*rhoow/(3*How**2)
+        OLow = Lam/(3*How**2)
+        OKow = 1 - Omow - OLow
+        dHzow = How*(3*Omow + 2*OKow)/2 #(because the terms in the np.sqrt adds up to 1)
+        uppow = (dHzow + 2*upow)*upow
+        return rhoow, upow, uppow
 
     def give_shear_for_plotting(self, Om0, OL0, H0, DelRSq, UV_cut, zmax, Np, tstar, Nret, data_prior, data_lik, fname,
                                 DoPLCF, err):
@@ -203,7 +206,7 @@ class FLRW(object):
         zi = np.linspace(0, zmax, Np)
         Hzi = self.getHz(zi, Om0=Om0, OL0=OL0, H0=H0)
         Dzi = self.getDz(zi, Om0=Om0, OL0=OL0, H0=H0)
-        sigmasqi = self.get_sigmasq(DelRSq, UV_cut, 1.0, Hzi, Dzi, zi)
+        sigmasqi = self.get_sigmasq(DelRSq, UV_cut, 1.0, Hzi, Dzi, zi, Om0, OL0)
         sigmasqio = uvs(zi/zi[-1], sigmasqi, k=3, s=0.0)
 
         LamF = 3 * OL0 * H0 ** 2
@@ -211,6 +214,7 @@ class FLRW(object):
         Xrho = np.array([0.5, 2.8])
         XH = np.array([0.6, 3.5])
         sigmaLam = 0.6 * 3 * 0.7 * (70.0 / 299.79) ** 2
+        #tstar = 3.9
         UF = Master.SSU(zmax, tstar, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=Hzi, rhoz=rhozi,
                         Lam=LamF, useInputFuncs=True)
 
@@ -228,12 +232,23 @@ class FLRW(object):
         DzFf[0] = 0.0
         HzFf = uvs(zonuf, upfF / ufF ** 2, k=3, s=0.0)(zf)
 
+        # plt.figure()
+        # plt.plot(zonuf, rhofF)
+        # plt.show()
+
+        Omf = 8*np.pi*rhofF[0]/(3.0*HzFf[0]**2)
+        OLf = LamF/(3.0*HzFf[0]**2)
+
+        #print "Okf = ", 1 - Omf - OLf
+
         # Get aot
         aot, t0 = self.get_aot(Om0, OL0, H0)
 
         ac = aot(tstar)
 
-        sigmasqf = self.get_sigmasq(DelRSq, UV_cut, ac, HzFf, DzFf, zf)
+        #rhoow, upow, uppow = self.get_C_Sol(aot, Om0, OL0, t0, tstar, LamF)
+
+        sigmasqf = self.get_sigmasq(DelRSq, UV_cut, 1.0, HzFf, DzFf, zf, Omf, OLf)
         sigmasqfo = uvs(zf / zf[-1], sigmasqf, k=3, s=0.0)
 
         l = np.linspace(0, 1, Nret)
@@ -276,18 +291,10 @@ if __name__=="__main__":
     LamF = 3 * OL0 * H0 ** 2
 
     LCDM = FLRW(Om0, OL0, H0, zmax, Np)
-    # zi = LCDM.z
-    #
-    # Hzi = LCDM.Hz
-    # Dzi = LCDM.Dz
-    # rhozi = LCDM.rhoz
 
     Dzi, Hzi, rhozi, dzdwzF, sigmasqi, sigmasqf = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np, tstar, Nret, data_prior,
                                                       data_lik, fname, DoPLCF, err)
 
-    # #print aot(t0), t0, aot(3.25)
-    #
-    # sigmasqi = LCDM.get_sigmasq(2.41e-9, 0.005, 1.0, Hzi, Dzi, zi)
 
     # plot shear on PLC0
     l = linspace(0, 1, Nret)
@@ -333,4 +340,4 @@ if __name__=="__main__":
     plt.legend()
     #plt.ylim(1.0e-11, 1.0e-6)
     plt.yscale('log')
-    plt.savefig(fname + '/Figures/logsigmasqfF.png', dpi=250)
+    plt.savefig(fname + '/Figures/logsigmasqfF_no_rescale.png', dpi=250)

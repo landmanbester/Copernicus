@@ -26,8 +26,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     DzF, HzF, rhozF, dzdwzF, sigmasqiF, sigmasqfF = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np,
                                                                                tstar, Nret, data_prior,
                                                                                data_lik, fname, DoPLCF, err)
-
-    # Do integration of FLRW funcs
+    # set redshift and params required by CIVP
     zp = np.linspace(0, zmax, Np)
     Xrho = np.array([0.5, 2.8])
     XH = np.array([0.6, 3.5])
@@ -35,7 +34,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     sigmaLam = 0.6*3*0.7*(70.0/299.79)**2
 
     # Do LTB integration
-    print "Getting LTB vals"
+    print "Getting LTBCon vals"
     #LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
     LTB_z_funcs = np.load(fname + 'Processed_Data/ConLTBDat.npz')
     HzLT = LTB_z_funcs['Hz']
@@ -53,6 +52,26 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     if t0LT > ULT.tmin and ULT.NI > 1 and DoPLCF:
         T1fLT, T2fLT, LLTBConsfLT, DfLT, SfLT, QfLT, AfLT, ZfLT, SpfLT, QpfLT, ZpfLT, ufLT, upfLT, uppfLT, udotfLT, rhofLT, rhopfLT, \
         rhodotfLT, sigmasqfLT = ULT.get_funcsf()
+
+    # Do LTB integration
+    print "Getting LTBCon vals"
+    LTB_z_funcs = np.load(fname + 'Processed_Data/LTB_z_funcs.npz')
+    HzLT2 = LTB_z_funcs['Hz']
+    rhozLT2 = LTB_z_funcs['rhoz']
+    DzLT2 = LTB_z_funcs['Dz']
+    #zLT2 = LTB_z_funcs['z']
+    #HzLT2 = uvs(zLT2,HzLT,k=3,s=0.0)(zp)
+    #rhozLT2 = uvs(zLT2, rhozLT, k=3, s=0.0)(zp)
+
+    # Do LTBCon integration
+    ULT2 = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=HzLT2, rhoz=rhozLT2, Lam=0.0, useInputFuncs=True)
+
+    T1iLT2, T2iLT2, LLTBConsiLT2, DiLT2, SiLT2, QiLT2, AiLT2, ZiLT2, SpiLT2, QpiLT2, ZpiLT2, uiLT2, upiLT2, uppiLT2, udotiLT2, rhoiLT2, rhopiLT2, rhodotiLT2, \
+    DzLT2num, dzdwzLT2, sigmasqiLT2, t0LT2 = ULT.get_funcsi()
+
+    if t0LT2 > ULT2.tmin and ULT2.NI > 1 and DoPLCF:
+        T1fLT2, T2fLT2, LLTBConsfLT2, DfLT2, SfLT2, QfLT2, AfLT2, ZfLT2, SpfLT2, QpfLT2, ZpfLT2, ufLT2, upfLT2, uppfLT2, udotfLT2, rhofLT2, rhopfLT2, \
+        rhodotfLT2, sigmasqfLT2 = ULT.get_funcsf()
 
     # Load the data we want to plot
     files = ["DHt0/", "Ddzdw/", "DHdzdw/"]
@@ -152,7 +171,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
     axPLC0[0, 0].set_ylim(0.0, 2.0)
     Dplh.add_plot(zp, DzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    Dplh.add_plot(zp, DzLT, col='m', lab=r'$LTB$', wid=1.5)
+    Dplh.add_plot(zp, DzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
+    Dplh.add_plot(zp, DzLT2, col='c', lab=r'$LTB$', wid=1.5)
     Dplh.add_data(zD, Dz, sDz, alp=1.0)
     #Dplh.show_lab(4, only_2sig=True)
 
@@ -160,7 +180,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
     axPLC0[0, 1].set_ylim(65, 220.0)
     Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
-    Hplh.add_plot(zp, HzLT, col='m', scale=299.8, lab=r'$LTB$', wid=1.5)
+    Hplh.add_plot(zp, HzLT, col='m', scale=299.8, lab=r'$LTB \ t_B=0$', wid=1.5)
+    Hplh.add_plot(zp, HzLT2, col='c', scale=299.8, lab=r'$LTB$', wid=1.5)
     Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=1.0)
     #Hplh.show_lab(4)
 
@@ -170,7 +191,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
     axPLC0[1, 0].set_ylim(0, 10.0)
     rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
-    rhoplh.add_plot(zp, rhozLT, col='m', scale=153.66, lab=r'$LTB$', wid=1.5)
+    rhoplh.add_plot(zp, rhozLT, col='m', scale=153.66, lab=r'$LTB \ t_B=0$', wid=1.5)
+    rhoplh.add_plot(zp, rhozLT2, col='c', scale=153.66, lab=r'$LTB$', wid=1.5)
     #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
     #rhoplh.show_lab(2)
 
@@ -179,7 +201,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[1, 1].set_xlim(0, zmax)
     axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
     dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    dzdwplh.add_plot(zp, dzdwzLT, col='m', lab=r'$LTB$', wid=1.5)
+    dzdwplh.add_plot(zp, dzdwzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
+    dzdwplh.add_plot(zp, dzdwzLT2, col='c', lab=r'$LTB$', wid=1.5)
     dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=1.0)
     #dzdwplh.show_lab(3)
 
@@ -204,6 +227,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     sigmasqiplh = plh(sigmasqidict[files[0]], axsigmasq[0])
     sigmasqiplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
     sigmasqiplh.add_plot(l, sigmasqiLT, col='m',lab=r'$LTB \ (t_B = 0)$')
+    sigmasqiplh.add_plot(l, sigmasqiLT2, col='c', lab=r'$LTB$')
     sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0])
     sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
     sigmasqiplh = plh(sigmasqidict[files[2]], axsigmasq[0])
@@ -218,6 +242,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1])
     sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
     sigmasqfplh.add_plot(l, sigmasqfLT, col='m', lab=r'$LTB \ (t_B = 0)$')
+    sigmasqfplh.add_plot(l, sigmasqfLT2, col='c', lab=r'$LTB$')
     sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1])
     sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k', lab=labelsdict[files[1]])
     sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1])

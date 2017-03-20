@@ -14,14 +14,14 @@ from scipy.optimize import fsolve
 from scipy.interpolate import RectBivariateSpline
 from scipy.interpolate import UnivariateSpline as uvs
 from scipy.integrate import odeint, cumtrapz, trapz, quad
-import scipy.optimize as opt
-from numpy.random import multivariate_normal as mvn
-from numpy.random import random
+#import scipy.optimize as opt
+#from numpy.random import multivariate_normal as mvn
+#from numpy.random import random
 import sympy as sm
-import mpmath as mp
+#import mpmath as mp
 import matplotlib.pyplot as plt
-from genFLRW import FLRW
-from mpmath import elliprj
+#from genFLRW import FLRW
+#from mpmath import elliprj
 from Copernicus.Parset import MyOptParse
         
 class LTB(object):
@@ -365,6 +365,11 @@ if __name__ == "__main__":
     # Get input args
     GD = MyOptParse.readargs()
 
+    # Print out parset settings
+    keyslist = GD.keys()
+    for it in keyslist:
+        print it, GD[it]
+
     fname = GD["fname"]
     zmax = GD["zmax"]
     NJ = GD['np']
@@ -379,4 +384,4 @@ if __name__ == "__main__":
     rmax = 10.0
     tmin = 0.05
 
-    M = LTB(OmI, OmO, HI, HO, delr, r0, rmax, zmax, tmin, NJ, mode='ConLTB', fname=fname)
+    M = LTB(OmI, OmO, HI, HO, delr, r0, rmax, zmax, tmin, NJ, fname=fname)
