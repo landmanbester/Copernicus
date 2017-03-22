@@ -90,7 +90,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     colourdict[files[2]] = "red"
     labelsdict = {}
     labelsdict[files[0]] = r'$\mathcal{D}_0$'
-    labelsdict[files[1]] = r'$\mathcal{D}/\{H_\parallel\}$'
+    labelsdict[files[1]] = r'$\mathcal{D} \textbackslash \{H_\parallel\}$'
     labelsdict[files[2]] = r'$\mathcal{D}$'
 
     # Load first samples
