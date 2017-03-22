@@ -97,11 +97,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     print "Loading samps"
     for s in files:
         with np.load("/home/landman/Projects/CP_LCDM_" + s + 'Processed_Data/' + samps_out_name + '.npz') as holder:
-            Dzlist = holder['Dz']
-            Hzlist = holder['Hz']
-            rhozlist = holder['rhoz']
-            dzdwzlist = holder['dzdwz']
-            Lamlist = holder['Lam']
+            #Dzlist = holder['Dz']
+            #Hzlist = holder['Hz']
+            #rhozlist = holder['rhoz']
+            #dzdwzlist = holder['dzdwz']
+            #Lamlist = holder['Lam']
             sigmasqilist = holder['sigmasqi']
             sigmasqflist = holder['sigmasqf']
             NSamplers = holder['NSamplers']
@@ -109,50 +109,51 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
             # Load the rest of the data
             for i in xrange(NSamplers):
                 if i > 0:
-                    Dzsamps = np.append(Dzsamps, Dzlist[i], axis=1)
-                    Hzsamps = np.append(Hzsamps, Hzlist[i], axis=1)
-                    rhozsamps = np.append(rhozsamps, rhozlist[i], axis=1)
-                    dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
-                    Lamsamps = np.append(Lamsamps, Lamlist[i])
+                    #Dzsamps = np.append(Dzsamps, Dzlist[i], axis=1)
+                    #Hzsamps = np.append(Hzsamps, Hzlist[i], axis=1)
+                    #rhozsamps = np.append(rhozsamps, rhozlist[i], axis=1)
+                    #dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
+                    #Lamsamps = np.append(Lamsamps, Lamlist[i])
                     sigmasqisamps = np.append(sigmasqisamps, sigmasqilist[i], axis=1)
                     sigmasqfsamps = np.append(sigmasqfsamps, sigmasqflist[i], axis=1)
                 else:
-                    Dzsamps = Dzlist[0]
-                    Hzsamps = Hzlist[0]
-                    rhozsamps = rhozlist[0]
-                    dzdwzsamps = dzdwzlist[0]
-                    Lamsamps = Lamlist[0]
+                    #Dzsamps = Dzlist[0]
+                    #Hzsamps = Hzlist[0]
+                    #rhozsamps = rhozlist[0]
+                    #dzdwzsamps = dzdwzlist[0]
+                    #Lamsamps = Lamlist[0]
                     sigmasqisamps = sigmasqilist[0]
                     sigmasqfsamps = sigmasqflist[0]
 
-            Om0samps = 8 * np.pi * rhozsamps[0, :] / (3 * Hzsamps[0, :] ** 2)
-            OL0samps = Lamsamps / (3 * Hzsamps[0, :] ** 2)
+            #Om0samps = 8 * np.pi * rhozsamps[0, :] / (3 * Hzsamps[0, :] ** 2)
+            #OL0samps = Lamsamps / (3 * Hzsamps[0, :] ** 2)
 
-            Dzdict[s] = Dzsamps
-            Hzdict[s] = Hzsamps
-            rhozdict[s] = rhozsamps
-            dzdwdict[s] = dzdwzsamps
-            Lamdict[s] = Lamsamps
+            #Dzdict[s] = Dzsamps
+            #Hzdict[s] = Hzsamps
+            #rhozdict[s] = rhozsamps
+            #dzdwdict[s] = dzdwzsamps
+            #Lamdict[s] = Lamsamps
             sigmasqidict[s] = sigmasqisamps
             sigmasqfdict[s] = sigmasqfsamps
-            Om0dict[s] = Om0samps
-            OL0dict[s] = OL0samps
+            #Om0dict[s] = Om0samps
+            #OL0dict[s] = OL0samps
 
-            del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, Om0samps, OL0samps #sigmasqfsamps,
+            #del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, Om0samps, OL0samps #sigmasqfsamps,
+            del sigmasqisamps, sigmasqfsamps
 
     # read in data
-    zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
-    zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
+    #zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
+    #zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
     #zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
-    zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
+    #zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
 
     # Create the figures we want to plot
     # PLC0
-    figPLC0, axPLC0 = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
+    #figPLC0, axPLC0 = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
     # Shear
     figsigmasq, axsigmasq = plt.subplots(nrows=1, ncols=2, figsize=(15, 9), sharey=True)
     # Om vs OL contours
-    figOL, axOL = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+    #figOL, axOL = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
 
     # # Plot PLC0
     # print "PLC0"
@@ -225,16 +226,19 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # Plot sigmasq
     print "sigmasqi0"
     l = np.linspace(0,1,Nret)
-    sigmasqiplh = plh(sigmasqidict[files[0]], axsigmasq[0], delzeros=True)
-    sigmasqiplh.draw_Upper(l, sigmasqiF, sigmasqiLT)
-    sigmasqiplh.add_plot(l, sigmasqiLT2, col='k-.', lab=r'$LTB_2$')
-    sigmasqiplh.add_plot(l, sigmasqiLT, col='k:',lab=r'$LTB_1$')
-    print "sigmasqi1"
-    sigmasqiplh = plh(sigmasqidict[files[2]], axsigmasq[0], delzeros=True)
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k-', lab=labelsdict[files[2]])
-    print "sigmasqi2"
-    sigmasqiplh = plh(sigmasqidict[files[1]], axsigmasq[0], delzeros=True)
-    sigmasqiplh.add_plot(l, sigmasqiplh.contours[:, 4], col='k--', lab=labelsdict[files[1]])
+    sigmasqiplh0 = plh(sigmasqidict[files[0]], axsigmasq[0], delzeros=True)
+    sigmasqiplh1 = plh(sigmasqidict[files[1]], axsigmasq[0], delzeros=True)
+    sigmasqiplh2 = plh(sigmasqidict[files[2]], axsigmasq[0], delzeros=True)
+    axsigmasq[0].fill_between(l, sigmasqiplh0.contours[:,4], sigmasqiplh1.contours[:,4], facecolor='blue',
+                              edgecolor='blue', alpha=0.25, lw=0.0)
+    axsigmasq[0].fill_between(l, sigmasqiplh1.contours[:,4], sigmasqiplh2.contours[:,4], facecolor='blue',
+                              edgecolor='blue', alpha=0.5, lw=0.0)
+    axsigmasq[0].fill_between(l, sigmasqiplh2.contours[:,4], sigmasqiF, facecolor='blue',
+                              edgecolor='blue', alpha=0.75, lw=0.0)
+    axsigmasq[0].fill_between(l, sigmasqiF, np.ones(Nret)*1e-13, facecolor='green',
+                              edgecolor='green', alpha=1.0, lw=0.0)
+    axsigmasq[0].plot(l, sigmasqiLT, 'k-', label=r'$LTB_1$')
+    axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$')
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
@@ -242,16 +246,19 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[0].set_ylim(1e-13, 0.5)
 
     print "sigmasqf0"
-    sigmasqfplh = plh(sigmasqfdict[files[0]], axsigmasq[1], delzeros=True)
-    sigmasqfplh.draw_Upper(l, sigmasqfF, sigmasqiLT)
-    sigmasqfplh.add_plot(l, sigmasqfLT2, col='k-.', lab=r'$LTB_2$')
-    sigmasqfplh.add_plot(l, sigmasqfLT, col='k:', lab=r'$LTB_1$')
-    print "sigmasqf1"
-    sigmasqfplh = plh(sigmasqfdict[files[1]], axsigmasq[1], delzeros=True)
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k--', lab=labelsdict[files[1]])
-    print "sigmasqf2"
-    sigmasqfplh = plh(sigmasqfdict[files[2]], axsigmasq[1], delzeros=True)
-    sigmasqfplh.add_plot(l, sigmasqfplh.contours[:, 4], col='k-', lab=labelsdict[files[2]])
+    sigmasqfplh0 = plh(sigmasqfdict[files[0]], axsigmasq[1], delzeros=True)
+    sigmasqfplh1 = plh(sigmasqfdict[files[1]], axsigmasq[1], delzeros=True)
+    sigmasqfplh2 = plh(sigmasqfdict[files[2]], axsigmasq[1], delzeros=True)
+    axsigmasq[1].fill_between(l, sigmasqfplh0.contours[:,4], sigmasqfplh1.contours[:,4], facecolor='blue',
+                              edgecolor='blue', alpha=0.25, lw=0.0)
+    axsigmasq[1].fill_between(l, sigmasqfplh1.contours[:,4], sigmasqfplh2.contours[:,4], facecolor='blue',
+                              edgecolor='blue', alpha=0.5, lw=0.0)
+    axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], sigmasqfF, facecolor='blue',
+                              edgecolor='blue', alpha=0.75, lw=0.0)
+    axsigmasq[1].fill_between(l, sigmasqfF, np.ones(Nret)*1e-13, facecolor='green',
+                              edgecolor='green', alpha=1.0, lw=0.0)
+    axsigmasq[1].plot(l, sigmasqfLT, 'k-', label=r'$LTB_1$')
+    axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$')
 
     axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
     axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
