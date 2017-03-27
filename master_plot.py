@@ -12,6 +12,7 @@ from My2Ddist import plot2Ddist2 as pl2d
 from matplotlib.patches import Rectangle
 from Copernicus.Parset import MyOptParse
 from Plotter import plh
+from matplotlib.patches import Polygon
 
 def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps_out_name):
     print "Getting LCDM vals"
@@ -233,10 +234,22 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
                               edgecolor='blue', alpha=0.25, lw=0.0)
     axsigmasq[0].fill_between(l, sigmasqiplh1.contours[:,4], sigmasqiplh2.contours[:,4], facecolor='blue',
                               edgecolor='blue', alpha=0.5, lw=0.0)
-    axsigmasq[0].fill_between(l, sigmasqiplh2.contours[:,4], sigmasqiF, facecolor='blue',
+    axsigmasq[0].fill_between(l, sigmasqiplh2.contours[:,4], np.ones(Nret)*1e-13, facecolor='blue',
                               edgecolor='blue', alpha=0.75, lw=0.0)
-    axsigmasq[0].fill_between(l, sigmasqiF, np.ones(Nret)*1e-13, facecolor='green',
-                              edgecolor='green', alpha=1.0, lw=0.0)
+    # Create polygon for hatching FLRW inclusion region
+    x = np.zeros(2*Nret)
+    x[0:Nret] = l
+    x[Nret::] = np.linspace(1,0, Nret)
+    y = np.zeros(2*Nret)
+    y[0:Nret] = sigmasqiF
+    y[Nret::] = np.ones(Nret)*1e-13
+    poly = np.vstack((x,y)).T
+    axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/'))
+
+    # axsigmasq[0].fill_between(l, sigmasqiplh2.contours[:,4], sigmasqiF, facecolor='blue',
+    #                           edgecolor='blue', alpha=0.75, lw=0.0)
+    # axsigmasq[0].fill_between(l, sigmasqiF, np.ones(Nret)*1e-13, facecolor='green',
+    #                           edgecolor='green', alpha=1.0, lw=0.0)
     axsigmasq[0].plot(l, sigmasqiLT, 'k-', label=r'$LTB_1$')
     axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$')
 
@@ -253,10 +266,22 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
                               edgecolor='blue', alpha=0.25, lw=0.0)
     axsigmasq[1].fill_between(l, sigmasqfplh1.contours[:,4], sigmasqfplh2.contours[:,4], facecolor='blue',
                               edgecolor='blue', alpha=0.5, lw=0.0)
-    axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], sigmasqfF, facecolor='blue',
+    axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], np.ones(Nret)*1e-13, facecolor='blue',
                               edgecolor='blue', alpha=0.75, lw=0.0)
-    axsigmasq[1].fill_between(l, sigmasqfF, np.ones(Nret)*1e-13, facecolor='green',
-                              edgecolor='green', alpha=1.0, lw=0.0)
+    # Create polygon for hatching FLRW inclusion region
+    #x = np.zeros(2*Nret)
+    #x[0:Nret] = l
+    #x[Nret::] = np.linspace(1,0, Nret)
+    #y = np.zeros(2*Nret)
+    y[0:Nret] = sigmasqfF
+    #y[Nret::] = np.ones(Nret)*1e-13
+    poly = np.vstack((x,y)).T
+    axsigmasq[1].add_patch(Polygon(poly, closed=True, fill=False, hatch='/'))
+
+    # axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], sigmasqfF, facecolor='blue',
+    #                           edgecolor='blue', alpha=0.75, lw=0.0)
+    # axsigmasq[1].fill_between(l, sigmasqfF, np.ones(Nret)*1e-13, facecolor='green',
+    #                           edgecolor='green', alpha=1.0, lw=0.0)
     axsigmasq[1].plot(l, sigmasqfLT, 'k-', label=r'$LTB_1$')
     axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$')
 
