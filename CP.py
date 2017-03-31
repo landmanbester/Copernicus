@@ -30,6 +30,9 @@ if __name__ == "__main__":
     beta = GD["beta"]
     use_meanf = GD["use_meanf"]
     samps_out_name = GD["samps_out_name"]
+    h_sigma = GD["h_sigma"]
+    rho_sigma = GD["rho_sigma"]
+    sigma_lower = np.array([h_sigma, rho_sigma])
 
     # Print out parset settings
     keyslist = GD.keys()
@@ -98,70 +101,67 @@ if __name__ == "__main__":
     #Create a pool for this number of samplers and submit the jobs
     Hsamps = np.zeros([NSamplers,Np,Nsamp])
     cont = True
-    num_repeats = 0
-    max_repeats = 1
-    while cont and num_repeats < max_repeats:
-        with cf.ProcessPoolExecutor(max_workers=NSamplers) as executor:
-            for i in xrange(NSamplers):
-                future = executor.submit(sampler, zmax, Np, Nret, Nsamp, Nburn, tstar, data_prior, data_lik, DoPLCF,
-                                         DoTransform, err, i, fname, beta, HzF, rhozF, Lam, use_meanf)
-                futures.append(future)
-            k = 0
-            for f in cf.as_completed(futures):
-                if DoPLCF:
-                    Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
-                    Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
-                    rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf, t0 = f.result()
-                else:
-                    Hz, rhoz, Lam, T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, \
-                    rhopi, rhodoti, Dz, dzdwz, sigmasqi, t0 = f.result()
+    with cf.ProcessPoolExecutor(max_workers=NSamplers) as executor:
+        for i in xrange(NSamplers):
+            future = executor.submit(sampler, zmax, Np, Nret, Nsamp, Nburn, tstar, data_prior, data_lik, DoPLCF,
+                                     DoTransform, err, i, fname, beta, HzF, rhozF, Lam, use_meanf, sigma_lower=sigma_lower)
+            futures.append(future)
+        k = 0
+        for f in cf.as_completed(futures):
+            if DoPLCF:
+                Hz, rhoz, Lam, T1i, T1f, T2i, T2f, LLTBConsi, LLTBConsf, Di, Df, Si, Sf, Qi, Qf, Ai, Af, Zi, \
+                Zf, Spi, Spf, Qpi, Qpf, Zpi, Zpf, ui, uf, upi, upf, uppi, uppf, udoti, udotf, rhoi, rhof, rhopi, rhopf, \
+                rhodoti, rhodotf, Dz, dzdwz, sigmasqi, sigmasqf, t0 = f.result()
+            else:
+                Hz, rhoz, Lam, T1i, T2i, LLTBConsi, Di, Si, Qi, Ai, Zi, Spi, Qpi, Zpi, ui, upi, uppi, udoti, rhoi, \
+                rhopi, rhodoti, Dz, dzdwz, sigmasqi, t0 = f.result()
 
-                Dzlist.append(Dz)
-                Hzlist.append(Hz)
-                rhozlist.append(rhoz)
-                dzdwzlist.append(dzdwz)
-                Lamlist.append(Lam)
-                T1ilist.append(T1i)
-                T2ilist.append(T2i)
-                sigmasqilist.append(sigmasqi)
-                LLTBConsilist.append(LLTBConsi)
-                Dilist.append(Di)
-                Silist.append(Si)
-                Qilist.append(Qi)
-                Ailist.append(Ai)
-                Zilist.append(Zi)
-                Spilist.append(Spi)
-                Qpilist.append(Qpi)
-                Zpilist.append(Zpi)
-                uilist.append(ui)
-                upilist.append(upi)
-                uppilist.append(uppi)
-                udotilist.append(udoti)
-                rhoilist.append(rhoi)
-                rhopilist.append(rhopi)
-                rhodotilist.append(rhodoti)
-                t0list.append(t0)
+            Dzlist.append(Dz)
+            Hzlist.append(Hz)
+            rhozlist.append(rhoz)
+            dzdwzlist.append(dzdwz)
+            Lamlist.append(Lam)
+            T1ilist.append(T1i)
+            T2ilist.append(T2i)
+            sigmasqilist.append(sigmasqi)
+            LLTBConsilist.append(LLTBConsi)
+            Dilist.append(Di)
+            Silist.append(Si)
+            Qilist.append(Qi)
+            Ailist.append(Ai)
+            Zilist.append(Zi)
+            Spilist.append(Spi)
+            Qpilist.append(Qpi)
+            Zpilist.append(Zpi)
+            uilist.append(ui)
+            upilist.append(upi)
+            uppilist.append(uppi)
+            udotilist.append(udoti)
+            rhoilist.append(rhoi)
+            rhopilist.append(rhopi)
+            rhodotilist.append(rhodoti)
+            t0list.append(t0)
 
-                if DoPLCF:
-                    T1flist.append(T1f)
-                    T2flist.append(T2f)
-                    sigmasqflist.append(sigmasqf)
-                    LLTBConsflist.append(LLTBConsf)
-                    Dflist.append(Df)
-                    Sflist.append(Sf)
-                    Qflist.append(Qf)
-                    Aflist.append(Af)
-                    Zflist.append(Zf)
-                    Spflist.append(Spf)
-                    Qpflist.append(Qpf)
-                    Zpflist.append(Zpf)
-                    uflist.append(uf)
-                    upflist.append(upf)
-                    uppflist.append(uppf)
-                    udotflist.append(udotf)
-                    rhoflist.append(rhof)
-                    rhopflist.append(rhopf)
-                    rhodotflist.append(rhodotf)
+            if DoPLCF:
+                T1flist.append(T1f)
+                T2flist.append(T2f)
+                sigmasqflist.append(sigmasqf)
+                LLTBConsflist.append(LLTBConsf)
+                Dflist.append(Df)
+                Sflist.append(Sf)
+                Qflist.append(Qf)
+                Aflist.append(Af)
+                Zflist.append(Zf)
+                Spflist.append(Spf)
+                Qpflist.append(Qpf)
+                Zpflist.append(Zpf)
+                uflist.append(uf)
+                upflist.append(upf)
+                uppflist.append(uppf)
+                udotflist.append(udotf)
+                rhoflist.append(rhof)
+                rhopflist.append(rhopf)
+                rhodotflist.append(rhodotf)
 
         Htest = MCT.MCMC_diagnostics(NSamplers, Hzlist).get_GRC().max()
         rhotest = MCT.MCMC_diagnostics(NSamplers, rhozlist).get_GRC().max()
@@ -176,10 +176,8 @@ if __name__ == "__main__":
             cont = True
             print "Something went wrong in GR test"
 
-        if cont and num_repeats < max_repeats:
+        if cont:
             print "Gelman-Rubin indicates non-convergence"
-            Nsamp *= 2
-            num_repeats += 1
 
         print "GR(H) = ", Htest, "GR(rho) = ", rhotest, "GR(Lambda) = ", Lamtest
 

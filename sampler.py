@@ -24,7 +24,8 @@ def sampler(*args, **kwargs):
         raise StandardError("Error occurred. Original traceback "
                             "is\n%s\n" % traceback_str)
 
-def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam,use_meanf):
+def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTransform,err,j,fname,beta,Hz,rhoz,Lam,
+                 use_meanf,sigma_lower=np.array([1.0e-5, 1.0e-5])):
     #Set sparams
     Xrho = np.array([0.8, 3.5])
     XH = np.array([0.6, 3.5])
@@ -38,9 +39,9 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     #Instantiate universe object
     if use_meanf:
         U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, False,
-                beta=beta, Hz=Hz, rhoz=rhoz, Lam=Lam)
+                beta=beta, Hz=Hz, rhoz=rhoz, Lam=Lam, sigma_lower=sigma_lower)
     else:
-        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, False, beta=beta)
+        U = SSU(zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, False, beta=beta, sigma_lower=sigma_lower)
 
     #Get starting sample
     Hz = U.Hz
@@ -114,33 +115,33 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     print "Sampler ",j, "started burnin"
     #U.set_DoPLCF(False) # don't need to compute the PLCF during burnin
     t1 = time.time()
+    interval = Nburn / 5
     for i in range(Nburn):
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
         U.track_max_lik(logLik,Hz,rhoz,Lam)
         accrate += np.array([a, 1])
-
+        if i % interval == 0 and i != 0:
+            # Check acceptance rate
+            arate = accrate[0] / accrate[1]
+            if arate < 0.2:
+                beta /= 1.3
+                U.reset_beta(beta)
+                print "Acceptance rate of ", arate, " is too low. Resetting beta to ", beta, i, j
+            elif arate > 0.5:
+                beta *= 1.3
+                U.reset_beta(beta)
+                print " Acceptance rate of ", arate, " is too high. Resetting beta to ", beta, i, j
     print 'It took sampler'+str(j),(time.time() - t1)/60.0,'min to draw ',Nburn,' samples with an accrate of ', accrate[0]/accrate[1]
 
     # Reset the lambda prior
     U.set_Lambda_Prior(U.Hz, U.rhoz)
     U.set_DoPLCF(DoPLCF)
-    interval = Nsamp/10
     accrate = np.zeros(2)
+    interval = Nsamp / 10
     t1 = time.time()
     for i in range(Nsamp):
-        if i%Nburn == 0:
+        if i%interval == 0:
             print "Sampler ",j," is at sample ",i
-        if i%interval == 0 and i != 0:
-            #Check acceptance rate
-            arate = accrate[0]/accrate[1]
-            if arate < 0.2:
-                beta /= 1.3
-                U.reset_beta(beta)
-                print "Acceptance rate of ", arate," is too low. Resetting beta to ", beta, i, j
-            elif arate > 0.5:
-                beta *= 1.3
-                U.reset_beta(beta)
-                print " Acceptance rate of ", arate, " is too high. Resetting beta to ", beta, i, j
         Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
         accrate += np.array([a,1])
         Hzsamps[:,i] = Hz

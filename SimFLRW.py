@@ -23,11 +23,14 @@ if __name__=="__main__":
     #Determine how many samplers to spawn
     fname = GD["fname"]
     zmax = GD["zmax"]
+    h_sigma = GD["h_sigma"]
+    rho_sigma = GD["rho_sigma"]
+
 
     #set z values for data points
     nD = 500
     nH = 50
-    nrho = 60
+    nrho = 10
 
     # zD = sort(0.005 + random.ranf(nD)*(zmax-0.005))
     # zH = sort(random.ranf(nH)*zmax)
@@ -47,7 +50,7 @@ if __name__=="__main__":
     z = linspace(0,zmax,nD)
 
     #Set how the error grows
-    alpha = 0.5
+    alpha = 0.225
     #errD = (1+zD)**alpha
     #errH = (1+zH)**alpha
     errrho = (1+zrho)**alpha
@@ -71,7 +74,7 @@ if __name__=="__main__":
     N = 21
     #delD = 0.05
     #delH = 0.1
-    delrho = 0.5
+    delrho = 0.75
 
     #Do simulation
     # SimD = zeros([N,nD])

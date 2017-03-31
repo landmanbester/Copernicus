@@ -26,6 +26,8 @@ def readargs():
         "beta" : 0.01,
         "use_meanf" : 1,
         "samps_out_name" : "samps",
+        "h_sigma" : 0.5,
+        "rho_sigma": 0.2,
         }
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
@@ -58,6 +60,8 @@ def readargs():
     parser.add_argument("--beta", type=float, help="Parameter to control acceptance rate of the MCMC")
     parser.add_argument("--use_meanf", type=int, help="Whether mean functions should be used for GPR")
     parser.add_argument("--samps_out_name", type=str, help="What to name the output samps")
+    parser.add_argument("--h_sigma", type=float, help="lower bound on sigma_f for H")
+    parser.add_argument("--rho_sigma", type=float, help="lower bound on sigma_f for rho")
     args = parser.parse_args(remaining_argv)
 
 

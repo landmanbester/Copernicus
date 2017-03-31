@@ -224,7 +224,7 @@ class GP(object):
 
 class SSU(object):
     def __init__(self, zmax, tmin, Np, err, XH, Xrho, sigmaLam, Nret, data_prior, data_lik, fname, DoPLCF, Hz=None, rhoz=None,
-                 Lam=None, beta=None, setLamPrior=True, useInputFuncs=False):
+                 Lam=None, beta=None, setLamPrior=True, useInputFuncs=False, sigma_lower=np.array([1.0e-5, 1.0e-5])):
         """
         This is the main untility class (SSU = spherically symmetric universe)
         Input:  zmax = max redshift
@@ -279,7 +279,7 @@ class SSU(object):
             Hzo = uvs(self.z, Hz, k=3, s=0.0)
             #Hzo = uvs(self.z, Hz, k=3, s=0.0)
             self.GPH = GP(self.my_z_prior["H"], self.my_F_prior["H"], self.my_sF_prior["H"], self.z, XH, self.beta,
-                          prior_mean=Hzo, bnds=((0.5, None), (2.0, 4.0)))
+                          prior_mean=Hzo, bnds=((sigma_lower[0], None), (2.0, 4.0)))
         self.XH = self.GPH.THETA
         #print "Hz theta = ", self.XH
         self.Hm = self.GPH.fmean
@@ -299,7 +299,7 @@ class SSU(object):
             y = rhoz[0] + self.z * (rhoz[-1] - rhoz[0]) / self.z[-1]
             rhozo = uvs(self.z, rhoz, k=3, s=0.0)
             self.GPrho = GP(self.my_z_prior["rho"], self.my_F_prior["rho"], self.my_sF_prior["rho"], self.z, Xrho,
-                            self.beta, prior_mean=rhozo, bnds=((0.2, None), (2.0, 4.0)))
+                            self.beta, prior_mean=rhozo, bnds=((sigma_lower[1], None), (2.0, 4.0)))
         self.Xrho = self.GPrho.THETA
         #print "rhoz theta =", self.Xrho
         self.rhom = self.GPrho.fmean
@@ -522,7 +522,7 @@ class SSU(object):
     def gen_sample(self, Hzi, rhozi, Lami):
         Hz = self.GPH.sample(Hzi)
         rhoz = self.GPrho.sample(rhozi)
-        Lam = self.sample_lambda(Lami)
+        Lam = self.sample_lambda(Lami)[0]
         #Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
@@ -575,7 +575,7 @@ class SSU(object):
         TODO: figure out why the elliptic functions sometimes gives NaN
         """
         try:
-            t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0))[0]
+            t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0), epsabs=self.err, epsrel=self.err)[0]
             return t0
         except UserWarning:
             print "Got UserWarning"
@@ -773,9 +773,9 @@ class SSU(object):
         if logLik < self.logLik:
             self.logLik = logLik
             self.Hz = Hz
-            self.GPH.fmean = Hz
+            #self.GPH.fmean = Hz
             self.rhoz = rhoz
-            self.GPrho.fmean = rhoz
+            #self.GPrho.fmean = rhoz
             self.Lamm = Lam
             #print "Max lik tracked"
         return
