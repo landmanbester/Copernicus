@@ -253,7 +253,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
     axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$')
     axsigmasq[0].plot(l, sigmasqiLT, 'k:', label=r'$LTB_1$')
-    axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'), label="FLRW")
+    axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'))
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
@@ -278,7 +278,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     y[0:Nret] = sigmasqfF
     #y[Nret::] = np.ones(Nret)*1e-13
     poly = np.vstack((x,y)).T
-    axsigmasq[1].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'), label="FLRW")
+    axsigmasq[1].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'))
 
     # axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], sigmasqfF, facecolor='blue',
     #                           edgecolor='blue', alpha=0.75, lw=0.0)
@@ -293,6 +293,9 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].set_ylim(1e-13, 0.5)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
+    px = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.75, hatch='/')
+    handles.append(px)
+    labels.append(r'$FLRW$')
     p0 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.75)
     handles.append(p0)
     labels.append(r'$\mathcal{D}_2$')
