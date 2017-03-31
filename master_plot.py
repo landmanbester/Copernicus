@@ -23,7 +23,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     LCDM = FLRW(Om0, OL0, H0, zmax, Np)
 
     DelRSq = 2.41e-9
-    UV_cut = 0.005
+    UV_cut = 0.01
     DzF, HzF, rhozF, dzdwzF, sigmasqiF, sigmasqfF = LCDM.give_shear_for_plotting(Om0, OL0, H0, DelRSq, UV_cut, zmax, Np,
                                                                                tstar, Nret, data_prior,
                                                                                data_lik, fname, DoPLCF, err)
@@ -244,14 +244,16 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     y[0:Nret] = sigmasqiF
     y[Nret::] = np.ones(Nret)*1e-13
     poly = np.vstack((x,y)).T
-    axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/'))
+
 
     # axsigmasq[0].fill_between(l, sigmasqiplh2.contours[:,4], sigmasqiF, facecolor='blue',
     #                           edgecolor='blue', alpha=0.75, lw=0.0)
     # axsigmasq[0].fill_between(l, sigmasqiF, np.ones(Nret)*1e-13, facecolor='green',
     #                           edgecolor='green', alpha=1.0, lw=0.0)
-    axsigmasq[0].plot(l, sigmasqiLT, 'k-', label=r'$LTB_1$')
+
     axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$')
+    axsigmasq[0].plot(l, sigmasqiLT, 'k:', label=r'$LTB_1$')
+    axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'), label="FLRW")
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
     axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
@@ -276,13 +278,13 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     y[0:Nret] = sigmasqfF
     #y[Nret::] = np.ones(Nret)*1e-13
     poly = np.vstack((x,y)).T
-    axsigmasq[1].add_patch(Polygon(poly, closed=True, fill=False, hatch='/'))
+    axsigmasq[1].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'), label="FLRW")
 
     # axsigmasq[1].fill_between(l, sigmasqfplh2.contours[:,4], sigmasqfF, facecolor='blue',
     #                           edgecolor='blue', alpha=0.75, lw=0.0)
     # axsigmasq[1].fill_between(l, sigmasqfF, np.ones(Nret)*1e-13, facecolor='green',
     #                           edgecolor='green', alpha=1.0, lw=0.0)
-    axsigmasq[1].plot(l, sigmasqfLT, 'k-', label=r'$LTB_1$')
+    axsigmasq[1].plot(l, sigmasqfLT, 'k:', label=r'$LTB_1$')
     axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$')
 
     axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
@@ -291,16 +293,18 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].set_ylim(1e-13, 0.5)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
-    axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4)
-    # p1 = Rectangle((0, 0), 1, 1, fc="red", alpha=0.5)
-    # handles.append(p1)
-    # labels.append(r'$FLRW$')
-    # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
-    # handles.append(p2)
-    # labels.append(r'$\mathcal{D}_0$')
+    p0 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.75)
+    handles.append(p0)
+    labels.append(r'$\mathcal{D}_2$')
+    p1 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
+    handles.append(p1)
+    labels.append(r'$\mathcal{D}_1$')
+    p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.25)
+    handles.append(p2)
+    labels.append(r'$\mathcal{D}_0$')
 
     #figsigmasq.legend(handles=handles[::-1], labels=labels[::-1], loc=9, bbox_to_anchor=(0.035, -0.045, 1, 1), borderaxespad=0.)
-
+    axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4, ncol=3)
     figsigmasq.savefig(fname + 'Figures/sigmasq.png', dpi=250)
 
     # print "OL vs Om"
