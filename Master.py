@@ -23,6 +23,9 @@ from scipy.integrate import quad, cumtrapz, trapz
 import scipy.optimize as opt
 from scipy.linalg import solve_triangular as soltri
 from scipy.interpolate import UnivariateSpline as uvs
+from sympy import symbols, roots
+from sympy.utilities import lambdify
+from mpmath import elliprj
 import matplotlib.pyplot as plt
 from Copernicus.fortran_mods import CIVP
 import warnings
@@ -252,7 +255,8 @@ class SSU(object):
         self.uz = 1.0 + self.z
 
         # Set function to get t0
-        self.t0f = lambda x, a, b, c, d: np.sqrt(x)/(d*np.sqrt(a + b*x + c*x**3))
+        self.set_age_symb() # to get t0 with elliptic funcs
+        self.t0f = lambda x, a, b, c, d: np.sqrt(x)/(d*np.sqrt(a + b*x + c*x**3)) # to get t0 numerically
 
         # Set minimum time to integrate to
         self.tmin = tmin
@@ -575,16 +579,31 @@ class SSU(object):
         TODO: figure out why the elliptic functions sometimes gives NaN
         """
         try:
-            t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0), epsabs=self.err, epsrel=self.err)[0]
-            return t0
-        except UserWarning:
-            print "Got UserWarning"
-            return 0.0
-        except RuntimeWarning:
-            print "Got RuntimeWarning"
-            return 0.0
+            qi = self.zroots(Om0,Ok0,OL0)
+            t0tmp = 2*elliprj(-qi[0],-qi[1],-qi[2],1)/(3*H0*np.sqrt(Om0))
+            t0 = float(t0tmp.real)
+            if np.isnan(t0):
+                raise RuntimeError("Got NaN for t0, resorting to numerical integration")
+            else:
+                return t0
+        except:
+            try:
+                t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0), epsabs=self.err, epsrel=self.err)[0]
+                return t0
+            except UserWarning:
+                print "Got UserWarning"
+                return 0.0
+            except RuntimeWarning:
+                print "Got RuntimeWarning"
+                return 0.0
 
-
+    def set_age_symb(self):
+        #Set the symbolic vars required to get age
+        x,Omo,OKo,OLo = symbols('t_0,Omega_m,Omega_K,Omega_Lambda')
+        f = (x + 1)**3 + OKo*(x+1)**2/Omo + OLo/Omo
+        q = roots(f,x,multiple=True)
+        self.zroots = lambdify([Omo,OKo,OLo],q,modules="numpy")
+        return
 
         
     def affine_grid(self, Hz, rhoz, Lam):
