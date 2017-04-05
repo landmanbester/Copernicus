@@ -146,20 +146,6 @@ subroutine solve(v,delv,w,delw,ui,rhoi,Lam & !These are all the inputs
 
               end do
 
-!!$              !Re-evaluate vmaxi with corrected value
-!!$              call getvmaxi(v,A(:,i),vmax,vmaxi,delv,delw,NI,NJ,i,err,Flag)
-!!$              if (Flag==1) then
-!!$                 Flag2 = 1
-!!$                 exit
-!!$              endif
-!!$              jmax = vmaxi(i)
-!!$
-!!$              if (jmax > NJ) then
-!!$                 Flag2 = 1
-!!$                 write(*,*) "Warning! Got jmax > NJ in corrrected estimate in main. Rejecting this sample"
-!!$                 exit
-!!$              endif
-
               !Final correct
               call correct(rho,rhod,u,ud,delw,D(:,i),S(:,i),Q(:,i),A(:,i),Z(:,i),rhop(:,i),up(:,i),NI,NJ,jmax,i)
 

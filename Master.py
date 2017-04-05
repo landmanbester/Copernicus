@@ -28,9 +28,9 @@ from sympy.utilities import lambdify
 from mpmath import elliprj
 import matplotlib.pyplot as plt
 from Copernicus.fortran_mods import CIVP
-import warnings
-warnings.simplefilter('error', UserWarning)
-warnings.simplefilter('error', RuntimeWarning)
+# import warnings
+# warnings.simplefilter('error', UserWarning)
+# warnings.simplefilter('error', RuntimeWarning)
 
 global kappa
 kappa = 8.0*np.pi
@@ -289,7 +289,7 @@ class SSU(object):
         self.Hm = self.GPH.fmean
 
         # Set max Lambda
-        self.LambdaMax = 3*(self.Hm[0] + 2*np.sqrt(self.GPH.fcov[0, 0]))**2
+        self.LambdaMax = 3*(self.Hm[0] + 2.0*np.sqrt(self.GPH.fcov[0, 0]))**2
         #print "Max value of Lambda =", self.LambdaMax
         # plt.figure('H')
         # plt.plot(self.z,self.Hm)
@@ -311,8 +311,6 @@ class SSU(object):
         # plt.plot(self.z,self.rhom)
         # plt.errorbar(self.my_z_prior["rho"],self.my_F_prior["rho"],self.my_sF_prior["rho"],fmt='xr')
         # plt.savefig(self.fname + 'Figures/rhowithmean.png', dpi=200)
-
-        # Jointly optimise H and rho hypers
 
         # Now we do the initialisation starting with the background vals
         #print "Setting starting samps"
@@ -348,7 +346,7 @@ class SSU(object):
                 self.sample_lambda = lambda *args: self.LambdaMax*np.random.random(1)
 
             # Draw initial sample of Lam (note abs is here to make sure it is positive)
-            self.Lam = np.abs(self.sample_lambda(self.Lamm))
+            self.Lam = np.abs(self.sample_lambda(self.Lamm)[0])
 
         #Set up spatial grid
         #print "Setting spatial grid"
@@ -402,7 +400,7 @@ class SSU(object):
         Ngrid = 50
         Lamgrid = np.linspace(0, self.LambdaMax, Ngrid)
         LikSamps = np.zeros(Ngrid)
-        #print "Setting Lambda prior"
+        I = []
         for i in xrange(Ngrid):
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lamgrid[i])
             if not F:
@@ -410,16 +408,13 @@ class SSU(object):
                 w, delw = self.age_grid(NI, NJ, delv, t0, prior=True)
                 D, S, Q, A, Z, rhoi, ui, up, upp, udot, rhodot, rhop, Sp, Qp, Zp, LLTBCon, T1, T2, vmaxi, sigmasq, F = \
                     self.integrate(u, rho, Lamgrid[i], v, delv, w, delw)
-                if F == 1:
-                    print "Shit! If we get here. Lambda = ", Lamgrid[i]
                 LikSamps[i] = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=ui, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A)
-                #print i, Lamgrid[i], LikSamps[i]
             else:
-                if i>0:
-                    LikSamps[i] = LikSamps[i-1]
-                else:
-                    print "Dangerously setting Lambda prior"
-                    LikSamps[i] = 0.0
+                I.append(i)
+
+        # Delete unstable solutions
+        LikSamps = np.delete(LikSamps, I)
+        Lamgrid = np.delete(Lamgrid, I)
 
         # Normalise for numerical stability
         LikSamps -= LikSamps.min()
@@ -433,10 +428,12 @@ class SSU(object):
             self.Lamm = Lamgrid[I[0]]
         else:
             self.Lamm = Lamgrid[I]
-        #Lamtmp = np.sort(Lamgrid[I],axis=0)
+
+        # Get cdf
         cdf = cumtrapz(LikSamps, Lamgrid, initial=0.0)
         cdf /= cdf.max()
 
+        # Compute confidence intervals
         Id = np.argwhere(cdf <= 0.16)[-1]  # lower 1sig
         Lamd = Lamgrid[Id]
         Iu = np.argwhere(cdf <= 0.84)[-1]  # upper 1sig
@@ -468,14 +465,12 @@ class SSU(object):
         """
         # Propose sample
         Hz, rhoz, Lam, F = self.gen_sample(Hz0, rhoz0, Lam0)
-        #print Lam, Lam0
         if F:
             return Hz0, rhoz0, Lam0, logLik0, 0, 0
         else:
             # Set up spatial grid
             v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F = self.affine_grid(Hz, rhoz, Lam)
             if F:
-                #print "t0 < tmin"
                 return Hz0, rhoz0, Lam0, logLik0, 0, 0
             else:
                 # Set temporal grid
@@ -487,7 +482,6 @@ class SSU(object):
                 else:
                     # Get likelihood
                     logLik = self.get_Chi2(Hz=Hz, D=D, rhoz=rhoz, u=u, vzo=vzo, t0=t0, NJ=NJ, udot=udot, up=up, A=A) #Make sure to pass Hz and rhoz to avoid the interpolation
-                    # print "logLik proposed = ", logLik
                     logr = logLik - logLik0
                     accprob = np.exp(-logr/2.0)
                     # Accept reject step
@@ -527,7 +521,6 @@ class SSU(object):
         Hz = self.GPH.sample(Hzi)
         rhoz = self.GPrho.sample(rhozi)
         Lam = self.sample_lambda(Lami)[0]
-        #Lam = self.Lamm + self.beta*self.sigmaLam*np.random.randn(1)
         #Flag if any of these less than zero
         if ((Hz < 0.0).any() or (rhoz <= 0.0).any() or (Lam<0.0)):
             #print "Negative samples" #,(Hz < 0.0).any(),(rhoz <= 0.0).any(),(Lam<0.0)
@@ -570,7 +563,6 @@ class SSU(object):
         self.w0 = w0
         self.NJ = NJ
         self.NI = NI
-        #print " Actual Shape", self.T1.shape, " should be", NJ, NI
         return
 
     def get_age(self, Om0, Ok0, OL0, H0):
@@ -578,31 +570,20 @@ class SSU(object):
         Here we return the current age of the Universe. quad seems to give the most reliable estimates
         TODO: figure out why the elliptic functions sometimes gives NaN
         """
-        try:
-            qi = self.zroots(Om0,Ok0,OL0)
-            t0tmp = 2*elliprj(-qi[0],-qi[1],-qi[2],1)/(3*H0*np.sqrt(Om0))
-            t0 = float(t0tmp.real)
-            if np.isnan(t0):
-                raise RuntimeError("Got NaN for t0, resorting to numerical integration")
-            else:
-                return t0
-        except:
-            try:
-                t0 = quad(self.t0f, 0, 1, args=(Om0, Ok0, OL0, H0), epsabs=self.err, epsrel=self.err)[0]
-                return t0
-            except UserWarning:
-                print "Got UserWarning"
-                return 0.0
-            except RuntimeWarning:
-                print "Got RuntimeWarning"
-                return 0.0
+        qi = self.zroots(Om0, Ok0, OL0)
+        t0tmp = 2.0 * elliprj(-qi[0], -qi[1], -qi[2], 1) / (3.0 * H0 * np.sqrt(Om0))
+        t0 = float(t0tmp.real)
+        if np.isnan(t0) or t0 < 0.0 or t0 > 12.0:
+            return 0.0
+        else:
+            return t0
 
     def set_age_symb(self):
         #Set the symbolic vars required to get age
         x,Omo,OKo,OLo = symbols('t_0,Omega_m,Omega_K,Omega_Lambda')
         f = (x + 1)**3 + OKo*(x+1)**2/Omo + OLo/Omo
-        q = roots(f,x,multiple=True)
-        self.zroots = lambdify([Omo,OKo,OLo],q,modules="numpy")
+        q = roots(f, x, multiple=True)
+        self.zroots = lambdify([Omo, OKo, OLo], q, modules="numpy")
         return
 
         
@@ -623,10 +604,8 @@ class SSU(object):
             return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, F
         else:
             F = 0
-            #print "t0 = ", t0, Om0, OL0, Ok0, rhoz[0]
-
             #Set affine parameter vals
-            dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to be the most accurate way to do the numerical integration
+            dvo = uvs(self.z,1/(self.uz**2*Hz),k=3,s=0.0) #seems to be the most accurate way to do the numerical integration when int const is zero
             vzo = dvo.antiderivative()
             vz = vzo(self.z)
             vz[0] = 0.0
@@ -645,9 +624,9 @@ class SSU(object):
                 print 'delv > sqrt(err)'
             Ho = uvs(vz,Hz,s=0.0,k=3)
             H = Ho(v)
-            rhoo = uvs(vz,rhoz,s=0.0,k=3)
+            rhoo = uvs(vz, rhoz, s=0.0, k=3)
             rho = rhoo(v)
-            uo = uvs(vz,self.uz,s=0.0,k=3)
+            uo = uvs(vz, self.uz, s=0.0, k=3)
             u = uo(v)
             u[0] = 1.0
             return v, vzo, H, rho, u, NJ, NI, delv, Om0, OL0, Ok0, t0, F
@@ -931,18 +910,8 @@ class SSU(object):
         """
         Returns quantities of interest on the PLCF
         """
-        # # Find index of w0 marking value closest to tfind
-        # I1 = np.argwhere(self.w0 >= self.tfind)[-1]
-        # I2 = np.argwhere(self.w0 <= self.tfind)[0]
-        # #Choose whichever is closer
-        # if ( abs(self.w0[I1]-self.tfind) <= abs(self.w0[I2] - self.tfind)):
-        #     self.Istar = I1
-        # else:
-        #     self.Istar = I2
-
         umax = self.NI - 1 #int(self.Istar) #the -1 is here because fortran indexing starts at 1
-        #njf = int(self.vmaxi[umax]) #This is the max value of the spatial index on the PLC we are finding
-        jmaxf = self.vmaxi[-1] - 1#This is the max value on the final PLCF
+        jmaxf = self.vmaxi[-1] - 1 #This is the max value on the final PLCF
         l = np.linspace(0, 1, self.Nret)
 
         if (jmaxf <= 2 or jmaxf > self.NJ):
@@ -972,12 +941,12 @@ class SSU(object):
             print "Failed at sigmasqf", traceback.format_exc()
         #Get the LLTB consistency relation
         try:
-            LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1],self.LLTBCon[0:jmaxf,-1],k=3,s=0.0)(l)
+            LLTBConsf = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.LLTBCon[0:jmaxf, -1], k=3, s=0.0)(l)
         except:
             LLTBConsf = np.zeros(self.Nret)
             print "failed at LLTBConsf", traceback.format_exc()
         try:
-            Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf,-1], k=3, s=0.0)(l)
+            Df = uvs(self.v[0:jmaxf]/self.v[jmaxf-1], self.D[0:jmaxf, -1], k=3, s=0.0)(l)
         except:
             Df = np.zeros(self.Nret)
             print "failed at Df", traceback.format_exc()

@@ -117,8 +117,8 @@ def sampler_impl(zmax,Np,Nret,Nsamp,Nburn,tmin,data_prior,data_lik,DoPLCF,DoTran
     t1 = time.time()
     interval = Nburn / 5
     for i in range(Nburn):
-        Hz,rhoz,Lam,logLik,F,a = U.MCMCstep(logLik,Hz,rhoz,Lam)
-        U.track_max_lik(logLik,Hz,rhoz,Lam)
+        Hz, rhoz, Lam, logLik, F, a = U.MCMCstep(logLik, Hz, rhoz, Lam)
+        U.track_max_lik(logLik, Hz, rhoz, Lam)
         accrate += np.array([a, 1])
         if i % interval == 0 and i != 0:
             # Check acceptance rate

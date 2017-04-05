@@ -54,8 +54,8 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
 	real*8 :: dotrho,dotu,errQ,errA,errZ,tol,pQs,pAs,pZs,maxit
 
         !Set tolerance for PC step (for some reason the code is extremely sensitive to errors in Q,A and Z)
-        tol = 1.0E-9
-        maxit = 100000 !Maximum number of iterations
+        tol = 1.0E-6
+        maxit = 5000 !Maximum number of iterations
 
         if (jmax > NJ) then
             write(*,*) "Warning! Got jmax > NJ in evaluate", jmax
@@ -183,7 +183,7 @@ subroutine evaluate(rho,u,rhod,ud,Lam,delv,D,S,Q,A,Z,rhop,up,upp,NI,NJ,jmax,i,dS
                         errA = 1.0D0
                         errZ = 1.0D0
                         k = 1
-			do while (abs(errQ) > tol .and. abs(errA) > tol .and. abs(errZ) > tol .and. k < maxit)
+			do while (abs(errQ) > tol .or. abs(errA) > tol .or. abs(errZ) > tol .and. k < maxit)
                                 !Save current values
                                 pQs = pQ
                                 pAs = pA
