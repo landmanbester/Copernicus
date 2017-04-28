@@ -87,22 +87,26 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     OL0dict = {}
     colourdict = {}
     colourdict[files[0]] = "blue"
-    colourdict[files[1]] = "green"
-    colourdict[files[2]] = "red"
+    colourdict[files[1]] = "blue"
+    colourdict[files[2]] = "blue"
+    alphadict = {}
+    alphadict[files[0]] = 0.25
+    alphadict[files[1]] = 0.25
+    alphadict[files[2]] = 0.25
     labelsdict = {}
     labelsdict[files[0]] = r'$\mathcal{D}_0$'
-    labelsdict[files[1]] = r'$\mathcal{D} \textbackslash \{H_\parallel\}$'
-    labelsdict[files[2]] = r'$\mathcal{D}$'
+    labelsdict[files[1]] = r'$\mathcal{D}_1$'
+    labelsdict[files[2]] = r'$\mathcal{D}_2$'
 
     # Load first samples
     print "Loading samps"
     for s in files:
         with np.load("/home/landman/Projects/CP_LCDM_" + s + 'Processed_Data/' + samps_out_name + '.npz') as holder:
-            #Dzlist = holder['Dz']
-            #Hzlist = holder['Hz']
-            #rhozlist = holder['rhoz']
-            #dzdwzlist = holder['dzdwz']
-            #Lamlist = holder['Lam']
+            Dzlist = holder['Dz']
+            Hzlist = holder['Hz']
+            rhozlist = holder['rhoz']
+            dzdwzlist = holder['dzdwz']
+            Lamlist = holder['Lam']
             sigmasqilist = holder['sigmasqi']
             sigmasqflist = holder['sigmasqf']
             NSamplers = holder['NSamplers']
@@ -110,119 +114,119 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
             # Load the rest of the data
             for i in xrange(NSamplers):
                 if i > 0:
-                    #Dzsamps = np.append(Dzsamps, Dzlist[i], axis=1)
-                    #Hzsamps = np.append(Hzsamps, Hzlist[i], axis=1)
-                    #rhozsamps = np.append(rhozsamps, rhozlist[i], axis=1)
-                    #dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
-                    #Lamsamps = np.append(Lamsamps, Lamlist[i])
+                    Dzsamps = np.append(Dzsamps, Dzlist[i], axis=1)
+                    Hzsamps = np.append(Hzsamps, Hzlist[i], axis=1)
+                    rhozsamps = np.append(rhozsamps, rhozlist[i], axis=1)
+                    dzdwzsamps = np.append(dzdwzsamps, dzdwzlist[i], axis=1)
+                    Lamsamps = np.append(Lamsamps, Lamlist[i])
                     sigmasqisamps = np.append(sigmasqisamps, sigmasqilist[i], axis=1)
                     sigmasqfsamps = np.append(sigmasqfsamps, sigmasqflist[i], axis=1)
                 else:
-                    #Dzsamps = Dzlist[0]
-                    #Hzsamps = Hzlist[0]
-                    #rhozsamps = rhozlist[0]
-                    #dzdwzsamps = dzdwzlist[0]
-                    #Lamsamps = Lamlist[0]
+                    Dzsamps = Dzlist[0]
+                    Hzsamps = Hzlist[0]
+                    rhozsamps = rhozlist[0]
+                    dzdwzsamps = dzdwzlist[0]
+                    Lamsamps = Lamlist[0]
                     sigmasqisamps = sigmasqilist[0]
                     sigmasqfsamps = sigmasqflist[0]
 
-            #Om0samps = 8 * np.pi * rhozsamps[0, :] / (3 * Hzsamps[0, :] ** 2)
-            #OL0samps = Lamsamps / (3 * Hzsamps[0, :] ** 2)
+            Om0samps = 8 * np.pi * rhozsamps[0, :] / (3 * Hzsamps[0, :] ** 2)
+            OL0samps = Lamsamps / (3 * Hzsamps[0, :] ** 2)
 
-            #Dzdict[s] = Dzsamps
-            #Hzdict[s] = Hzsamps
-            #rhozdict[s] = rhozsamps
-            #dzdwdict[s] = dzdwzsamps
-            #Lamdict[s] = Lamsamps
+            Dzdict[s] = Dzsamps
+            Hzdict[s] = Hzsamps
+            rhozdict[s] = rhozsamps
+            dzdwdict[s] = dzdwzsamps
+            Lamdict[s] = Lamsamps
             sigmasqidict[s] = sigmasqisamps
             sigmasqfdict[s] = sigmasqfsamps
-            #Om0dict[s] = Om0samps
-            #OL0dict[s] = OL0samps
+            Om0dict[s] = Om0samps
+            OL0dict[s] = OL0samps
 
-            #del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, Om0samps, OL0samps #sigmasqfsamps,
-            del sigmasqisamps, sigmasqfsamps
+            del Dzsamps, Hzsamps, rhozsamps, dzdwzsamps, Lamsamps, sigmasqisamps, Om0samps, OL0samps #sigmasqfsamps,
+            #del sigmasqisamps, sigmasqfsamps
 
     # read in data
-    #zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
-    #zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
-    #zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
-    #zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
+    zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
+    zH, Hz, sHz = np.loadtxt(fname + 'Data/H.txt', unpack=True)
+    zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
+    zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
 
     # Create the figures we want to plot
     # PLC0
-    #figPLC0, axPLC0 = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
+    figPLC0, axPLC0 = plt.subplots(nrows=2, ncols=2, figsize=(15, 9), sharex=True)
     # Shear
     figsigmasq, axsigmasq = plt.subplots(nrows=1, ncols=2, figsize=(15, 9), sharey=True)
     # Om vs OL contours
-    #figOL, axOL = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+    figOL, axOL = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
 
-    # # Plot PLC0
-    # print "PLC0"
-    # # First the contours
-    # for s in files:
-    #     Dplh = plh(Dzdict[s], axPLC0[0, 0])
-    #     Dplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
-    #     Hplh = plh(Hzdict[s], axPLC0[0, 1])
-    #     Hplh.draw_Contours(zp, scale=299.8, only_2sig=True, colour=colourdict[s], draw_median=False)
-    #     rhoplh = plh(rhozdict[s], axPLC0[1, 0])
-    #     rhoplh.draw_Contours(zp, scale=153.66, only_2sig=True, colour=colourdict[s], draw_median=False)
-    #     dzdwplh = plh(dzdwdict[s], axPLC0[1, 1])
-    #     dzdwplh.draw_Contours(zp, only_2sig=True, colour=colourdict[s], draw_median=False)
-    #
-    # # Now add labels and background plots
-    # # D
-    # axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
-    # axPLC0[0, 0].set_ylim(0.0, 2.0)
-    # Dplh.add_plot(zp, DzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # Dplh.add_plot(zp, DzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
-    # Dplh.add_plot(zp, DzLT2, col='c', lab=r'$LTB$', wid=1.5)
-    # Dplh.add_data(zD, Dz, sDz, alp=1.0)
-    # #Dplh.show_lab(4, only_2sig=True)
-    #
-    # # H
-    # axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
-    # axPLC0[0, 1].set_ylim(65, 220.0)
-    # Hplh.add_plot(zp, HzF, col='k', scale=299.8, lab=r'$\Lambda CDM$', wid=1.5)
-    # Hplh.add_plot(zp, HzLT, col='m', scale=299.8, lab=r'$LTB \ t_B=0$', wid=1.5)
-    # Hplh.add_plot(zp, HzLT2, col='c', scale=299.8, lab=r'$LTB$', wid=1.5)
-    # Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=1.0)
-    # #Hplh.show_lab(4)
-    #
-    # # rho
-    # axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
-    # axPLC0[1, 0].set_xlim(0, zmax)
-    # axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
-    # axPLC0[1, 0].set_ylim(0, 10.0)
-    # rhoplh.add_plot(zp, rhozF, col='k', scale=153.66, lab=r'$\Lambda CDM$', wid=1.5)
-    # rhoplh.add_plot(zp, rhozLT, col='m', scale=153.66, lab=r'$LTB \ t_B=0$', wid=1.5)
-    # rhoplh.add_plot(zp, rhozLT2, col='c', scale=153.66, lab=r'$LTB$', wid=1.5)
-    # #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
-    # #rhoplh.show_lab(2)
-    #
-    # # dzdw
-    # axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
-    # axPLC0[1, 1].set_xlim(0, zmax)
-    # axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
-    # dzdwplh.add_plot(zp, dzdwzF, col='k', lab=r'$\Lambda CDM$', wid=1.5)
-    # dzdwplh.add_plot(zp, dzdwzLT, col='m', lab=r'$LTB \ t_B=0$', wid=1.5)
-    # dzdwplh.add_plot(zp, dzdwzLT2, col='c', lab=r'$LTB$', wid=1.5)
-    # dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=1.0)
-    # #dzdwplh.show_lab(3)
-    #
-    # handles, labels = axPLC0[0, 0].get_legend_handles_labels()
-    # p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
-    # handles.append(p1)
-    # labels.append(labelsdict[files[0]])
-    # p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
-    # handles.append(p2)
-    # labels.append(labelsdict[files[1]])
-    # p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
-    # handles.append(p3)
-    # labels.append(labelsdict[files[2]])
-    #
-    # figPLC0.legend(handles=handles, labels=labels, loc=7)
-    #
-    # figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
+    # Plot PLC0
+    print "PLC0"
+    # First the contours
+    for s in files:
+        Dplh = plh(Dzdict[s], axPLC0[0, 0])
+        Dplh.draw_Contours(zp, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
+        Hplh = plh(Hzdict[s], axPLC0[0, 1])
+        Hplh.draw_Contours(zp, scale=299.8, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
+        rhoplh = plh(rhozdict[s], axPLC0[1, 0])
+        rhoplh.draw_Contours(zp, scale=153.66, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
+        dzdwplh = plh(dzdwdict[s], axPLC0[1, 1])
+        dzdwplh.draw_Contours(zp, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
+
+    # Now add labels and background plots
+    # D
+    axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
+    axPLC0[0, 0].set_ylim(0.0, 2.0)
+    Dplh.add_plot(zp, DzF, col='w', lab=r'$\Lambda CDM$', wid=1.0)
+    Dplh.add_plot(zp, DzLT, col='k:', lab=r'$LTB_1$', wid=2)
+    Dplh.add_plot(zp, DzLT2, col='k--', lab=r'$LTB_2$', wid=2)
+    Dplh.add_data(zD, Dz, sDz, alp=1.0)
+    #Dplh.show_lab(4, only_2sig=True)
+
+    # H
+    axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
+    axPLC0[0, 1].set_ylim(65, 220.0)
+    Hplh.add_plot(zp, HzF, col='w', scale=299.8, lab=r'$\Lambda CDM$', wid=1.0)
+    Hplh.add_plot(zp, HzLT, col='k:', scale=299.8, lab=r'$LTB_1$', wid=2)
+    Hplh.add_plot(zp, HzLT2, col='k--', scale=299.8, lab=r'$LTB_2$', wid=2)
+    Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=1.0)
+    #Hplh.show_lab(4)
+
+    # rho
+    axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
+    axPLC0[1, 0].set_xlim(0, zmax)
+    axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
+    axPLC0[1, 0].set_ylim(0, 10.0)
+    rhoplh.add_plot(zp, rhozF, col='w', scale=153.66, lab=r'$\Lambda CDM$', wid=1.0)
+    rhoplh.add_plot(zp, rhozLT, col='k:', scale=153.66, lab=r'$LTB_1$', wid=2)
+    rhoplh.add_plot(zp, rhozLT2, col='k--', scale=153.66, lab=r'$LTB_2$', wid=2)
+    #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
+    #rhoplh.show_lab(2)
+
+    # dzdw
+    axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
+    axPLC0[1, 1].set_xlim(0, zmax)
+    axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
+    dzdwplh.add_plot(zp, dzdwzF, col='w', lab=r'$\Lambda CDM$', wid=1.0)
+    dzdwplh.add_plot(zp, dzdwzLT, col='k:', lab=r'$LTB_1$', wid=2)
+    dzdwplh.add_plot(zp, dzdwzLT2, col='k--', lab=r'$LTB_2$', wid=2)
+    dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=1.0)
+    #dzdwplh.show_lab(3)
+
+    handles, labels = axPLC0[0, 0].get_legend_handles_labels()
+    p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.25)
+    handles.append(p1)
+    labels.append(labelsdict[files[0]])
+    p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
+    handles.append(p2)
+    labels.append(labelsdict[files[1]])
+    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.75)
+    handles.append(p3)
+    labels.append(labelsdict[files[2]])
+
+    figPLC0.legend(handles=handles, labels=labels, loc=7)
+
+    figPLC0.savefig(fname + 'Figures/PLC0.png', dpi=250)
 
     # Plot sigmasq
     print "sigmasqi0"
