@@ -321,7 +321,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     print "OL vs Om"
     i = 0
     for s in files:
-        pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
+        pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s], alp=alphadict[s])
         print colourdict[s], files[i]
         i += 1
         # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
