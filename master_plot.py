@@ -345,7 +345,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     handles.append(p3)
     labels.append(labelsdict[files[2]])
 
-    figOL.legend(handles=handles, labels=labels, loc=7)
+    axOL.legend(handles, labels, loc=4)
 
     figOL.savefig(fname + 'Figures/OLvOm.pdf', dpi=250)
 
