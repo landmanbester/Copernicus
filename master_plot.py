@@ -163,7 +163,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # Plot PLC0
     print "PLC0"
     # First the contours
-    files_tmp = files = ["DHt0/", "DHdzdw/"]
+    files_tmp = ["DHt0/", "DHdzdw/"]
     for s in files_tmp:
         Dplh = plh(Dzdict[s], axPLC0[0, 0])
         Dplh.draw_Contours(zp, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
@@ -260,10 +260,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[0].plot(l, sigmasqiLT, 'k:', label=r'$LTB_1$', lw=2)
     axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'))
 
-    axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
-    axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
+    axsigmasq[0].set_ylabel(r'$  \log(\sigma^2D^2) $', fontsize=25)
+    axsigmasq[0].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=30)
     axsigmasq[0].set_yscale('log')
     axsigmasq[0].set_ylim(1e-13, 0.5)
+    axsigmasq[0].set_title(r"$PLC_0$", fontsize=30)
 
     print "sigmasqf0"
     sigmasqfplh0 = plh(sigmasqfdict[files[0]], axsigmasq[1], delzeros=True)
@@ -292,10 +293,11 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[1].plot(l, sigmasqfLT, 'k:', label=r'$LTB_1$', lw=2)
     axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$', lw=2)
 
-    axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
-    axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
+    #axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
+    axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=30)
     axsigmasq[1].set_yscale('log')
     axsigmasq[1].set_ylim(1e-13, 0.5)
+    axsigmasq[1].set_title(r"$PLC_f$",fontsize=30)
 
     handles, labels = axsigmasq[0].get_legend_handles_labels()
     px = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.75, hatch='/')
@@ -313,6 +315,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
     #figsigmasq.legend(handles=handles[::-1], labels=labels[::-1], loc=9, bbox_to_anchor=(0.035, -0.045, 1, 1), borderaxespad=0.)
     axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4, ncol=3)
+    figsigmasq.tight_layout(pad=1.08, h_pad=0.0, w_pad=0.0)
     figsigmasq.savefig(fname + 'Figures/sigmasq.pdf', dpi=250)
 
     print "OL vs Om"
