@@ -225,7 +225,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     handles.append(p3)
     labels.append(labelsdict[files[2]])
 
-    figPLC0.legend(handles=handles, labels=labels, loc=7)
+    axPLC0[0,0].legend(handles, labels, loc=4)
 
     figPLC0.savefig(fname + 'Figures/PLC0.pdf', dpi=250)
 
@@ -315,7 +315,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
     #figsigmasq.legend(handles=handles[::-1], labels=labels[::-1], loc=9, bbox_to_anchor=(0.035, -0.045, 1, 1), borderaxespad=0.)
     axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4, ncol=3)
-    figsigmasq.tight_layout(pad=1.08, h_pad=0.0, w_pad=0.0)
+    figsigmasq.tight_layout(pad=1.08, h_pad=0.1, w_pad=0.1)
     figsigmasq.savefig(fname + 'Figures/sigmasq.pdf', dpi=250)
 
     print "OL vs Om"
@@ -347,7 +347,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
     figOL.legend(handles=handles, labels=labels, loc=7)
 
-    figOL.savefig(fname + 'Figures/OLvOm.png', dpi=250)
+    figOL.savefig(fname + 'Figures/OLvOm.pdf', dpi=250)
 
 if __name__=="__main__":
     # Get input args
