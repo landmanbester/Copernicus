@@ -251,8 +251,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # axsigmasq[0].fill_between(l, sigmasqiF, np.ones(Nret)*1e-13, facecolor='green',
     #                           edgecolor='green', alpha=1.0, lw=0.0)
 
-    axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$')
-    axsigmasq[0].plot(l, sigmasqiLT, 'k:', label=r'$LTB_1$')
+    axsigmasq[0].plot(l, sigmasqiLT2, 'k--', label=r'$LTB_2$', lw=2)
+    axsigmasq[0].plot(l, sigmasqiLT, 'k:', label=r'$LTB_1$', lw=2)
     axsigmasq[0].add_patch(Polygon(poly, closed=True, fill=False, hatch='/', color='k'))
 
     axsigmasq[0].set_ylabel(r'$  \log(\sigma^2_iD^2_i) $', fontsize=20)
