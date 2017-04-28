@@ -284,8 +284,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     #                           edgecolor='blue', alpha=0.75, lw=0.0)
     # axsigmasq[1].fill_between(l, sigmasqfF, np.ones(Nret)*1e-13, facecolor='green',
     #                           edgecolor='green', alpha=1.0, lw=0.0)
-    axsigmasq[1].plot(l, sigmasqfLT, 'k:', label=r'$LTB_1$')
-    axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$')
+    axsigmasq[1].plot(l, sigmasqfLT, 'k:', label=r'$LTB_1$', lw=2)
+    axsigmasq[1].plot(l, sigmasqfLT2, 'k--', label=r'$LTB_2$', lw=2)
 
     axsigmasq[1].set_ylabel(r'$  \log(\sigma^2_fD^2_f) $', fontsize=20)
     axsigmasq[1].set_xlabel(r'$ \frac{z}{z_{max}}$', fontsize=20)
