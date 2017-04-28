@@ -163,7 +163,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # Plot PLC0
     print "PLC0"
     # First the contours
-    for s in files:
+    files_tmp = files = ["DHt0/", "DHdzdw/"]
+    for s in files_tmp:
         Dplh = plh(Dzdict[s], axPLC0[0, 0])
         Dplh.draw_Contours(zp, only_2sig=True, alp=alphadict[s], colour=colourdict[s], draw_median=False)
         Hplh = plh(Hzdict[s], axPLC0[0, 1])
@@ -177,7 +178,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # D
     axPLC0[0, 0].set_ylabel(r'$ D / [Gpc]$', fontsize=20)
     axPLC0[0, 0].set_ylim(0.0, 2.0)
-    Dplh.add_plot(zp, DzF, col='w', lab=r'$\Lambda CDM$', wid=1.0)
+    Dplh.add_plot(zp, DzF, col='b', lab=r'$\Lambda CDM$', wid=1.0)
     Dplh.add_plot(zp, DzLT, col='k:', lab=r'$LTB_1$', wid=2)
     Dplh.add_plot(zp, DzLT2, col='k--', lab=r'$LTB_2$', wid=2)
     Dplh.add_data(zD, Dz, sDz, alp=0.25)
@@ -186,7 +187,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     # H
     axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
     axPLC0[0, 1].set_ylim(65, 220.0)
-    Hplh.add_plot(zp, HzF, col='w', scale=299.8, lab=r'$\Lambda CDM$', wid=1.0)
+    Hplh.add_plot(zp, HzF, col='b', scale=299.8, lab=r'$\Lambda CDM$', wid=1.0)
     Hplh.add_plot(zp, HzLT, col='k:', scale=299.8, lab=r'$LTB_1$', wid=2)
     Hplh.add_plot(zp, HzLT2, col='k--', scale=299.8, lab=r'$LTB_2$', wid=2)
     Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=0.5)
@@ -197,7 +198,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[1, 0].set_xlim(0, zmax)
     axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
     axPLC0[1, 0].set_ylim(0, 10.0)
-    rhoplh.add_plot(zp, rhozF, col='w', scale=153.66, lab=r'$\Lambda CDM$', wid=1.0)
+    rhoplh.add_plot(zp, rhozF, col='b', scale=153.66, lab=r'$\Lambda CDM$', wid=1.0)
     rhoplh.add_plot(zp, rhozLT, col='k:', scale=153.66, lab=r'$LTB_1$', wid=2)
     rhoplh.add_plot(zp, rhozLT2, col='k--', scale=153.66, lab=r'$LTB_2$', wid=2)
     #rhoplh.add_data(zrho, rhoz, srhoz, alp=0.5, scale=153.66)
@@ -207,7 +208,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[1, 1].set_xlabel(r'$z$', fontsize=20)
     axPLC0[1, 1].set_xlim(0, zmax)
     axPLC0[1, 1].set_ylabel(r'$  \frac{\delta z}{\delta w} / [Gyr^{-1}] $', fontsize=20)
-    dzdwplh.add_plot(zp, dzdwzF, col='w', lab=r'$\Lambda CDM$', wid=1.0)
+    dzdwplh.add_plot(zp, dzdwzF, col='b', lab=r'$\Lambda CDM$', wid=1.0)
     dzdwplh.add_plot(zp, dzdwzLT, col='k:', lab=r'$LTB_1$', wid=2)
     dzdwplh.add_plot(zp, dzdwzLT2, col='k--', lab=r'$LTB_2$', wid=2)
     dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=0.5)
@@ -217,10 +218,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.25)
     handles.append(p1)
     labels.append(labelsdict[files[0]])
-    p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
-    handles.append(p2)
-    labels.append(labelsdict[files[1]])
-    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.75)
+    #p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
+    #handles.append(p2)
+    #labels.append(labelsdict[files[1]])
+    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.65)
     handles.append(p3)
     labels.append(labelsdict[files[2]])
 
@@ -314,36 +315,36 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axsigmasq[0].legend(handles[::-1], labels[::-1], loc=4, ncol=3)
     figsigmasq.savefig(fname + 'Figures/sigmasq.pdf', dpi=250)
 
-    # print "OL vs Om"
-    # i = 0
-    # for s in files:
-    #     pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
-    #     print colourdict[s], files[i]
-    #     i += 1
-    #     # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
-    #     # handles.append(p2)
-    #     # labels.append(r'$2-\sigma$')
-    #
-    # # Do labels and
-    # axOL.plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
-    # axOL.set_xlabel(r'$\Omega_{m0}$', fontsize=25)
-    # axOL.set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
-    # axOL.set_xlim(0.0, 1.0)
-    # axOL.set_ylim(0.0, 1.5)
-    # handles, labels = axOL.get_legend_handles_labels()
-    # p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.5)
-    # handles.append(p1)
-    # labels.append(labelsdict[files[0]])
-    # p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
-    # handles.append(p2)
-    # labels.append(labelsdict[files[1]])
-    # p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.5)
-    # handles.append(p3)
-    # labels.append(labelsdict[files[2]])
-    #
-    # figOL.legend(handles=handles, labels=labels, loc=7)
-    #
-    # figOL.savefig(fname + 'Figures/OLvOm.png', dpi=250)
+    print "OL vs Om"
+    i = 0
+    for s in files:
+        pl2d(Om0dict[s], OL0dict[s], axOL, colour=colourdict[s])
+        print colourdict[s], files[i]
+        i += 1
+        # p2 = Rectangle((0, 0), 1, 1, fc="blue", alpha=0.5)
+        # handles.append(p2)
+        # labels.append(r'$2-\sigma$')
+
+    # Do labels and
+    axOL.plot(l, 1 - l, 'k', label='Flat', alpha=0.5)
+    axOL.set_xlabel(r'$\Omega_{m0}$', fontsize=25)
+    axOL.set_ylabel(r'$\Omega_{\Lambda 0}$', fontsize=25)
+    axOL.set_xlim(0.0, 1.0)
+    axOL.set_ylim(0.0, 1.5)
+    handles, labels = axOL.get_legend_handles_labels()
+    p1 = Rectangle((0, 0), 1, 1, fc=colourdict[files[0]], alpha=0.25)
+    handles.append(p1)
+    labels.append(labelsdict[files[0]])
+    p2 = Rectangle((0, 0), 1, 1, fc=colourdict[files[1]], alpha=0.5)
+    handles.append(p2)
+    labels.append(labelsdict[files[1]])
+    p3 = Rectangle((0, 0), 1, 1, fc=colourdict[files[2]], alpha=0.75)
+    handles.append(p3)
+    labels.append(labelsdict[files[2]])
+
+    figOL.legend(handles=handles, labels=labels, loc=7)
+
+    figOL.savefig(fname + 'Figures/OLvOm.png', dpi=250)
 
 if __name__=="__main__":
     # Get input args
