@@ -52,8 +52,8 @@ class plh(object):
             contours[i, 4] = cdf.x[Iuu]
         return contours
 
-    def add_data(self, x, y, sy, alp=0.5, scale=1.0):
-        self.ax.errorbar(x, y * scale, sy * scale, fmt='xr', alpha=alp)
+    def add_data(self, x, y, sy, alp=0.5, scale=1.0, format='xr', lab=None):
+        self.ax.errorbar(x, y * scale, sy * scale, fmt=format, alpha=alp, label=lab)
         return
 
     def add_plot(self, x, y, col, lab, scale=1.0, wid=1.0):

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Nov 12 10:25:06 2015
@@ -9,7 +11,6 @@ Simulate SKA and reddrift data
 """
 from numpy import linspace, array, zeros, ones, loadtxt,append, column_stack,argsort, savetxt, abs
 from genFLRW import FLRW
-from CIVPSimp import SSU
 from scipy.interpolate import UnivariateSpline as uvs
 import matplotlib.pyplot as plt
 
@@ -86,16 +87,16 @@ if __name__ == "__main__":
     errH = errH0 + mH*(zDat - zDat0)
 
     #Load the data sets to append these to
-    zD0, Dz0, sDz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/Unionrz.txt',unpack=True)
-    zH0, Hz0, sHz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/CChz.txt',unpack=True)
+    #zD0, Dz0, sDz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/Unionrz.txt',unpack=True)
+    #zH0, Hz0, sHz0 = loadtxt('/home/landman/Projects/Data/CP_data/RawData/CChz.txt',unpack=True)
     
     #Append the data
-    zD = append(zD0,zDat)
-    Dz = append(Dz0,D)
-    sDz = append(sDz0,errD)
-    zH = append(zH0,zDat)
-    Hz = append(Hz0,H)
-    sHz = append(sHz0,errH)
+    zD = zDat #append(zD0,zDat)
+    Dz = D #append(Dz0,D)
+    sDz = errD #append(sDz0,errD)
+    zH = zDat #append(zH0,zDat)
+    Hz = H #append(Hz0,H)
+    sHz = errH #append(sHz0,errH)
     
     #Sort and save the data
     I = argsort(zH)
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     Hz = Hz[I]
     sHz = sHz[I]
     saveH = column_stack((zH,Hz,sHz))
-    Hf = open('/home/landman/Projects/Data/CP_data/SimSKAH.txt','w')
+    Hf = open('/home/landman/Projects/Data/CP_data/SKAH.txt','w')
     savetxt(Hf,saveH,fmt='%s')
     Hf.close()
     I = argsort(zD)
@@ -111,11 +112,11 @@ if __name__ == "__main__":
     Dz = Dz[I]
     sDz = sDz[I]
     saveD = column_stack((zD,Dz,sDz))
-    Df = open('/home/landman/Projects/Data/CP_data/SimSKAD.txt','w')
+    Df = open('/home/landman/Projects/Data/CP_data/SKAD.txt','w')
     savetxt(Df,saveD,fmt='%s')
     Df.close()
     savedzdw = column_stack((zDatdzdw,dzdw,errdzdw))
-    dzdwf = open('/home/landman/Projects/Data/CP_data/Simdzdw.txt','w')
+    dzdwf = open('/home/landman/Projects/Data/CP_data/SKAdzdw.txt','w')
     savetxt(dzdwf,savedzdw,fmt='%s')
     dzdwf.close()
 

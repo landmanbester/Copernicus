@@ -147,9 +147,10 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
             #del sigmasqisamps, sigmasqfsamps
 
     # read in data
-    zD, Dz, sDz = np.loadtxt(fname + 'Data/D.txt', unpack=True)
-    zH, Hz, sHz = np.loadtxt(fname + 'Data/Hfull.txt', unpack=True)
-    zrho, rhoz, srhoz = np.loadtxt(fname + 'Data/rho.txt', unpack=True)
+    zD, Dz, sDz = np.loadtxt(fname + 'Data/SKAD.txt', unpack=True)
+    zD0, Dz0, sDz0 = np.loadtxt(fname + 'Data/UnionD.txt', unpack=True)
+    zH, Hz, sHz = np.loadtxt(fname + 'Data/SKAH.txt', unpack=True)
+    zH0, Hz0, sHz0 = np.loadtxt(fname + 'Data/CCH.txt, unpack=True')
     zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
 
     # Create the figures we want to plot
@@ -181,7 +182,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     Dplh.add_plot(zp, DzF, col='b', lab=r'$\Lambda CDM$', wid=1.0)
     Dplh.add_plot(zp, DzLT, col='k:', lab=r'$LTB_1$', wid=2)
     Dplh.add_plot(zp, DzLT2, col='k--', lab=r'$LTB_2$', wid=2)
-    Dplh.add_data(zD, Dz, sDz, alp=0.25)
+    Dplh.add_data(zD0, Dz0, sDz0, alp=0.25, lab=r'$Real$')
+    Dplh.add_data(zD, Dz, sDz, alp=0.5, format='xg', lab=r'$Simulated$')
     #Dplh.show_lab(4, only_2sig=True)
 
     # H
@@ -190,7 +192,8 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     Hplh.add_plot(zp, HzF, col='b', scale=299.8, lab=r'$\Lambda CDM$', wid=1.0)
     Hplh.add_plot(zp, HzLT, col='k:', scale=299.8, lab=r'$LTB_1$', wid=2)
     Hplh.add_plot(zp, HzLT2, col='k--', scale=299.8, lab=r'$LTB_2$', wid=2)
-    Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=0.5)
+    Hplh.add_data(zH0, Hz0, sHz0, scale=299.8, alp=0.25, lab=r'$Real$')
+    Hplh.add_data(zH, Hz, sHz, scale=299.8, alp=0.5, format='xg', lab=r'$Simulated$')
     #Hplh.show_lab(4)
 
     # rho
@@ -211,7 +214,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     dzdwplh.add_plot(zp, dzdwzF, col='b', lab=r'$\Lambda CDM$', wid=1.0)
     dzdwplh.add_plot(zp, dzdwzLT, col='k:', lab=r'$LTB_1$', wid=2)
     dzdwplh.add_plot(zp, dzdwzLT2, col='k--', lab=r'$LTB_2$', wid=2)
-    dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=0.5)
+    dzdwplh.add_data(zdzdw, dzdwz, sdzdwz, alp=0.5, format='xg', lab=r'$Simulated$')
     #dzdwplh.show_lab(3)
 
     handles, labels = axPLC0[0, 0].get_legend_handles_labels()
