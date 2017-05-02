@@ -188,7 +188,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
 
     # H
     axPLC0[0, 1].set_ylabel(r'$ H_\parallel / [km s^{-1} Mpc^{-1}]$', fontsize=20)
-    axPLC0[0, 1].set_ylim(65, 220.0)
+    axPLC0[0, 1].set_ylim(65, 270.0)
     Hplh.add_plot(zp, HzF, col='b', scale=299.8, lab=r'$\Lambda CDM$', wid=1.0)
     Hplh.add_plot(zp, HzLT, col='k:', scale=299.8, lab=r'$LTB_1$', wid=2)
     Hplh.add_plot(zp, HzLT2, col='k--', scale=299.8, lab=r'$LTB_2$', wid=2)
@@ -200,7 +200,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     axPLC0[1, 0].set_xlabel(r'$z$', fontsize=20)
     axPLC0[1, 0].set_xlim(0, zmax)
     axPLC0[1, 0].set_ylabel(r'$\frac{\rho}{\rho_c} $', fontsize=30)
-    axPLC0[1, 0].set_ylim(0, 10.0)
+    axPLC0[1, 0].set_ylim(0, 12.5)
     rhoplh.add_plot(zp, rhozF, col='b', scale=153.66, lab=r'$\Lambda CDM$', wid=1.0)
     rhoplh.add_plot(zp, rhozLT, col='k:', scale=153.66, lab=r'$LTB_1$', wid=2)
     rhoplh.add_plot(zp, rhozLT2, col='k--', scale=153.66, lab=r'$LTB_2$', wid=2)
