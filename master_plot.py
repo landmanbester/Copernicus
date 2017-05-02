@@ -150,7 +150,7 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     zD, Dz, sDz = np.loadtxt(fname + 'Data/SKAD.txt', unpack=True)
     zD0, Dz0, sDz0 = np.loadtxt(fname + 'Data/UnionD.txt', unpack=True)
     zH, Hz, sHz = np.loadtxt(fname + 'Data/SKAH.txt', unpack=True)
-    zH0, Hz0, sHz0 = np.loadtxt(fname + 'Data/CCH.txt, unpack=True')
+    zH0, Hz0, sHz0 = np.loadtxt(fname + 'Data/CCH.txt', unpack=True)
     zdzdw, dzdwz, sdzdwz = np.loadtxt(fname + 'Data/dzdw.txt', unpack=True)
 
     # Create the figures we want to plot
