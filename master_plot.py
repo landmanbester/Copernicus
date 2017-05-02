@@ -228,9 +228,9 @@ def Plot_Data(zmax,Np,Nret,tmin,err,data_prior,data_lik,fname,Nsamp,DoPLCF,samps
     handles.append(p3)
     labels.append(labelsdict[files[2]])
 
-    axPLC0[0,0].legend(handles, labels, loc=4)
+    axPLC0[0,0].legend(handles, labels, loc=4, ncol=2)
 
-    figPLC0.savefig(fname + 'Figures/PLC0.pdf', dpi=250, loc=4, ncol=2)
+    figPLC0.savefig(fname + 'Figures/PLC0.pdf', dpi=250)
 
     # # Plot sigmasq
     # print "sigmasqi0"
